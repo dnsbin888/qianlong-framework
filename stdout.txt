@@ -1,0 +1,715 @@
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://192.168.1.129:8501
+  External URL: http://117.177.203.30:8501
+
++------------------------- Traceback (most recent call last) --------------------------+
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\streamlit\runt |
+| ime\scriptrunner\exec_code.py:129 in exec_func_with_error_handling                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\streamlit\runt |
+| ime\scriptrunner\script_runner.py:789 in code_to_exec                                |
+|                                                                                      |
+| D:\quant_framework\dashboard.py:395 in <module>                                      |
+|                                                                                      |
+|   392             st.markdown('<div class="m-label" style="margin-bottom:8px;">K线图 |
+|   393             fig = go.Figure()                                                  |
+|   394             sample = df if len(df) < 600 else df.iloc[::max(1, len(df)//600)]  |
+| > 395             fig.add_trace(go.Candlestick(                                      |
+|   396                 x=sample.index, open=sample["open"], high=sample["high"],      |
+|   397                 low=sample["low"], close=sample["close"], name="K线",          |
+|   398                 increasing_line_color="#00C853", decreasing_line_color="#FF525 |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\graph_o |
+| bjs\_candlestick.py:1859 in __init__                                                 |
+|                                                                                      |
+|   1856                                                                               |
+|   1857         self._props["type"] = "candlestick"                                   |
+|   1858         arg.pop("type", None)                                                 |
+| > 1859         self._process_kwargs(**dict(arg, **kwargs))                           |
+|   1860         self._skip_invalid = False                                            |
+|   1861                                                                               |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4446 in _process_kwargs                                                    |
+|                                                                                      |
+|   4443             err = _check_path_in_prop_tree(self, k, error_cast=ValueError)    |
+|   4444             if err is None:                                                   |
+|   4445                 # e.g. underscore kwargs like marker_line_color               |
+| > 4446                 self[k] = v                                                   |
+|   4447             elif not self._validate:                                          |
+|   4448                 # Set extra property as-is                                    |
+|   4449                 self[k] = v                                                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4972 in __setitem__                                                        |
+|                                                                                      |
+|   4969                                                                               |
+|   4970             res._validate = self._validate                                    |
+|   4971                                                                               |
+| > 4972             res[prop[-1]] = value                                             |
+|   4973                                                                               |
+|   4974     def __setattr__(self, prop, value):                                       |
+|   4975         """                                                                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4932 in __setitem__                                                        |
+|                                                                                      |
+|   4929                                                                               |
+|   4930                 # ### Handle simple property ###                              |
+|   4931                 else:                                                         |
+| > 4932                     self._set_prop(prop, value)                               |
+|   4933             else:                                                             |
+|   4934                 # Make sure properties dict is initialized                    |
+|   4935                 self._init_props()                                            |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:5276 in _set_prop                                                          |
+|                                                                                      |
+|   5273             if self._skip_invalid:                                            |
+|   5274                 return                                                        |
+|   5275             else:                                                             |
+| > 5276                 raise err                                                     |
+|   5277                                                                               |
+|   5278         # val is None                                                         |
+|   5279         # -----------                                                         |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:5271 in _set_prop                                                          |
+|                                                                                      |
+|   5268         validator = self._get_validator(prop)                                 |
+|   5269                                                                               |
+|   5270         try:                                                                  |
+| > 5271             val = validator.validate_coerce(val)                              |
+|   5272         except ValueError as err:                                             |
+|   5273             if self._skip_invalid:                                            |
+|   5274                 return                                                        |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\_plotly_utils\ |
+| basevalidators.py:1399 in validate_coerce                                            |
+|                                                                                      |
+|   1396             # Validate scalar color                                           |
+|   1397             validated_v = self.vc_scalar(v)                                   |
+|   1398             if validated_v is None and should_raise:                          |
+| > 1399                 self.raise_invalid_val(v)                                     |
+|   1400                                                                               |
+|   1401             v = validated_v                                                   |
+|   1402                                                                               |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\_plotly_utils\ |
+| basevalidators.py:312 in raise_invalid_val                                           |
+|                                                                                      |
+|    309             for i in inds:                                                    |
+|    310                 name += "[" + str(i) + "]"                                    |
+|    311                                                                               |
+| >  312         raise ValueError(                                                     |
+|    313             """                                                               |
+|    314     Invalid value of type {typ} received for the '{name}' property of {pname} |
+|    315         Received value: {v}                                                   |
++--------------------------------------------------------------------------------------+
+ValueError: 
+    Invalid value of type 'builtins.str' received for the 'fillcolor' property of 
+candlestick.increasing
+        Received value: '#00C85333'
+
+    The 'fillcolor' property is a color and may be specified as:
+      - A hex string (e.g. '#ff0000')
+      - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+      - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+      - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+      - A named CSS color: see https://plotly.com/python/css-colors/ for a list
++------------------------- Traceback (most recent call last) --------------------------+
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\streamlit\runt |
+| ime\scriptrunner\exec_code.py:129 in exec_func_with_error_handling                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\streamlit\runt |
+| ime\scriptrunner\script_runner.py:789 in code_to_exec                                |
+|                                                                                      |
+| D:\quant_framework\dashboard.py:395 in <module>                                      |
+|                                                                                      |
+|   392             st.markdown('<div class="m-label" style="margin-bottom:8px;">K线图 |
+|   393             fig = go.Figure()                                                  |
+|   394             sample = df if len(df) < 600 else df.iloc[::max(1, len(df)//600)]  |
+| > 395             fig.add_trace(go.Candlestick(                                      |
+|   396                 x=sample.index, open=sample["open"], high=sample["high"],      |
+|   397                 low=sample["low"], close=sample["close"], name="K线",          |
+|   398                 increasing_line_color="#00C853", decreasing_line_color="#FF525 |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\graph_o |
+| bjs\_candlestick.py:1859 in __init__                                                 |
+|                                                                                      |
+|   1856                                                                               |
+|   1857         self._props["type"] = "candlestick"                                   |
+|   1858         arg.pop("type", None)                                                 |
+| > 1859         self._process_kwargs(**dict(arg, **kwargs))                           |
+|   1860         self._skip_invalid = False                                            |
+|   1861                                                                               |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4446 in _process_kwargs                                                    |
+|                                                                                      |
+|   4443             err = _check_path_in_prop_tree(self, k, error_cast=ValueError)    |
+|   4444             if err is None:                                                   |
+|   4445                 # e.g. underscore kwargs like marker_line_color               |
+| > 4446                 self[k] = v                                                   |
+|   4447             elif not self._validate:                                          |
+|   4448                 # Set extra property as-is                                    |
+|   4449                 self[k] = v                                                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4972 in __setitem__                                                        |
+|                                                                                      |
+|   4969                                                                               |
+|   4970             res._validate = self._validate                                    |
+|   4971                                                                               |
+| > 4972             res[prop[-1]] = value                                             |
+|   4973                                                                               |
+|   4974     def __setattr__(self, prop, value):                                       |
+|   4975         """                                                                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4932 in __setitem__                                                        |
+|                                                                                      |
+|   4929                                                                               |
+|   4930                 # ### Handle simple property ###                              |
+|   4931                 else:                                                         |
+| > 4932                     self._set_prop(prop, value)                               |
+|   4933             else:                                                             |
+|   4934                 # Make sure properties dict is initialized                    |
+|   4935                 self._init_props()                                            |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:5276 in _set_prop                                                          |
+|                                                                                      |
+|   5273             if self._skip_invalid:                                            |
+|   5274                 return                                                        |
+|   5275             else:                                                             |
+| > 5276                 raise err                                                     |
+|   5277                                                                               |
+|   5278         # val is None                                                         |
+|   5279         # -----------                                                         |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:5271 in _set_prop                                                          |
+|                                                                                      |
+|   5268         validator = self._get_validator(prop)                                 |
+|   5269                                                                               |
+|   5270         try:                                                                  |
+| > 5271             val = validator.validate_coerce(val)                              |
+|   5272         except ValueError as err:                                             |
+|   5273             if self._skip_invalid:                                            |
+|   5274                 return                                                        |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\_plotly_utils\ |
+| basevalidators.py:1399 in validate_coerce                                            |
+|                                                                                      |
+|   1396             # Validate scalar color                                           |
+|   1397             validated_v = self.vc_scalar(v)                                   |
+|   1398             if validated_v is None and should_raise:                          |
+| > 1399                 self.raise_invalid_val(v)                                     |
+|   1400                                                                               |
+|   1401             v = validated_v                                                   |
+|   1402                                                                               |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\_plotly_utils\ |
+| basevalidators.py:312 in raise_invalid_val                                           |
+|                                                                                      |
+|    309             for i in inds:                                                    |
+|    310                 name += "[" + str(i) + "]"                                    |
+|    311                                                                               |
+| >  312         raise ValueError(                                                     |
+|    313             """                                                               |
+|    314     Invalid value of type {typ} received for the '{name}' property of {pname} |
+|    315         Received value: {v}                                                   |
++--------------------------------------------------------------------------------------+
+ValueError: 
+    Invalid value of type 'builtins.str' received for the 'fillcolor' property of 
+candlestick.increasing
+        Received value: '#00C85333'
+
+    The 'fillcolor' property is a color and may be specified as:
+      - A hex string (e.g. '#ff0000')
+      - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+      - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+      - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+      - A named CSS color: see https://plotly.com/python/css-colors/ for a list
++------------------------- Traceback (most recent call last) --------------------------+
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\streamlit\runt |
+| ime\scriptrunner\exec_code.py:129 in exec_func_with_error_handling                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\streamlit\runt |
+| ime\scriptrunner\script_runner.py:789 in code_to_exec                                |
+|                                                                                      |
+| D:\quant_framework\dashboard.py:395 in <module>                                      |
+|                                                                                      |
+|   392             st.markdown('<div class="m-label" style="margin-bottom:8px;">K线图 |
+|   393             fig = go.Figure()                                                  |
+|   394             sample = df if len(df) < 600 else df.iloc[::max(1, len(df)//600)]  |
+| > 395             fig.add_trace(go.Candlestick(                                      |
+|   396                 x=sample.index, open=sample["open"], high=sample["high"],      |
+|   397                 low=sample["low"], close=sample["close"], name="K线",          |
+|   398                 increasing_line_color="#00C853", decreasing_line_color="#FF525 |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\graph_o |
+| bjs\_candlestick.py:1859 in __init__                                                 |
+|                                                                                      |
+|   1856                                                                               |
+|   1857         self._props["type"] = "candlestick"                                   |
+|   1858         arg.pop("type", None)                                                 |
+| > 1859         self._process_kwargs(**dict(arg, **kwargs))                           |
+|   1860         self._skip_invalid = False                                            |
+|   1861                                                                               |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4446 in _process_kwargs                                                    |
+|                                                                                      |
+|   4443             err = _check_path_in_prop_tree(self, k, error_cast=ValueError)    |
+|   4444             if err is None:                                                   |
+|   4445                 # e.g. underscore kwargs like marker_line_color               |
+| > 4446                 self[k] = v                                                   |
+|   4447             elif not self._validate:                                          |
+|   4448                 # Set extra property as-is                                    |
+|   4449                 self[k] = v                                                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4972 in __setitem__                                                        |
+|                                                                                      |
+|   4969                                                                               |
+|   4970             res._validate = self._validate                                    |
+|   4971                                                                               |
+| > 4972             res[prop[-1]] = value                                             |
+|   4973                                                                               |
+|   4974     def __setattr__(self, prop, value):                                       |
+|   4975         """                                                                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4932 in __setitem__                                                        |
+|                                                                                      |
+|   4929                                                                               |
+|   4930                 # ### Handle simple property ###                              |
+|   4931                 else:                                                         |
+| > 4932                     self._set_prop(prop, value)                               |
+|   4933             else:                                                             |
+|   4934                 # Make sure properties dict is initialized                    |
+|   4935                 self._init_props()                                            |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:5276 in _set_prop                                                          |
+|                                                                                      |
+|   5273             if self._skip_invalid:                                            |
+|   5274                 return                                                        |
+|   5275             else:                                                             |
+| > 5276                 raise err                                                     |
+|   5277                                                                               |
+|   5278         # val is None                                                         |
+|   5279         # -----------                                                         |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:5271 in _set_prop                                                          |
+|                                                                                      |
+|   5268         validator = self._get_validator(prop)                                 |
+|   5269                                                                               |
+|   5270         try:                                                                  |
+| > 5271             val = validator.validate_coerce(val)                              |
+|   5272         except ValueError as err:                                             |
+|   5273             if self._skip_invalid:                                            |
+|   5274                 return                                                        |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\_plotly_utils\ |
+| basevalidators.py:1399 in validate_coerce                                            |
+|                                                                                      |
+|   1396             # Validate scalar color                                           |
+|   1397             validated_v = self.vc_scalar(v)                                   |
+|   1398             if validated_v is None and should_raise:                          |
+| > 1399                 self.raise_invalid_val(v)                                     |
+|   1400                                                                               |
+|   1401             v = validated_v                                                   |
+|   1402                                                                               |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\_plotly_utils\ |
+| basevalidators.py:312 in raise_invalid_val                                           |
+|                                                                                      |
+|    309             for i in inds:                                                    |
+|    310                 name += "[" + str(i) + "]"                                    |
+|    311                                                                               |
+| >  312         raise ValueError(                                                     |
+|    313             """                                                               |
+|    314     Invalid value of type {typ} received for the '{name}' property of {pname} |
+|    315         Received value: {v}                                                   |
++--------------------------------------------------------------------------------------+
+ValueError: 
+    Invalid value of type 'builtins.str' received for the 'fillcolor' property of 
+candlestick.increasing
+        Received value: '#00C85333'
+
+    The 'fillcolor' property is a color and may be specified as:
+      - A hex string (e.g. '#ff0000')
+      - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+      - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+      - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+      - A named CSS color: see https://plotly.com/python/css-colors/ for a list
++------------------------- Traceback (most recent call last) --------------------------+
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\streamlit\runt |
+| ime\scriptrunner\exec_code.py:129 in exec_func_with_error_handling                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\streamlit\runt |
+| ime\scriptrunner\script_runner.py:789 in code_to_exec                                |
+|                                                                                      |
+| D:\quant_framework\dashboard.py:395 in <module>                                      |
+|                                                                                      |
+|   392             st.markdown('<div class="m-label" style="margin-bottom:8px;">K线图 |
+|   393             fig = go.Figure()                                                  |
+|   394             sample = df if len(df) < 600 else df.iloc[::max(1, len(df)//600)]  |
+| > 395             fig.add_trace(go.Candlestick(                                      |
+|   396                 x=sample.index, open=sample["open"], high=sample["high"],      |
+|   397                 low=sample["low"], close=sample["close"], name="K线",          |
+|   398                 increasing_line_color="#00C853", decreasing_line_color="#FF525 |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\graph_o |
+| bjs\_candlestick.py:1859 in __init__                                                 |
+|                                                                                      |
+|   1856                                                                               |
+|   1857         self._props["type"] = "candlestick"                                   |
+|   1858         arg.pop("type", None)                                                 |
+| > 1859         self._process_kwargs(**dict(arg, **kwargs))                           |
+|   1860         self._skip_invalid = False                                            |
+|   1861                                                                               |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4446 in _process_kwargs                                                    |
+|                                                                                      |
+|   4443             err = _check_path_in_prop_tree(self, k, error_cast=ValueError)    |
+|   4444             if err is None:                                                   |
+|   4445                 # e.g. underscore kwargs like marker_line_color               |
+| > 4446                 self[k] = v                                                   |
+|   4447             elif not self._validate:                                          |
+|   4448                 # Set extra property as-is                                    |
+|   4449                 self[k] = v                                                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4972 in __setitem__                                                        |
+|                                                                                      |
+|   4969                                                                               |
+|   4970             res._validate = self._validate                                    |
+|   4971                                                                               |
+| > 4972             res[prop[-1]] = value                                             |
+|   4973                                                                               |
+|   4974     def __setattr__(self, prop, value):                                       |
+|   4975         """                                                                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4932 in __setitem__                                                        |
+|                                                                                      |
+|   4929                                                                               |
+|   4930                 # ### Handle simple property ###                              |
+|   4931                 else:                                                         |
+| > 4932                     self._set_prop(prop, value)                               |
+|   4933             else:                                                             |
+|   4934                 # Make sure properties dict is initialized                    |
+|   4935                 self._init_props()                                            |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:5276 in _set_prop                                                          |
+|                                                                                      |
+|   5273             if self._skip_invalid:                                            |
+|   5274                 return                                                        |
+|   5275             else:                                                             |
+| > 5276                 raise err                                                     |
+|   5277                                                                               |
+|   5278         # val is None                                                         |
+|   5279         # -----------                                                         |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:5271 in _set_prop                                                          |
+|                                                                                      |
+|   5268         validator = self._get_validator(prop)                                 |
+|   5269                                                                               |
+|   5270         try:                                                                  |
+| > 5271             val = validator.validate_coerce(val)                              |
+|   5272         except ValueError as err:                                             |
+|   5273             if self._skip_invalid:                                            |
+|   5274                 return                                                        |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\_plotly_utils\ |
+| basevalidators.py:1399 in validate_coerce                                            |
+|                                                                                      |
+|   1396             # Validate scalar color                                           |
+|   1397             validated_v = self.vc_scalar(v)                                   |
+|   1398             if validated_v is None and should_raise:                          |
+| > 1399                 self.raise_invalid_val(v)                                     |
+|   1400                                                                               |
+|   1401             v = validated_v                                                   |
+|   1402                                                                               |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\_plotly_utils\ |
+| basevalidators.py:312 in raise_invalid_val                                           |
+|                                                                                      |
+|    309             for i in inds:                                                    |
+|    310                 name += "[" + str(i) + "]"                                    |
+|    311                                                                               |
+| >  312         raise ValueError(                                                     |
+|    313             """                                                               |
+|    314     Invalid value of type {typ} received for the '{name}' property of {pname} |
+|    315         Received value: {v}                                                   |
++--------------------------------------------------------------------------------------+
+ValueError: 
+    Invalid value of type 'builtins.str' received for the 'fillcolor' property of 
+candlestick.increasing
+        Received value: '#00C85333'
+
+    The 'fillcolor' property is a color and may be specified as:
+      - A hex string (e.g. '#ff0000')
+      - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+      - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+      - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+      - A named CSS color: see https://plotly.com/python/css-colors/ for a list
++------------------------- Traceback (most recent call last) --------------------------+
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\streamlit\runt |
+| ime\scriptrunner\exec_code.py:129 in exec_func_with_error_handling                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\streamlit\runt |
+| ime\scriptrunner\script_runner.py:789 in code_to_exec                                |
+|                                                                                      |
+| D:\quant_framework\dashboard.py:395 in <module>                                      |
+|                                                                                      |
+|   392             st.markdown('<div class="m-label" style="margin-bottom:8px;">K线图 |
+|   393             fig = go.Figure()                                                  |
+|   394             sample = df if len(df) < 600 else df.iloc[::max(1, len(df)//600)]  |
+| > 395             fig.add_trace(go.Candlestick(                                      |
+|   396                 x=sample.index, open=sample["open"], high=sample["high"],      |
+|   397                 low=sample["low"], close=sample["close"], name="K线",          |
+|   398                 increasing_line_color="#00C853", decreasing_line_color="#FF525 |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\graph_o |
+| bjs\_candlestick.py:1859 in __init__                                                 |
+|                                                                                      |
+|   1856                                                                               |
+|   1857         self._props["type"] = "candlestick"                                   |
+|   1858         arg.pop("type", None)                                                 |
+| > 1859         self._process_kwargs(**dict(arg, **kwargs))                           |
+|   1860         self._skip_invalid = False                                            |
+|   1861                                                                               |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4446 in _process_kwargs                                                    |
+|                                                                                      |
+|   4443             err = _check_path_in_prop_tree(self, k, error_cast=ValueError)    |
+|   4444             if err is None:                                                   |
+|   4445                 # e.g. underscore kwargs like marker_line_color               |
+| > 4446                 self[k] = v                                                   |
+|   4447             elif not self._validate:                                          |
+|   4448                 # Set extra property as-is                                    |
+|   4449                 self[k] = v                                                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4972 in __setitem__                                                        |
+|                                                                                      |
+|   4969                                                                               |
+|   4970             res._validate = self._validate                                    |
+|   4971                                                                               |
+| > 4972             res[prop[-1]] = value                                             |
+|   4973                                                                               |
+|   4974     def __setattr__(self, prop, value):                                       |
+|   4975         """                                                                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4932 in __setitem__                                                        |
+|                                                                                      |
+|   4929                                                                               |
+|   4930                 # ### Handle simple property ###                              |
+|   4931                 else:                                                         |
+| > 4932                     self._set_prop(prop, value)                               |
+|   4933             else:                                                             |
+|   4934                 # Make sure properties dict is initialized                    |
+|   4935                 self._init_props()                                            |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:5276 in _set_prop                                                          |
+|                                                                                      |
+|   5273             if self._skip_invalid:                                            |
+|   5274                 return                                                        |
+|   5275             else:                                                             |
+| > 5276                 raise err                                                     |
+|   5277                                                                               |
+|   5278         # val is None                                                         |
+|   5279         # -----------                                                         |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:5271 in _set_prop                                                          |
+|                                                                                      |
+|   5268         validator = self._get_validator(prop)                                 |
+|   5269                                                                               |
+|   5270         try:                                                                  |
+| > 5271             val = validator.validate_coerce(val)                              |
+|   5272         except ValueError as err:                                             |
+|   5273             if self._skip_invalid:                                            |
+|   5274                 return                                                        |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\_plotly_utils\ |
+| basevalidators.py:1399 in validate_coerce                                            |
+|                                                                                      |
+|   1396             # Validate scalar color                                           |
+|   1397             validated_v = self.vc_scalar(v)                                   |
+|   1398             if validated_v is None and should_raise:                          |
+| > 1399                 self.raise_invalid_val(v)                                     |
+|   1400                                                                               |
+|   1401             v = validated_v                                                   |
+|   1402                                                                               |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\_plotly_utils\ |
+| basevalidators.py:312 in raise_invalid_val                                           |
+|                                                                                      |
+|    309             for i in inds:                                                    |
+|    310                 name += "[" + str(i) + "]"                                    |
+|    311                                                                               |
+| >  312         raise ValueError(                                                     |
+|    313             """                                                               |
+|    314     Invalid value of type {typ} received for the '{name}' property of {pname} |
+|    315         Received value: {v}                                                   |
++--------------------------------------------------------------------------------------+
+ValueError: 
+    Invalid value of type 'builtins.str' received for the 'fillcolor' property of 
+candlestick.increasing
+        Received value: '#00C85333'
+
+    The 'fillcolor' property is a color and may be specified as:
+      - A hex string (e.g. '#ff0000')
+      - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+      - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+      - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+      - A named CSS color: see https://plotly.com/python/css-colors/ for a list
++------------------------- Traceback (most recent call last) --------------------------+
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\streamlit\runt |
+| ime\scriptrunner\exec_code.py:129 in exec_func_with_error_handling                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\streamlit\runt |
+| ime\scriptrunner\script_runner.py:789 in code_to_exec                                |
+|                                                                                      |
+| D:\quant_framework\dashboard.py:395 in <module>                                      |
+|                                                                                      |
+|   392             st.markdown('<div class="m-label" style="margin-bottom:8px;">K线图 |
+|   393             fig = go.Figure()                                                  |
+|   394             sample = df if len(df) < 600 else df.iloc[::max(1, len(df)//600)]  |
+| > 395             fig.add_trace(go.Candlestick(                                      |
+|   396                 x=sample.index, open=sample["open"], high=sample["high"],      |
+|   397                 low=sample["low"], close=sample["close"], name="K线",          |
+|   398                 increasing_line_color="#00C853", decreasing_line_color="#FF525 |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\graph_o |
+| bjs\_candlestick.py:1859 in __init__                                                 |
+|                                                                                      |
+|   1856                                                                               |
+|   1857         self._props["type"] = "candlestick"                                   |
+|   1858         arg.pop("type", None)                                                 |
+| > 1859         self._process_kwargs(**dict(arg, **kwargs))                           |
+|   1860         self._skip_invalid = False                                            |
+|   1861                                                                               |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4446 in _process_kwargs                                                    |
+|                                                                                      |
+|   4443             err = _check_path_in_prop_tree(self, k, error_cast=ValueError)    |
+|   4444             if err is None:                                                   |
+|   4445                 # e.g. underscore kwargs like marker_line_color               |
+| > 4446                 self[k] = v                                                   |
+|   4447             elif not self._validate:                                          |
+|   4448                 # Set extra property as-is                                    |
+|   4449                 self[k] = v                                                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4972 in __setitem__                                                        |
+|                                                                                      |
+|   4969                                                                               |
+|   4970             res._validate = self._validate                                    |
+|   4971                                                                               |
+| > 4972             res[prop[-1]] = value                                             |
+|   4973                                                                               |
+|   4974     def __setattr__(self, prop, value):                                       |
+|   4975         """                                                                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:4932 in __setitem__                                                        |
+|                                                                                      |
+|   4929                                                                               |
+|   4930                 # ### Handle simple property ###                              |
+|   4931                 else:                                                         |
+| > 4932                     self._set_prop(prop, value)                               |
+|   4933             else:                                                             |
+|   4934                 # Make sure properties dict is initialized                    |
+|   4935                 self._init_props()                                            |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:5276 in _set_prop                                                          |
+|                                                                                      |
+|   5273             if self._skip_invalid:                                            |
+|   5274                 return                                                        |
+|   5275             else:                                                             |
+| > 5276                 raise err                                                     |
+|   5277                                                                               |
+|   5278         # val is None                                                         |
+|   5279         # -----------                                                         |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\plotly\basedat |
+| atypes.py:5271 in _set_prop                                                          |
+|                                                                                      |
+|   5268         validator = self._get_validator(prop)                                 |
+|   5269                                                                               |
+|   5270         try:                                                                  |
+| > 5271             val = validator.validate_coerce(val)                              |
+|   5272         except ValueError as err:                                             |
+|   5273             if self._skip_invalid:                                            |
+|   5274                 return                                                        |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\_plotly_utils\ |
+| basevalidators.py:1399 in validate_coerce                                            |
+|                                                                                      |
+|   1396             # Validate scalar color                                           |
+|   1397             validated_v = self.vc_scalar(v)                                   |
+|   1398             if validated_v is None and should_raise:                          |
+| > 1399                 self.raise_invalid_val(v)                                     |
+|   1400                                                                               |
+|   1401             v = validated_v                                                   |
+|   1402                                                                               |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\_plotly_utils\ |
+| basevalidators.py:312 in raise_invalid_val                                           |
+|                                                                                      |
+|    309             for i in inds:                                                    |
+|    310                 name += "[" + str(i) + "]"                                    |
+|    311                                                                               |
+| >  312         raise ValueError(                                                     |
+|    313             """                                                               |
+|    314     Invalid value of type {typ} received for the '{name}' property of {pname} |
+|    315         Received value: {v}                                                   |
++--------------------------------------------------------------------------------------+
+ValueError: 
+    Invalid value of type 'builtins.str' received for the 'fillcolor' property of 
+candlestick.increasing
+        Received value: '#00C85333'
+
+    The 'fillcolor' property is a color and may be specified as:
+      - A hex string (e.g. '#ff0000')
+      - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+      - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+      - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+      - A named CSS color: see https://plotly.com/python/css-colors/ for a list
++------------------------- Traceback (most recent call last) --------------------------+
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\streamlit\runt |
+| ime\scriptrunner\exec_code.py:129 in exec_func_with_error_handling                   |
+|                                                                                      |
+| C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\streamlit\runt |
+| ime\scriptrunner\script_runner.py:789 in code_to_exec                                |
+|                                                                                      |
+| D:\quant_framework\dashboard.py:178 in <module>                                      |
+|                                                                                      |
+|   175 with h5:                                                                       |
+|   176     st.metric("通过率", f"{stats['ok']/max(stats['scanned'],1)*100:.0f}%")     |
+|   177                                                                                |
+| > 178 # ═══════════════════════════════ Alert Row ═══════════════════════════════    |
+|   179 if signals:                                                                    |
+|   180     strong = [s for s in signals if s["score"] >= 80]                          |
+|   181     medium = [s for s in signals if 60 <= s["score"] < 80]                     |
++--------------------------------------------------------------------------------------+
+NameError: name 'h6' is not defined
