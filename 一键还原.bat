@@ -6,13 +6,13 @@ echo ============================
 echo  潜龙 — 版本还原工具
 echo ============================
 echo.
-
-echo 最近 10 个版本（最新的在上面）:
+echo 最近 50 个版本（最新的在上面）:
 echo.
+
 setlocal enabledelayedexpansion
 set idx=1
-for /f "tokens=1,*" %%a in ('"C:\Program Files\Git\bin\git.exe" log --oneline -10') do (
-    echo  [!idx!] %%a %%b
+for /f "usebackq tokens=1,2,*" %%a in (`C:\PROGRA~1\Git\bin\git.exe log --format^="%%h %%ad %%s" --date^=format:"%%Y-%%m-%%d %%H:%%M" -50`) do (
+    echo  [!idx!] %%a  %%b  %%c
     set "commit_!idx!=%%a"
     set /a idx+=1
 )
@@ -35,7 +35,7 @@ if %choice% geq 1 if %choice% leq %total% (
     echo ⚠️ 当前未备份的改动会丢失！
     set /p confirm=确认？(y/N): 
     if /i "!confirm!"=="y" (
-        "C:\Program Files\Git\bin\git.exe" restore --source=%target% --worktree -- .
+        C:\PROGRA~1\Git\bin\git.exe restore --source=%target% --worktree -- .
         echo ✅ 已还原到版本 %target%
         echo   刷新页面即可看到效果。
     ) else (
