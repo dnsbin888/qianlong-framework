@@ -10,8 +10,8 @@ echo  潜龙 — 一键备份
 echo  备注: %msg%
 echo ============================
 
-C:\Program Files\Git\bin\git.exe add -A
-C:\Program Files\Git\bin\git.exe commit -m "%msg%"
+"C:\Program Files\Git\bin\git.exe" add -A
+"C:\Program Files\Git\bin\git.exe" commit -m "%msg%"
 
 if %errorlevel%==0 (
     echo ✅ 备份完成

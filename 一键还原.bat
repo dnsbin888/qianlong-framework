@@ -11,7 +11,7 @@ echo 最近 10 个版本（最新的在上面）:
 echo.
 setlocal enabledelayedexpansion
 set idx=1
-for /f "tokens=1,*" %%a in ('C:\Program Files\Git\bin\git.exe log --oneline -10') do (
+for /f "tokens=1,*" %%a in ('"C:\Program Files\Git\bin\git.exe" log --oneline -10') do (
     echo  [!idx!] %%a %%b
     set "commit_!idx!=%%a"
     set /a idx+=1
@@ -35,7 +35,7 @@ if %choice% geq 1 if %choice% leq %total% (
     echo ⚠️ 当前未备份的改动会丢失！
     set /p confirm=确认？(y/N): 
     if /i "!confirm!"=="y" (
-        C:\Program Files\Git\bin\git.exe restore --source=%target% --worktree -- .
+        "C:\Program Files\Git\bin\git.exe" restore --source=%target% --worktree -- .
         echo ✅ 已还原到版本 %target%
         echo   刷新页面即可看到效果。
     ) else (
