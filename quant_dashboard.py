@@ -16,6 +16,7 @@
 
 import sys
 import os
+import json
 
 sys.path.insert(0, r"d:\quant_framework\src")
 
@@ -869,9 +870,34 @@ def main():
 
     # ═══════════════════ SIDEBAR ═══════════════════
     with st.sidebar:
-        st.markdown("### 策略配置")
+        mode = st.radio("模式", ["回测", "WFA"], horizontal=True, key="sidebar_mode")
+        if mode == "WFA":
+            st.markdown("### WFA 参数")
+            wfa_stock = st.text_input("股票代码", "600519", key="wf_stk")
+            wfa_train = st.number_input("训练窗口", 60, 504, 252, 21, key="wf_tr")
+            wfa_test = st.number_input("测试窗口", 21, 252, 63, 21, key="wf_te")
+            wfa_folds = st.slider("折叠数", 2, 8, 4, key="wf_fo")
+            wfa_pool = st.slider("股票池", 30, 200, 80, key="wf_po")
+            wfa_sl = st.multiselect("止损%", [-0.03,-0.05,-0.07,-0.10], default=[-0.05,-0.07], key="wf_sl")
+            wfa_tp = st.multiselect("止盈%", [0.05,0.08,0.10,0.15], default=[0.05,0.08], key="wf_tp")
+            if st.button("开始 WFA", type="primary", use_container_width=True, key="wf_btn"):
+                with st.spinner("WFA 运行中..."):
+                    params = json.dumps({"stop_loss": wfa_sl, "take_profit": wfa_tp})
+                    cmd = [sys.executable, r"d:\quant_framework\run_wfa.py",
+                           "--stock", wfa_stock, "--train", str(wfa_train),
+                           "--test", str(wfa_test), "--n-folds", str(wfa_folds),
+                           "--pool-size", str(wfa_pool), "--param-grid", params,
+                           "--output", r"d:\quant_framework\wfa_result.json"]
+                    try:
+                        r = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+                        st.success("WFA 完成" if r.returncode==0 else f"失败({r.returncode})")
+                    except subprocess.TimeoutExpired: st.error("超时")
+                    except Exception as e: st.error(str(e))
+                    st.rerun()
+        else:
+            st.markdown("### 策略配置")
 
-        signal = st.selectbox("选股公式",
+            signal = st.selectbox("选股公式",
             ["tdx_resonance (双信号共振)", "tdx2_final (牛线突破+B1反转)",
              "tdx2_xg (涨停突破牛线)", "tdx2_b1 (底部反转B1)"], index=0)
 
@@ -933,23 +959,31 @@ def main():
                 st.rerun()
 
     # ═══════════════════ MAIN: 加载数据 ═══════════════════
-    sig_key = signal.split(" ")[0] if signal else "tdx_resonance"
-    data = load_data(signal_name=sig_key)
+    if mode == "WFA":
+        # WFA 模式：跳过回测加载，直接进入 Tab（只显示 WFA 结果）
+        data = {"available": False, "equity": pd.DataFrame(), "trades": pd.DataFrame(), "sentiment": pd.DataFrame()}
+        equity = pd.Series(dtype=float)
+        drawdown_series = pd.Series(dtype=float)
+        trades = pd.DataFrame()
+        sentiment = pd.DataFrame()
+        metrics = {}
+    else:
+        sig_key = signal.split(" ")[0] if signal else "tdx_resonance"
+        data = load_data(signal_name=sig_key)
 
-    if not data["available"] or data["equity"].empty:
-        st.warning("未找到回测数据。请在左侧边栏点击「开始回测」生成，或运行: python run_backtest_fast.py")
-        st.stop()
-    st.success("数据已加载")
+    if mode != "WFA":
+        if not data["available"] or data["equity"].empty:
+            st.warning("未找到回测数据。请在左侧边栏点击「开始回测」生成，或运行: python run_backtest_fast.py")
+            st.stop()
+        st.success("数据已加载")
+        equity = data["equity"]["equity"] if "equity" in data["equity"].columns else data["equity"].iloc[:, 0]
+        drawdown_series = (equity - equity.expanding().max()) / equity.expanding().max()
+        trades = data["trades"]
+        sentiment = data.get("sentiment", pd.DataFrame())
+        metrics = _store.compute_metrics(data["equity"], trades)
 
-    equity = data["equity"]["equity"] if "equity" in data["equity"].columns else data["equity"].iloc[:, 0]
-    peak = equity.expanding().max()
-    drawdown_series = (equity - peak) / peak
-    trades = data["trades"]
-    sentiment = data.get("sentiment", pd.DataFrame())
-    metrics = _store.compute_metrics(data["equity"], trades)
-
-    # ═══════════════════ 4-Tab 结果 ═══════════════════
-    tab1, tab2, tab3, tab4 = st.tabs(["概览", "交易分析", "深度分析", "对比"])
+    # ═══════════════════ 5-Tab 结果 ═══════════════════
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["概览", "因子看板", "WFA分析", "深度分析", "对比"])
 
     # -- Tab 1: 概览 --
     with tab1:
@@ -964,42 +998,125 @@ def main():
         fig_equity = build_equity_chart(equity, drawdown_series)
         st.plotly_chart(fig_equity, width='stretch')
 
-    # -- Tab 2: 交易分析 --
-    with tab2:
-        if trades.empty:
-            st.info("暂无交易记录")
-        else:
-            ta1, ta2, ta3 = st.tabs(["周内分析", "交易明细", "退出方式"])
-            with ta1:
-                c1, c2 = st.columns(2)
-                with c1:
-                    fig_weekly = build_weekly_analysis(trades)
-                    st.plotly_chart(fig_weekly, width='stretch')
-                with c2:
-                    trades_sorted = trades.sort_values("buy_date")
-                    cum_pnl = trades_sorted["net_profit"].cumsum() if "net_profit" in trades_sorted.columns else trades_sorted["return_pct"].cumsum() * 10000
-                    fig_cum = go.Figure()
-                    fig_cum.add_trace(go.Scatter(x=trades_sorted["buy_date"], y=cum_pnl.values, mode="lines",
-                        fill="tozeroy", line=dict(color="#409eff", width=1.5), fillcolor="rgba(88,166,255,0.15)"))
-                    fig_cum.update_layout(template="plotly_dark",paper_bgcolor="#0d1117",plot_bgcolor="#0d1117",
-                        height=300,margin=dict(l=20,r=20,t=10,b=10),yaxis=dict(gridcolor="#21262d"))
-                    st.plotly_chart(fig_cum, width='stretch')
-            with ta2:
-                st.dataframe(trades.sort_values("buy_date",ascending=False).head(50),
-                    column_config={"symbol":"代码","buy_date":"买入日",
-                    "return_pct":st.column_config.NumberColumn("收益率",format="+.2%"),
-                    "net_profit":st.column_config.NumberColumn("净盈亏",format="¥,.0f"),
-                    "exit_type":"退出方式"}, width='stretch',hide_index=True)
-            with ta3:
+        # 退出方式饼图（概览内嵌）
+        if not trades.empty:
+            c1, c2 = st.columns([1, 2])
+            with c1:
                 exit_counts = trades["exit_type"].value_counts()
                 fig_exit = go.Figure(data=[go.Pie(labels=exit_counts.index,values=exit_counts.values,hole=0.5,
                     marker=dict(colors=["#409eff","#FF4051","#F1A100"]))])
                 fig_exit.update_layout(template="plotly_dark",paper_bgcolor="#0d1117",plot_bgcolor="#0d1117",
-                    height=350,margin=dict(l=20,r=20,t=10,b=10))
+                    height=280,margin=dict(l=10,r=10,t=10,b=10))
                 st.plotly_chart(fig_exit, width='stretch')
+            with c2:
+                st.dataframe(trades.sort_values("buy_date",ascending=False).head(10),
+                    column_config={"symbol":"代码","buy_date":"买入日",
+                    "return_pct":st.column_config.NumberColumn("收益率",format="+.2%"),
+                    "net_profit":st.column_config.NumberColumn("净盈亏",format="¥,.0f"),
+                    "exit_type":"退出方式"}, width='stretch',hide_index=True)
 
-    # -- Tab 3: 深度分析 --
+    # -- Tab 2: 因子看板 --
+    with tab2:
+        ic_path = r"d:\quant_framework\factor_ic_results.csv"
+        if not os.path.exists(ic_path):
+            st.info("未找到 factor_ic_results.csv，请运行: python run_factor_backtest_unified.py --mode single")
+        else:
+            fd = pd.read_csv(ic_path)
+            fd5 = fd[fd["period"] == "ic_5d"].copy()
+            fu = fd5.drop_duplicates("factor")
+            best = fu.loc[fu["abs_icir"].idxmax()]
+            c1,c2,c3,c4 = st.columns(4)
+            c1.metric("因子总数", len(fu))
+            c2.metric("有效(ICIR>2)", len(fu[fu["abs_icir"]>2]))
+            c3.metric(f"最佳: {best['label']}", f"{best['icir']:.2f}")
+            c4.metric("数据周期", "ic_5d")
+
+            cl, cr = st.columns([2, 1])
+            with cl:
+                ranked = fu.sort_values("abs_icir", ascending=False)
+                colors = ["#FF4051" if v>0 else "#27ae60" for v in ranked["icir"]]
+                fig_ic = go.Figure()
+                fig_ic.add_trace(go.Bar(y=ranked["label"], x=ranked["icir"], orientation="h",
+                    marker_color=colors, text=[f"{v:.2f}" for v in ranked["icir"]], textposition="outside"))
+                fig_ic.update_layout(template="plotly_dark", height=max(300, len(fu)*15),
+                    paper_bgcolor="#0d1117", plot_bgcolor="#0d1117",
+                    xaxis=dict(title="ICIR"), yaxis=dict(tickfont=dict(size=9)),
+                    margin=dict(l=10, r=40, t=10, b=10))
+                st.plotly_chart(fig_ic, width="stretch")
+            with cr:
+                sel = st.selectbox("因子", fu["factor"].tolist(),
+                    format_func=lambda x: fu[fu["factor"]==x]["label"].iloc[0], key="ic_sel")
+                sd = fd5[fd5["factor"]==sel]
+                if not sd.empty:
+                    r = sd.iloc[0]
+                    st.metric("IC均值", f"{r['ic_mean']:.4f}")
+                    st.metric("ICIR", f"{r['icir']:.2f}")
+                    st.metric("IC>0占比", f"{r['ic_pos_pct']:.1%}")
+                    st.metric("分类", r.get("category","?"))
+
+            # 周期对比
+            top = fu.nlargest(10, "abs_icir")["factor"].tolist()
+            dfp = fd[fd["factor"].isin(top)]
+            fig_p = go.Figure()
+            for per, lab, col in [("ic_1d","1日","#58a6ff"),("ic_5d","5日","#F1A100"),("ic_20d","20日","#FF4051")]:
+                sub = dfp[dfp["period"]==per]
+                fig_p.add_trace(go.Bar(name=lab, x=[fu[fu["factor"]==f]["label"].iloc[0] for f in sub["factor"]],
+                    y=sub["icir"].values, marker_color=col))
+            fig_p.update_layout(template="plotly_dark", barmode="group", height=350,
+                paper_bgcolor="#0d1117", plot_bgcolor="#0d1117",
+                yaxis=dict(title="ICIR"), margin=dict(l=10, r=10, t=10, b=10))
+            st.plotly_chart(fig_p, width="stretch")
+
+            # 分类汇总
+            cs = fd5.groupby("category").agg(因子数=("factor","nunique"),平均ICIR=("abs_icir","mean")).reset_index()
+            cs["平均ICIR"] = cs["平均ICIR"].round(2)
+            st.dataframe(cs.sort_values("平均ICIR",ascending=False), width="stretch", hide_index=True)
+
+    # -- Tab 3: WFA分析 --
     with tab3:
+        wfa_path = r"d:\quant_framework\wfa_result.json"
+        if not os.path.exists(wfa_path):
+            st.info("尚未运行 WFA。请在左侧边栏切换到「WFA」模式，配置参数后点击「开始 WFA」。")
+        else:
+            with open(wfa_path, "r", encoding="utf-8") as f:
+                wfa = json.loads(f.read())
+            if "error" in wfa:
+                st.error(f"WFA 失败: {wfa['error']}")
+            else:
+                folds = wfa.get("folds", [])
+                summary = wfa.get("summary", {})
+                params = wfa.get("params", {})
+                st.caption(f"{wfa.get('stock','?')} · {params.get('n_folds','?')} folds · train={params.get('train_days','?')}d · test={params.get('test_days','?')}d · {params.get('elapsed_seconds','?')}s")
+                if folds:
+                    fl = [f"Fold {f['fold']}" for f in folds]
+                    ts = [f.get("train_sharpe",0) for f in folds]
+                    ss = [f.get("test_sharpe",0) for f in folds]
+                    c1,c2,c3,c4 = st.columns(4)
+                    c1.metric("平均测试Sharpe", f"{summary.get('avg_test_sharpe',0):.2f}")
+                    c2.metric("Sharpe衰减", f"{summary.get('avg_sharpe_decay',0):.2f}")
+                    c3.metric("参数稳定性", summary.get("param_stability",{}).get("overall_grade","?"))
+                    c4.metric("完成折叠", len(folds))
+                    fw = go.Figure()
+                    fw.add_trace(go.Bar(name="训练",x=fl,y=ts,marker_color="#58a6ff"))
+                    fw.add_trace(go.Bar(name="测试",x=fl,y=ss,marker_color="#FF4051"))
+                    fw.update_layout(template="plotly_dark",barmode="group",height=350,
+                        paper_bgcolor="#0d1117",plot_bgcolor="#0d1117",yaxis=dict(gridcolor="#21262d"))
+                    st.plotly_chart(fw,width="stretch")
+                    c = summary.get("conclusion","")
+                    if abs(summary.get("avg_sharpe_decay",0))>1.0:
+                        st.error(f"⚠️ {c}")
+                    else:
+                        st.success(f"✅ {c}")
+                    # 详情表
+                    rows = []
+                    for f in folds:
+                        rows.append({"Fold":f["fold"],"训练期":f.get("train_period",""),"测试期":f.get("test_period",""),
+                            "训练Sharpe":f"{f.get('train_sharpe',0):.2f}","测试Sharpe":f"{f.get('test_sharpe',0):.2f}",
+                            "衰减":f"{f.get('sharpe_decay',0):.2f}","测试收益":f"{f.get('test_return',0):.2%}"})
+                    st.dataframe(pd.DataFrame(rows),width="stretch",hide_index=True)
+
+    # -- Tab 4: 深度分析 --
+    with tab4:
         c1, c2 = st.columns(2)
         with c1:
             fig_rolling = build_rolling_metrics(equity)
@@ -1020,8 +1137,17 @@ def main():
         fig_dist = build_returns_distribution(trades)
         st.plotly_chart(fig_dist, width='stretch')
 
-    # -- Tab 4: 对比 --
-    with tab4:
+        # 交易分析（原Tab2内容内嵌）
+        if not trades.empty:
+            with st.expander("交易明细", expanded=False):
+                st.dataframe(trades.sort_values("buy_date",ascending=False).head(50),
+                    column_config={"symbol":"代码","buy_date":"买入日",
+                    "return_pct":st.column_config.NumberColumn("收益率",format="+.2%"),
+                    "net_profit":st.column_config.NumberColumn("净盈亏",format="¥,.0f"),
+                    "exit_type":"退出方式"}, width='stretch',hide_index=True)
+
+    # -- Tab 5: 对比 --
+    with tab5:
         runs = _store.list_runs()
         if len(runs) < 2:
             st.info(f"当前已完成 {len(runs)} 次回测，需要至少 2 次才能对比。修改参数后多次点击「开始回测」。")
