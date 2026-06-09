@@ -919,6 +919,7 @@ def main():
                     "trail3-profit": t3p, "trail3-drop": t3d, "sell-ratio-3": t3s,
                     "limit-up-enabled": 1 if lu else 0,
                     "limit-up-open-drop": lud,
+                    "min-power": 35,
                 }
                 cmd = [sys.executable, r"d:\quant_framework\run_backtest_fast.py",
                        "--config", _json.dumps(config, ensure_ascii=False)]

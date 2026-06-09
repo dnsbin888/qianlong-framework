@@ -40,6 +40,7 @@ parser.add_argument("--sell-ratio-2", type=float, default=0.25)
 parser.add_argument("--sell-ratio-3", type=float, default=0.25)
 parser.add_argument("--limit-up-enabled", type=int, default=1)
 parser.add_argument("--limit-up-open-drop", type=float, default=0.03)
+parser.add_argument("--min-power", type=int, default=50)
 parser.add_argument("--commission", type=float, default=0.00025)
 parser.add_argument("--stamp-duty", type=float, default=0.001)
 parser.add_argument("--config", type=str, default=None,
@@ -148,6 +149,7 @@ result = engine.run(
     sell_ratio_3=args.sell_ratio_3,
     limit_up_enabled=bool(args.limit_up_enabled),
     limit_up_open_drop=args.limit_up_open_drop,
+    min_power=args.min_power,
     initial_capital=INITIAL_CASH,
     commission_rate=args.commission,
     stamp_duty=args.stamp_duty,
