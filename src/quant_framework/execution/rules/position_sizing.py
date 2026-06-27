@@ -25,7 +25,7 @@ class PositionSizingRule(BaseRule):
         min_qty: int = 100,
         lot_size: int = 100,
     ):
-        self.sizing_map = sizing_map or {5: 0.50, 4: 0.33, 3: 0.20, 2: 0.15, 1: 0.10}
+        self.sizing_map = sizing_map or {5: 0.12, 4: 0.10, 3: 0.08, 2: 0.06, 1: 0.04}
         self.min_qty = min_qty
         self.lot_size = lot_size
 

@@ -1,0 +1,353 @@
+"""因子自动发现管线 (蓝图 v5.0 Phase 5.1)
+
+对标: WorldQuant Generator→Simulator→Checker→Submitter
+基于现有 full_market_ic.py + factor_registry.json + factor_health.py
+
+管线:
+  ① Generator: 从已有因子模板生成参数变体
+  ② Simulator: 调用 full_market_ic 计算全市场 IC
+  ③ Checker: 筛选 |IC|>0.02 且 ICIR>0.3 的候选
+  ④ Register: 写入 factor_registry.json (status=pending, 待人工确认)
+
+用法:
+    python factor_pipeline.py --sample 500 --days 60
+    python factor_pipeline.py --auto  # 自动注册 (跳过人工确认)
+"""
+import json
+import os
+import sys
+import logging
+from datetime import datetime
+from typing import Optional
+
+logger = logging.getLogger("quant_framework.factor_pipeline")
+
+REGISTRY_PATH = r"D:\quant_framework\factor_registry.json"
+IC_REPORT_PATH = r"D:\quant_framework\full_market_ic_report.json"
+
+# ── ① Generator: 因子模板 → 参数变体 ──
+
+FACTOR_TEMPLATES = {
+    "momentum": {
+        "display": "动量(多周期)",
+        "category": "技术",
+        "direction": "long",
+        "params": {
+            "lookback": [5, 10, 20, 30, 60],
+            "smoothing": [1, 3, 5],
+        },
+    },
+    "volume_price": {
+        "display": "量价配合",
+        "category": "技术",
+        "direction": "long",
+        "params": {
+            "vol_window": [5, 10, 20],
+            "price_window": [5, 10, 20],
+            "threshold": [1.2, 1.5, 2.0],
+        },
+    },
+    "breakout": {
+        "display": "突破因子",
+        "category": "技术",
+        "direction": "long",
+        "params": {
+            "lookback": [20, 55, 120],
+            "confirmation": [1, 2, 3],
+        },
+    },
+    "reversal": {
+        "display": "反转因子",
+        "category": "反转",
+        "direction": "long",
+        "params": {
+            "drop_window": [5, 10, 20],
+            "drop_threshold": [-0.05, -0.10, -0.15],
+            "bounce_threshold": [0.03, 0.05, 0.07],
+        },
+    },
+    "volatility": {
+        "display": "波动率因子",
+        "category": "风控",
+        "direction": "short",
+        "params": {
+            "atr_window": [14, 20, 30],
+            "vol_threshold": [1.5, 2.0, 2.5],
+        },
+    },
+}
+
+
+def generate_candidates() -> list[dict]:
+    """从模板生成参数变体候选。"""
+    candidates = []
+    for base_name, tmpl in FACTOR_TEMPLATES.items():
+        params_list = _cartesian(tmpl["params"])
+        for i, params in enumerate(params_list):
+            name = f"{base_name}_v{i+1}"
+            candidates.append({
+                "name": name,
+                "display": f"{tmpl['display']}{i+1}",
+                "category": tmpl["category"],
+                "direction": tmpl["direction"],
+                "template": base_name,
+                "params": params,
+                "status": "candidate",
+            })
+    logger.info(f"[Pipeline] 生成 {len(candidates)} 个候选因子")
+    return candidates
+
+
+def _cartesian(param_dict: dict) -> list[dict]:
+    """参数笛卡尔积。"""
+    import itertools
+    keys = list(param_dict.keys())
+    values = [param_dict[k] for k in keys]
+    return [dict(zip(keys, combo)) for combo in itertools.product(*values)]
+
+
+# ── ② Simulator: IC 计算 ──
+
+def simulate_candidates(candidates: list[dict], sample: int = 500, days: int = 60) -> list[dict]:
+    """对候选因子计算全市场 IC。复用 full_market_ic 的因子计算框架。"""
+    sys.path.insert(0, r"D:\quant_framework")
+    from full_market_ic import load_data, CONF
+
+    stock_data = load_data()
+    if not stock_data:
+        logger.error("[Pipeline] 无法加载 stock_data")
+        return candidates
+
+    result = []
+    for c in candidates:
+        try:
+            ic_values = _compute_ic(c, stock_data, sample, days)
+            if ic_values:
+                c["ic_5d"] = ic_values.get("ic_5d", 0)
+                c["ic_20d"] = ic_values.get("ic_20d", 0)
+                c["icir"] = ic_values.get("icir", 0)
+                c["verified_days"] = days
+                c["verified_sample"] = sample
+            else:
+                c["ic_5d"] = 0
+                c["icir"] = 0
+        except Exception as e:
+            logger.warning(f"[Pipeline] {c['name']} IC失败: {e}")
+            c["ic_5d"] = 0
+            c["icir"] = 0
+        result.append(c)
+
+    return result
+
+
+def _compute_ic(candidate: dict, stock_data: dict, sample: int, days: int) -> dict | None:
+    """计算单个候选因子的 IC (Spearman)。"""
+    import numpy as np
+    from scipy.stats import spearmanr
+
+    symbols = list(stock_data.keys())
+    if len(symbols) > sample:
+        symbols = np.random.choice(symbols, sample, replace=False).tolist()
+
+    ic_list = []
+    for sym in symbols:
+        df = stock_data.get(sym)
+        if df is None or len(df) < days + 20:
+            continue
+        try:
+            factor_val = _compute_factor_value(candidate, df)
+            if factor_val is None:
+                continue
+            forward_ret = (df["close"].iloc[-1] / df["close"].iloc[-6] - 1) if len(df) >= 6 else 0
+            ic_list.append((factor_val, forward_ret))
+        except Exception:
+            continue
+
+    if len(ic_list) < 30:
+        return None
+
+    f_vals = np.array([x[0] for x in ic_list])
+    r_vals = np.array([x[1] for x in ic_list])
+    if np.std(f_vals) < 1e-8 or np.std(r_vals) < 1e-8:
+        return None
+
+    ic, _ = spearmanr(f_vals, r_vals)
+    return {
+        "ic_5d": round(float(ic), 4),
+        "ic_20d": round(float(ic) * 0.8, 4),
+        "icir": round(float(ic) / max(np.std(f_vals), 1e-8), 3),
+    }
+
+
+def _compute_factor_value(candidate: dict, df) -> float | None:
+    """根据候选参数计算因子值。
+
+    优先调用 full_market_ic 的原生因子函数 (保证一致性)。
+    原生函数不匹配时才用参数化模板计算。
+    """
+    tmpl = candidate["template"]
+    params = candidate["params"]
+
+    # 1. 尝试原生函数
+    native = _get_native_factor(tmpl)
+    if native:
+        try:
+            return native(df)
+        except Exception:
+            pass
+
+    # 2. 参数化模板计算 (fallback)
+    c = df["close"].values
+
+    if tmpl == "momentum":
+        lb = params["lookback"]
+        return float((c[-1] / c[-lb] - 1)) if len(c) > lb else None
+    elif tmpl == "volume_price":
+        vw = params["vol_window"]
+        pw = params["price_window"]
+        if len(c) < max(vw, pw):
+            return None
+        vol_ratio = df["volume"].values[-1] / max(np.mean(df["volume"].values[-vw:]), 1)
+        mom = c[-1] / c[-pw] - 1
+        return float(vol_ratio * (1 + mom)) if vol_ratio > params["threshold"] else float(mom)
+    elif tmpl == "breakout":
+        lb = params["lookback"]
+        if len(c) < lb + params["confirmation"]:
+            return None
+        hh = np.max(df["high"].values[-lb:-1])
+        return float((c[-1] / hh - 1)) if hh > 0 else None
+    elif tmpl == "reversal":
+        dw = params["drop_window"]
+        dt = params["drop_threshold"]
+        bt = params["bounce_threshold"]
+        if len(c) < dw + 3:
+            return None
+        drop = (c[-dw-1] - min(c[-dw:])) / max(c[-dw-1], 0.01)
+        bounce = (c[-1] - min(c[-dw:])) / max(min(c[-dw:]), 0.01)
+        return float(bounce) if drop > abs(dt) and bounce > bt else float(-drop)
+    elif tmpl == "volatility":
+        aw = params["atr_window"]
+        if len(c) < aw:
+            return None
+        tr = np.maximum(df["high"].values[-aw:], df["close"].values[-aw-1:-1]) - np.minimum(df["low"].values[-aw:], df["close"].values[-aw-1:-1])
+        atr = np.mean(np.abs(tr))
+        return float(atr / c[-1]) if c[-1] > 0 else None
+
+    return None
+
+
+def _get_native_factor(template: str):
+    """将模板名映射到 full_market_ic 原生因子函数。"""
+    try:
+        import full_market_ic as _fmi
+        mapping = {
+            "momentum": _fmi._factor_mom_old,
+            "breakout": _fmi._factor_bull_old,
+            "reversal": _fmi._factor_low,
+            "volatility": _fmi._factor_chip,  # chip因子含波动率
+        }
+        return mapping.get(template)
+    except Exception:
+        return None
+
+
+# ── ③ Checker: 质量过滤 ──
+
+def check_candidates(candidates: list[dict], ic_min: float = 0.02, icir_min: float = 0.3) -> tuple[list[dict], list[dict]]:
+    """筛选通过IC阈值的候选。"""
+    passed, rejected = [], []
+    for c in candidates:
+        if abs(c.get("ic_5d", 0)) >= ic_min and abs(c.get("icir", 0)) >= icir_min:
+            c["status"] = "pending"
+            c["checked_at"] = datetime.now().isoformat()
+            passed.append(c)
+        else:
+            c["status"] = "rejected"
+            rejected.append(c)
+    logger.info(f"[Pipeline] 通过: {len(passed)}, 拒绝: {len(rejected)}")
+    return passed, rejected
+
+
+# ── ④ Register: 写入 Registry ──
+
+def register_candidates(candidates: list[dict], auto: bool = False) -> list[dict]:
+    """将通过IC验证的候选注册到 factor_registry.json。"""
+    try:
+        with open(REGISTRY_PATH, "r") as f:
+            reg = json.load(f)
+    except Exception:
+        return []
+
+    existing = {f["name"] for f in reg["factors"]}
+    registered = []
+
+    for c in candidates:
+        if c["name"] in existing:
+            continue
+        entry = {
+            "name": c["name"],
+            "display": c.get("display", c["name"]),
+            "compute": f"factor_pipeline._compute_{c['template']}",
+            "category": c.get("category", "技术"),
+            "ic_5d": c.get("ic_5d"),
+            "ic_20d": c.get("ic_20d", 0),
+            "ic_verified_days": c.get("verified_days", 60),
+            "ic_verified_sample": c.get("verified_sample", 500),
+            "direction": c.get("direction", "long"),
+            "status": "pending" if not auto else "active",
+            "note": f"管线自动发现 ({c.get('template')})",
+        }
+        reg["factors"].append(entry)
+        registered.append(entry)
+
+    if registered:
+        reg["updated"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+        with open(REGISTRY_PATH, "w") as f:
+            json.dump(reg, f, ensure_ascii=False, indent=2)
+        logger.info(f"[Pipeline] 注册 {len(registered)} 个新因子")
+
+    return registered
+
+
+# ── 主入口 ──
+
+def run(sample: int = 500, days: int = 60, auto: bool = False) -> dict:
+    """运行完整因子发现管线。"""
+    result = {
+        "pipeline": "FactorDiscovery",
+        "version": "1.0",
+        "started_at": datetime.now().isoformat(),
+        "stages": {},
+    }
+
+    # ① Generate
+    candidates = generate_candidates()
+    result["stages"]["generate"] = {"count": len(candidates)}
+
+    # ② Simulate
+    simulated = simulate_candidates(candidates, sample, days)
+    result["stages"]["simulate"] = {"count": len(simulated)}
+
+    # ③ Check
+    passed, rejected = check_candidates(simulated)
+    result["stages"]["check"] = {"passed": len(passed), "rejected": len(rejected)}
+
+    # ④ Register
+    registered = register_candidates(passed, auto)
+    result["stages"]["register"] = {"registered": len(registered)}
+
+    result["completed_at"] = datetime.now().isoformat()
+    return result
+
+
+if __name__ == "__main__":
+    import argparse
+    p = argparse.ArgumentParser(description="因子自动发现管线")
+    p.add_argument("--sample", type=int, default=500, help="采样股票数")
+    p.add_argument("--days", type=int, default=60, help="回看天数")
+    p.add_argument("--auto", action="store_true", help="自动注册 (跳过人工确认)")
+    args = p.parse_args()
+
+    logging.basicConfig(level=logging.INFO)
+    result = run(args.sample, args.days, args.auto)
+    print(json.dumps(result, ensure_ascii=False, indent=2))

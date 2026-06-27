@@ -14,13 +14,16 @@ class AutoStopLossRule(BaseRule):
     """基本止损规则。
 
     当持仓亏损达到阈值时触发卖出。
+    支持 sell_ratio: 1.0=全卖, 0.5=卖一半
 
     Attributes:
         threshold: 止损阈值 (负值，如 -0.05 表示 -5%)
+        sell_ratio: 卖出比例 (0~1, 默认1.0全卖)
     """
 
-    def __init__(self, threshold: float = -0.05):
+    def __init__(self, threshold: float = -0.05, sell_ratio: float = 1.0):
         self.threshold = threshold
+        self.sell_ratio = sell_ratio
 
     def check(self, position: dict | None, market_data: dict, context: dict) -> Optional[RuleAction]:
         if position is None:
@@ -33,11 +36,14 @@ class AutoStopLossRule(BaseRule):
 
         pnl_pct = (price / avg_cost - 1)
         if pnl_pct <= self.threshold:
+            total_qty = position.get("qty", 0)
+            sell_qty = max(100, int(total_qty * self.sell_ratio) // 100 * 100) if self.sell_ratio < 1 else total_qty
+            label = f"卖{self.sell_ratio*100:.0f}%" if self.sell_ratio < 1 else "清仓"
             return RuleAction(
                 action="sell",
                 symbol=position.get("symbol", ""),
-                qty=position.get("qty", 0),
+                qty=sell_qty,
                 price=price,
-                reason=f"止损({pnl_pct*100:.1f}%≤{self.threshold*100:.0f}%)",
+                reason=f"止损{label}({pnl_pct*100:.1f}%≤{self.threshold*100:.0f}%)",
             )
         return None

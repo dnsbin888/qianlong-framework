@@ -563,7 +563,7 @@ def build_monthly_heatmap(equity: pd.Series):
         textfont={"color": "#b4b6b8", "size": 11},
         hoverongaps=False,
         showscale=True,
-        colorbar=dict(title="Return %", tickformat=".1f"),
+        colorbar=dict(title="收益%", tickformat=".1f"),
     ))
 
     fig.update_layout(
@@ -597,7 +597,7 @@ def build_returns_distribution(trades: pd.DataFrame):
             color=["#00b96b" if r > 0 else "#FF4051" for r in returns],
         ),
         opacity=0.8,
-        name="Return Distribution",
+        name="收益分布",
     ))
 
     # Mean line
@@ -637,13 +637,13 @@ def build_rolling_metrics(equity: pd.Series, window: int = 60):
         shared_xaxes=True,
         vertical_spacing=0.08,
         row_heights=[0.5, 0.5],
-        subplot_titles=("Rolling Annual Return (60-Day)", "Rolling Sharpe Ratio (60-Day)"),
+        subplot_titles=("60日滚动年化收益", "60日滚动夏普比率"),
     )
 
     fig.add_trace(
         go.Scatter(
             x=rolling_ret.index, y=rolling_ret.values,
-            mode="lines", name="Rolling Return",
+            mode="lines", name="滚动收益",
             line=dict(color="#409eff", width=1.2),
             fill="tozeroy", fillcolor="rgba(88,166,255,0.1)",
         ),
@@ -661,7 +661,7 @@ def build_rolling_metrics(equity: pd.Series, window: int = 60):
         row=2, col=1,
     )
     fig.add_hline(y=0, line_dash="dash", line_color="#484f58", row=2, col=1)
-    fig.add_hline(y=1, line_dash="dot", line_color="#00b96b", row=2, col=1, annotation_text="Sharpe=1")
+    fig.add_hline(y=1, line_dash="dot", line_color="#00b96b", row=2, col=1, annotation_text="夏普=1")
 
     fig.update_layout(
         template="plotly_dark",
@@ -672,8 +672,8 @@ def build_rolling_metrics(equity: pd.Series, window: int = 60):
         showlegend=False,
         font=dict(color="#b4b6b8", size=12, family="PingFang SC, Microsoft YaHei, sans-serif")
     )
-    fig.update_yaxes(title_text="Return %", row=1, col=1, gridcolor="#2a2c30", tickformat=".1f")
-    fig.update_yaxes(title_text="Sharpe", row=2, col=1, gridcolor="#2a2c30")
+    fig.update_yaxes(title_text="收益%", row=1, col=1, gridcolor="#2a2c30", tickformat=".1f")
+    fig.update_yaxes(title_text="夏普", row=2, col=1, gridcolor="#2a2c30")
 
     return fig
 
@@ -703,7 +703,7 @@ def build_weekly_analysis(trades: pd.DataFrame):
         ),
         text=[f"{v:+.2f}%" for v in grouped["avg_return"]],
         textposition="outside",
-        name="Avg Return",
+        name="平均收益",
     ))
 
     fig.add_trace(go.Scatter(
@@ -721,7 +721,7 @@ def build_weekly_analysis(trades: pd.DataFrame):
         plot_bgcolor="#141619",
         height=300,
         margin=dict(l=20, r=20, t=10, b=10),
-        yaxis=dict(title="Avg Return %", gridcolor="#2a2c30"),
+        yaxis=dict(title="平均收益%", gridcolor="#2a2c30"),
         yaxis2=dict(title="Win Rate %", overlaying="y", side="right", range=[0, 100]),
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
         font=dict(color="#b4b6b8", size=12, family="PingFang SC, Microsoft YaHei, sans-serif")
@@ -780,7 +780,7 @@ def build_drawdown_chart(equity: pd.Series):
         plot_bgcolor="#141619",
         height=300,
         margin=dict(l=20, r=20, t=10, b=10),
-        yaxis=dict(title="Drawdown %", gridcolor="#2a2c30", tickformat=".1f"),
+        yaxis=dict(title="回撤%", gridcolor="#2a2c30", tickformat=".1f"),
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
         font=dict(color="#b4b6b8", size=12, family="PingFang SC, Microsoft YaHei, sans-serif")
     )
@@ -810,7 +810,7 @@ def build_sentiment_overlay(equity: pd.Series, sentiment: pd.DataFrame):
     fig.add_trace(go.Bar(
         x=monthly_strategy.loc[common_months].index,
         y=monthly_strategy.loc[common_months].values * 100,
-        name="Strategy Monthly Return",
+        name="策略月度收益",
         marker=dict(
             color=["#00b96b" if v > 0 else "#FF4051" for v in monthly_strategy.loc[common_months].values],
             opacity=0.8,
@@ -833,7 +833,7 @@ def build_sentiment_overlay(equity: pd.Series, sentiment: pd.DataFrame):
         plot_bgcolor="#141619",
         height=350,
         margin=dict(l=20, r=20, t=10, b=10),
-        yaxis=dict(title="Strategy Return %", gridcolor="#2a2c30"),
+        yaxis=dict(title="策略收益%", gridcolor="#2a2c30"),
         yaxis2=dict(title="Sentiment Score", overlaying="y", side="right"),
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
         hovermode="x unified",
@@ -975,15 +975,24 @@ def main():
         if not data["available"] or data["equity"].empty:
             st.warning("未找到回测数据。请在左侧边栏点击「开始回测」生成，或运行: python run_backtest_fast.py")
             st.stop()
-        st.success("数据已加载")
         equity = data["equity"]["equity"] if "equity" in data["equity"].columns else data["equity"].iloc[:, 0]
         drawdown_series = (equity - equity.expanding().max()) / equity.expanding().max()
         trades = data["trades"]
         sentiment = data.get("sentiment", pd.DataFrame())
         metrics = _store.compute_metrics(data["equity"], trades)
 
-    # ═══════════════════ 5-Tab 结果 ═══════════════════
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["概览", "因子看板", "WFA分析", "深度分析", "对比"])
+    # ═══════════════════ 6-Tab 结果 ═══════════════════
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+        ["概览", "因子看板", "WFA分析", "深度分析", "对比", "因子IC分析"])
+
+    # URL参数跳转
+    tab_map = {"backtest": 0, "factor": 1, "wfa": 2, "deep": 3, "compare": 4}
+    target_tab = st.query_params.get("tab")
+    if target_tab and target_tab in tab_map:
+        idx = tab_map[target_tab]
+        st.markdown(f"""<script>
+        setTimeout(function(){{var tabs=parent.document.querySelectorAll('[data-baseweb=\"tab\"]');if(tabs.length>={idx+1})tabs[{idx}].click()}},300)
+        </script>""", unsafe_allow_html=True)
 
     # -- Tab 1: 概览 --
     with tab1:
@@ -1003,7 +1012,8 @@ def main():
             c1, c2 = st.columns([1, 2])
             with c1:
                 exit_counts = trades["exit_type"].value_counts()
-                fig_exit = go.Figure(data=[go.Pie(labels=exit_counts.index,values=exit_counts.values,hole=0.5,
+                exit_names = {"stop_loss":"止损","take_profit":"止盈","trail_stop":"追踪止盈","normal":"正常到期","force_close":"强平"}
+                fig_exit = go.Figure(data=[go.Pie(labels=[exit_names.get(x,x) for x in exit_counts.index],values=exit_counts.values,hole=0.5,
                     marker=dict(colors=["#409eff","#FF4051","#F1A100"]))])
                 fig_exit.update_layout(template="plotly_dark",paper_bgcolor="#0d1117",plot_bgcolor="#0d1117",
                     height=280,margin=dict(l=10,r=10,t=10,b=10))
@@ -1071,6 +1081,37 @@ def main():
             cs = fd5.groupby("category").agg(因子数=("factor","nunique"),平均ICIR=("abs_icir","mean")).reset_index()
             cs["平均ICIR"] = cs["平均ICIR"].round(2)
             st.dataframe(cs.sort_values("平均ICIR",ascending=False), width="stretch", hide_index=True)
+
+        # E17: 因子IC分析 (合并到因子看板)
+        with st.expander("📊 因子IC排名 — 预测能力评估", expanded=False):
+            st.caption("IC = 因子值与未来收益的Spearman秩相关。|IC| > 0.05 有效，> 0.10 强效。")
+            if st.button("🔄 刷新IC排名", key="btn_ic"):
+                st.session_state.ic_data = None
+            try:
+                import requests
+                resp = requests.get("http://localhost:5002/api/factors/optimize", timeout=10)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    rankings = data.get("rankings", [])
+                    if rankings:
+                        df = pd.DataFrame(rankings)
+                        df = df[["rank", "name", "ic", "abs_ic", "grade", "samples", "status", "direction"]]
+                        df.columns = ["排名", "因子", "IC", "|IC|", "等级", "样本", "状态", "方向"]
+                        colors = ["#00e676" if r["abs_ic"] >= 0.05 else ("#F1A100" if r["abs_ic"] >= 0.02 else "#FF4051") for r in rankings]
+                        fig = px.bar(df, x="因子", y="|IC|", title="因子 |IC| 对比", color="|IC|", color_continuous_scale="RdYlGn")
+                        fig.update_traces(marker_color=colors)
+                        st.plotly_chart(fig, use_container_width=True)
+                        st.dataframe(df, use_container_width=True, hide_index=True)
+                        strong = [r for r in rankings if r["abs_ic"] >= 0.10]
+                        effective = [r for r in rankings if 0.05 <= r["abs_ic"] < 0.10]
+                        if strong:
+                            st.success(f"🏆 强效因子 ({len(strong)}个): " + ", ".join(f"{r['name']}(IC={r['ic']:+.3f})" for r in strong))
+                        if effective:
+                            st.info(f"✅ 有效因子 ({len(effective)}个): " + ", ".join(r["name"] for r in effective))
+                    else:
+                        st.warning("⚠️ 暂无因子数据")
+            except Exception as e:
+                st.warning(f"⚠️ 无法连接潜龙API: {e}")
 
     # -- Tab 3: WFA分析 --
     with tab3:
@@ -1170,8 +1211,8 @@ def main():
                 ea = ra["equity"]["equity"] if "equity" in ra["equity"].columns else ra["equity"].iloc[:,0]
                 eb = rb["equity"]["equity"] if "equity" in rb["equity"].columns else rb["equity"].iloc[:,0]
                 fig_cmp = go.Figure()
-                fig_cmp.add_trace(go.Scatter(x=ea.index,y=ea.values,mode="lines",name=f"A: {ids[ia]}",line=dict(color="#58a6ff",width=2)))
-                fig_cmp.add_trace(go.Scatter(x=eb.index,y=eb.values,mode="lines",name=f"B: {ids[ib]}",line=dict(color="#FF4051",width=2)))
+                fig_cmp.add_trace(go.Scatter(x=ea.index,y=ea.values,mode="lines",name=f"方案A: {ids[ia]}",line=dict(color="#58a6ff",width=2)))
+                fig_cmp.add_trace(go.Scatter(x=eb.index,y=eb.values,mode="lines",name=f"方案B: {ids[ib]}",line=dict(color="#FF4051",width=2)))
                 fig_cmp.add_hline(y=1_000_000,line_dash="dash",line_color="#484f58")
                 fig_cmp.update_layout(template="plotly_dark",paper_bgcolor="#0d1117",plot_bgcolor="#0d1117",
                     height=400,margin=dict(l=20,r=20,t=10,b=10),legend=dict(orientation="h",yanchor="bottom",y=1.02),
@@ -1194,6 +1235,84 @@ def main():
                     html += f"<tr style='border-bottom:1px solid #21262d'><td>{lb}</td><td style='text-align:right;{sa}'>{a}</td><td style='text-align:right;{sb}'>{b}</td></tr>"
                 html += "</table>"
                 st.markdown(html,unsafe_allow_html=True)
+
+    # -- Tab 6: 因子IC分析 (E69) --
+    with tab6:
+        st.markdown("### 因子有效性分析")
+        import json as _json, os as _os
+        ic_report_path = r"D:\quant_web\data\factor_ic_report.json"
+        if not _os.path.exists(ic_report_path):
+            ic_report_path = r"D:\quant_web\data\factor_ic_report_full.json"  # E107: fallback
+        if _os.path.exists(ic_report_path):
+            with open(ic_report_path, "r", encoding="utf-8") as _f:
+                report = _json.load(_f)
+            ic_data = report.get("ic_results", {})
+            recs = report.get("recommendations", [])
+            criteria = report.get("criteria", {})
+
+            if ic_data:
+                # IC 柱状图
+                st.markdown("#### IC 值 (vs 未来1日收益)")
+                import pandas as _pd
+                import plotly.express as _px
+                rows = []
+                for fname, ics in ic_data.items():
+                    ic1d = ics.get("ic_1d", {})
+                    rows.append({
+                        "因子": fname,
+                        "IC": ic1d.get("mean_ic", 0),
+                        "ICIR": ic1d.get("icir", 0),
+                        "方向性": ic1d.get("positive_ratio", 0),
+                        "样本": ic1d.get("samples", 0),
+                    })
+                df_ic = _pd.DataFrame(rows).sort_values("IC", key=abs, ascending=False)
+                colors_ic = ["#00e676" if abs(r["IC"]) >= 0.05 else ("#F1A100" if abs(r["IC"]) >= 0.02 else "#FF4051") for _, r in df_ic.iterrows()]
+                fig = _px.bar(df_ic, x="因子", y="IC", title="因子 IC 柱状图", color="IC", color_continuous_scale="RdYlGn")
+                fig.update_traces(marker_color=colors_ic)
+                st.plotly_chart(fig, use_container_width=True)
+
+                # ICIR 排序表
+                st.markdown("#### ICIR 排序 (稳定性)")
+                df_icir = df_ic.sort_values("ICIR", ascending=False)
+                st.dataframe(df_icir, use_container_width=True,
+                             column_config={"IC": st.column_config.NumberColumn(format="%.4f"),
+                                           "ICIR": st.column_config.NumberColumn(format="%.3f"),
+                                           "方向性": st.column_config.NumberColumn(format="%.0f%%"),
+                                           "样本": st.column_config.NumberColumn(format="%d")})
+
+                # 多周期IC
+                st.markdown("#### 多周期 IC")
+                multi_rows = []
+                for fname, ics in ic_data.items():
+                    for ndays in [1, 3, 5]:
+                        key = f"ic_{ndays}d"
+                        if key in ics:
+                            multi_rows.append({"因子": fname, "周期": f"{ndays}日", "IC": ics[key]["mean_ic"], "ICIR": ics[key]["icir"]})
+                if multi_rows:
+                    df_multi = _pd.DataFrame(multi_rows)
+                    fig2 = _px.line(df_multi, x="周期", y="IC", color="因子", markers=True, title="多周期 IC 衰减")
+                    st.plotly_chart(fig2, use_container_width=True)
+
+            # 推荐建议
+            if recs:
+                st.markdown("#### 因子建议")
+                keep = [r for r in recs if r["action"] in ("保留",)]
+                drop = [r for r in recs if r["action"] in ("淘汰", "合并(冗余)")]
+                watch = [r for r in recs if r["action"] == "观察"]
+                c1, c2, c3 = st.columns(3)
+                c1.metric("✅ 保留", len(keep))
+                c2.metric("⚠️ 观察", len(watch))
+                c3.metric("❌ 淘汰/合并", len(drop))
+                for r in recs:
+                    icon = {"保留": "✅", "淘汰": "❌", "合并(冗余)": "🔗", "观察": "⚠️"}.get(r["action"], "•")
+                    st.markdown(f"{icon} **{r['label']}**: {r['reason']}")
+
+            if criteria:
+                st.caption(f"标准: |IC|≥{criteria.get('ic_min',0.02)}, ICIR≥{criteria.get('icir_min',0.3)}, |ρ|<{criteria.get('corr_max',0.7)}")
+        else:
+            st.info("尚无 IC 分析报告。运行 E67 `analyze_all_factors()` 生成 `factor_ic_report.json`。", icon="📊")
+
+    # （因子IC分析和组合优化已移至 tab2 末尾的 expander 中）
 
 
 if __name__ == "__main__":

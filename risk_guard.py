@@ -10,14 +10,18 @@ from collections import defaultdict
 class PreTradeChecker:
     """报单前风控检查 — 返回 (通过, 拒绝原因)"""
 
-    def __init__(self, config=None, positions=None, cash=0, total_equity=0):
+    def __init__(self, config=None, positions=None, cash=0, total_equity=0, factor_cache=None, stock_data=None):
         self.config = config or {}
         self.positions = positions or {}
         self.cash = cash
         self.total_equity = total_equity
+        self.factor_cache = factor_cache or []
+        self.stock_data = stock_data or {}
 
     def check_buy(self, symbol, price, qty, industry='', signal_level=3):
         """买入前检查"""
+        if price is None or price <= 0:
+            return False, f"价格无效: {price}"
         cost = price * qty
 
         # 1. 资金检查
@@ -71,10 +75,42 @@ class PreTradeChecker:
         return True, "OK"
 
     def _is_limit_up(self, symbol):
-        return False  # 简化: 需要实时行情
+        code = symbol.replace('sh','').replace('sz','').replace('bj','').replace('SH','').replace('SZ','').replace('BJ','')
+        limit_pct = 0.10
+        if code.startswith(('688','3')): limit_pct = 0.20
+        elif code.startswith(('8','4')): limit_pct = 0.30
+        prev_close = self._get_prev_close(symbol)
+        if prev_close <= 0: return False
+        cur = self._get_current_price(symbol)
+        if cur <= 0: return False
+        return cur >= prev_close * (1 + limit_pct) - 0.01
 
     def _is_limit_down(self, symbol):
-        return False
+        code = symbol.replace('sh','').replace('sz','').replace('bj','').replace('SH','').replace('SZ','').replace('BJ','')
+        limit_pct = 0.10
+        if code.startswith(('688','3')): limit_pct = 0.20
+        elif code.startswith(('8','4')): limit_pct = 0.30
+        prev_close = self._get_prev_close(symbol)
+        if prev_close <= 0: return False
+        cur = self._get_current_price(symbol)
+        if cur <= 0: return False
+        return cur <= prev_close * (1 - limit_pct) + 0.01
+
+    def _get_prev_close(self, symbol):
+        for fc in self.factor_cache:
+            if getattr(fc, 'symbol', '') == symbol:
+                return getattr(fc, 'pre_close', 0) or 0
+        df = self.stock_data.get(symbol)
+        if df is not None and len(df) >= 2:
+            return float(df['close'].iloc[-2])
+        return 0
+
+    def _get_current_price(self, symbol):
+        for fc in self.factor_cache:
+            if getattr(fc, 'symbol', '') == symbol:
+                close = getattr(fc, 'close', 0) or 0
+                if close > 0: return close
+        return 0
 
 
 class CorrelationAnalyzer:
@@ -192,9 +228,10 @@ class RiskCycleScheduler:
                 pnl_pct = (pos.get('last_price',0)/pos.get('avg_cost',1)-1)*100
                 if pnl_pct < -8:
                     warnings.append(f"⚠️ {sym} 隔夜亏损{pnl_pct:.1f}%，关注开盘")
-            # 检查熔断状态
-            if self.paper._circuit_breaker_triggered():
-                warnings.append("🚨 昨日触发熔断，今日仅允许卖出")
+            # 检查熔断状态: daily_loss_total超过-5%初始资金即触发
+            daily_loss = getattr(self.paper, '_daily_loss_total', 0) or 0
+            if daily_loss < -50000:  # 1M * -5%
+                warnings.append(f"🚨 累计亏损{daily_loss:.0f}触发熔断，今日仅允许卖出")
 
         result = {"phase": "pre_market", "time": datetime.now().strftime("%H:%M"), "warnings": warnings}
         if self.store:

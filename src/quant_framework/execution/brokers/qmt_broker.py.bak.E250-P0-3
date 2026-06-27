@@ -1,0 +1,313 @@
+"""QMTBroker — QMT 下单适配器 (E241/E244)
+===========================================
+
+将 LiveStrategyRunner 的买卖信号转化为 QMT xttrader 的下单请求。
+支持 SIM（仿真）和 REAL（实盘）两种环境。REAL 模式需通过 real_confirmed=True 确认。
+
+安全约束:
+    - 环境检查: __init__ 中 env 必须为 "SIM" 或 "REAL"，非法值 raise RuntimeError
+    - REAL 确认: REAL 模式需 real_confirmed=True，否则 raise RuntimeError
+    - 降级安全: connect() 失败时 is_connected()=False, place_order 返回 None
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from quant_framework.execution.broker import AbstractBroker
+from quant_framework.execution.order import (
+    AccountInfo,
+    Order,
+    OrderRequest,
+    Position,
+    Trade,
+)
+
+logger = logging.getLogger("quant_framework.execution.brokers.qmt")
+
+
+class QMTBroker(AbstractBroker):
+    """QMT 下单适配器。
+
+    Args:
+        account_id: QMT 账户 ID
+        env: 环境标识，"SIM" 或 "REAL"
+        real_confirmed: REAL 模式确认标志，仅 env="REAL" 时需要传 True
+        path: QMT 客户端 userdata 路径
+        session_id: QMT 会话 ID
+    """
+
+    def __init__(
+        self,
+        account_id: str,
+        env: str = "SIM",
+        path: str = r"D:\QMT交易端\userdata_mini",
+        session_id: int = 1,
+        real_confirmed: bool = False,  # E244: REAL 模式确认标志
+    ) -> None:
+        # 🛡️ P0 红线：环境安全阀 (E244 升级: SIM/REAL/非法值 三路分支)
+        env_upper: str = env.upper()
+        if env_upper == "SIM":
+            pass  # 仿真模式，直接通过
+        elif env_upper == "REAL":
+            if not real_confirmed:
+                raise RuntimeError(
+                    "[E244 安全阀] REAL 模式未经交互确认 (real_confirmed=False)。"
+                    "禁止初始化实盘下单通道。"
+                )
+            logger.warning("[QMTBroker] 实盘模式已激活，将使用真实资金下单")
+        else:
+            raise RuntimeError(
+                f"[E244 安全阀] qmt_env='{env}' 非法。"
+                f"合法值: 'SIM' 或 'REAL'。"
+            )
+
+        self._account_id: str = account_id
+        self._env: str = env_upper
+        self._path: str = path
+        self._session_id: int = session_id
+        self._trader: Any = None
+        self._account: Any = None
+        self._connected: bool = False
+
+        # xtquant 延迟导入
+        try:
+            from xtquant.xttrader import XtQuantTrader
+            from xtquant.xttype import StockAccount
+            from xtquant import xtconstant
+
+            self._XtQuantTrader = XtQuantTrader
+            self._StockAccount = StockAccount
+            self._xtconstant = xtconstant
+            self._xt_available: bool = True
+        except ImportError:
+            logger.warning("[QMTBroker] xtquant 未安装，下单通道不可用")
+            self._xt_available: bool = False
+
+        logger.info(
+            f"[QMTBroker] 初始化完成 | account={account_id} env={env} "
+            f"xtquant={'已安装' if self._xt_available else '未安装'}"
+        )
+
+    # ── 生命周期 ────────────────────────────────────────
+
+    def connect(self) -> None:
+        """连接 QMT 客户端。失败时设 _connected=False，不抛异常。"""
+        if not self._xt_available:
+            logger.warning("[QMTBroker] xtquant 不可用，跳过连接")
+            return
+
+        try:
+            self._trader = self._XtQuantTrader(self._path, self._session_id)
+            self._trader.start()
+            self._account = self._StockAccount(self._account_id)
+            self._connected = True
+            logger.info(f"[QMTBroker] 已连接 QMT | account={self._account_id}")
+        except Exception as e:
+            logger.warning(f"[QMTBroker] 连接 QMT 失败，降级为空转: {e}")
+            self._connected = False
+
+    def disconnect(self) -> None:
+        """断开 QMT 连接。"""
+        if self._trader:
+            try:
+                self._trader.stop()
+            except Exception:
+                pass
+        self._connected = False
+        logger.info("[QMTBroker] 已断开")
+
+    def is_connected(self) -> bool:
+        return self._connected
+
+    # ── 账户查询 ────────────────────────────────────────
+
+    def get_account_value(self) -> float | None:
+        """查询账户总资产（只读，不触碰下单通道）。
+
+        Returns:
+            账户总市值 (float)，或 None（未连接/查询失败）
+        """
+        if not self._connected or not self._xt_available:
+            return None
+        try:
+            asset = self._trader.query_stock_asset(self._account)
+            if asset:
+                return float(asset.total_asset)
+        except Exception as e:
+            logger.warning(f"[QMTBroker] 查询账户资产失败: {e}")
+        return None
+
+    def get_available_cash(self) -> float | None:
+        """查询可用资金 (E250 P2-4: 下单前资金检查).
+
+        Returns:
+            可用资金 (float)，或 None（未连接/查询失败）
+        """
+        if not self._connected or not self._xt_available:
+            return None
+        try:
+            asset = self._trader.query_stock_asset(self._account)
+            if asset:
+                return float(getattr(asset, "cash", 0) or getattr(asset, "available", 0) or 0)
+        except Exception as e:
+            logger.warning(f"[QMTBroker] 查询可用资金失败: {e}")
+        return None
+
+    def query_order_status(self, order_id: str) -> str:
+        """查询订单成交状态 (E250 P0-3).
+
+        Args:
+            order_id: QMT 委托序号 (seq)
+
+        Returns:
+            "filled" / "pending" / "rejected" / "unknown"
+        """
+        if not self._connected or not self._xt_available:
+            return "unknown"
+        try:
+            result = self._trader.query_stock_orders(self._account)
+            if result:
+                for order in result:
+                    if str(order.get("seq", "")) == str(order_id):
+                        status = order.get("order_status", 0)
+                        # QMT 状态码: 56/57/60 = 已成交
+                        if status in (56, 57, 60):
+                            return "filled"
+                        elif status in (50, 52, 54):
+                            return "rejected"
+                        else:
+                            return "pending"
+        except Exception as e:
+            logger.warning(f"[QMTBroker] 查询订单状态失败: {e}")
+        return "unknown"
+
+    # ── 便捷下单 ────────────────────────────────────────
+
+    def place_order(
+        self, symbol: str, direction: str, price: float, volume: int
+    ) -> str | None:
+        """便捷下单方法 — 供 LiveStrategyRunner.on_bar 调用。
+
+        Args:
+            symbol: 股票代码 (如 "600000")
+            direction: "buy" 或 "sell"
+            price: 下单价格
+            volume: 股数（必须 100 的倍数）
+
+        Returns:
+            QMT 委托序号 (str) 或 None（失败/未连接）
+        """
+        if not self._connected or not self._xt_available:
+            logger.warning("[QMTBroker] 未连接，跳过下单")
+            return None
+
+        qmt_symbol: str = self._format_symbol(symbol)
+
+        if direction == "buy":
+            order_type = self._xtconstant.STOCK_BUY
+        elif direction == "sell":
+            order_type = self._xtconstant.STOCK_SELL
+        else:
+            logger.error(f"[QMTBroker] 未知方向: {direction}")
+            return None
+
+        try:
+            seq: int = self._trader.order_stock(
+                self._account,
+                qmt_symbol,
+                order_type,
+                volume,
+                self._xtconstant.FIX_PRICE,
+                price,
+                "ma_cross",
+                f"E241_{direction}_{symbol}",
+            )
+            logger.info(
+                f"[QMT-SIM] 委托已提交: {qmt_symbol} {direction} "
+                f"{volume}股 @ {price} | seq={seq}"
+            )
+            return str(seq)
+        except Exception as e:
+            logger.error(f"[QMTBroker] 下单失败: {e}")
+            return None
+
+    @staticmethod
+    def _format_symbol(symbol: str) -> str:
+        """将股票代码转为 QMT 格式 (E250 P1-6: 去重后缀 + 未知前缀抛异常)."""
+        s: str = symbol.strip().upper()
+
+        # 1. 如果已有后缀，先去除
+        for suffix in (".SH", ".SZ", ".BJ", ".SS"):
+            if s.endswith(suffix):
+                s = s[:-len(suffix)]
+                break
+
+        # 2. 非纯数字，原样返回
+        if not s.isdigit():
+            return s
+
+        # 3. 沪市
+        if s.startswith(("6", "5", "9", "7", "11", "13")):
+            return f"{s}.SH"
+        # 4. 深市
+        elif s.startswith(("0", "3", "2", "15", "16", "18")):
+            return f"{s}.SZ"
+        # 5. 北交所
+        elif s.startswith(("8", "4")):
+            return f"{s}.BJ"
+        # 6. 未知前缀 → 抛异常，不默认 .SH
+        else:
+            raise ValueError(f"未知股票代码前缀: {symbol} (处理后: {s})")
+
+    # ── AbstractBroker 接口 ──
+
+    def submit_order(self, request: OrderRequest) -> Order:
+        from quant_framework.core.constants import OrderStatus
+
+        direction_str: str = "buy" if request.direction.value == "BUY" else "sell"
+        seq: str | None = self.place_order(
+            request.symbol, direction_str, request.price or 0.0, request.volume or 0
+        )
+
+        return Order(
+            order_id=seq or "qmt_failed",
+            strategy_id=request.strategy_id,
+            symbol=request.symbol,
+            direction=request.direction,
+            price=request.price or 0.0,
+            requested_volume=request.volume or 0,
+            status=OrderStatus.SUBMITTED if seq else OrderStatus.REJECTED,
+        )
+
+    def cancel_order(self, order_id: str) -> bool:
+        raise NotImplementedError("E241 暂未实现撤单")
+
+    def cancel_all_orders(self, symbol: str | None = None) -> int:
+        raise NotImplementedError("E241 暂未实现批量撤单")
+
+    def get_order(self, order_id: str) -> Order | None:
+        raise NotImplementedError("E241 暂未实现订单查询")
+
+    def get_orders(self, symbol=None, status=None) -> list[Order]:
+        return []
+
+    def get_open_orders(self, symbol=None) -> list[Order]:
+        return []
+
+    def get_positions(self) -> dict:
+        return {}
+
+    def get_position(self, symbol: str) -> Position | None:
+        return None
+
+    def get_account(self) -> AccountInfo:
+        return AccountInfo(account_id=self._account_id)
+
+    def get_trades(self, symbol=None, limit=100) -> list[Trade]:
+        return []
+
+    @property
+    def name(self) -> str:
+        return f"QMTBroker({self._account_id}, {self._env})"

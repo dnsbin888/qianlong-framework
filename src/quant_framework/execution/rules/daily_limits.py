@@ -19,7 +19,7 @@ class MaxDailyTradesRule(BaseRule):
         max_trades: 单日最大成交次数
     """
 
-    def __init__(self, max_trades: int = 4):
+    def __init__(self, max_trades: int = 5):
         self.max_trades = max_trades
 
     def check(self, position: dict | None, market_data: dict, context: dict) -> Optional[RuleAction]:

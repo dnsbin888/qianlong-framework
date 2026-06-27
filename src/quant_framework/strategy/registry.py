@@ -166,6 +166,7 @@ class StrategyRegistry:
         self._register_builtin_scheduled()
         self._register_builtin_bull_line()
         self._register_builtin_dragon_tiger()
+        self._register_builtin_ma_cross()
 
     def _register_builtin_macd(self) -> None:
         try:
@@ -378,6 +379,25 @@ class StrategyRegistry:
                     "hold_days": {"type": "int", "default": 3, "description": "持有天数"},
                     "stop_loss_pct": {"type": "float", "default": -4.0, "description": "止损%"},
                     "stop_profit_pct": {"type": "float", "default": 10.0, "description": "止盈%"},
+                },
+            ))
+        except ImportError:
+            pass
+
+    def _register_builtin_ma_cross(self) -> None:
+        """注册双均线金叉死叉策略 (E225)."""
+        try:
+            from quant_framework.strategy.builtin.ma_cross import MACrossConfig, MACrossStrategy
+            self.register(StrategyMeta(
+                name="ma_cross", label="双均线金叉死叉",
+                strategy_cls=MACrossStrategy, config_cls=MACrossConfig,
+                description="快线上穿慢线买入(金叉)，快线下穿慢线卖出(死叉)",
+                category="趋势跟踪", risk_level="中等",
+                params={
+                    "symbol": {"type": "str", "default": "600000", "description": "股票代码"},
+                    "fast_period": {"type": "int", "default": 5, "description": "快线周期"},
+                    "slow_period": {"type": "int", "default": 20, "description": "慢线周期"},
+                    "volume": {"type": "int", "default": 1000, "description": "每笔交易股数"},
                 },
             ))
         except ImportError:

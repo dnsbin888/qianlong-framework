@@ -1,12 +1,20 @@
 """同花顺持仓自动读取 — 多策略自动同步
-策略1: 监控同花顺导出文件变化
-策略2: 读取窗口控件文本 (pywin32)
-策略3: 监控剪贴板
-策略4: 同花顺本地数据库 (SQLite)
+
+策略1: 监控同花顺导出文件变化 (FileWatcher)
+策略2: 同花顺本地数据库 (SQLite)
+策略3: 监控剪贴板 (clipper)
+策略4: 窗口标题提取 (仅总资产摘要)
+
+注意: 已移除 UIAutomation 策略
+  原因: UIA 遍历同花顺控件树会与弹窗杀手的 EnumWindows 竞争 Win32 消息泵, 导致死锁
+  修复: 改用文件监控 + SQLite + 剪贴板, 避免直接操作 THS 窗口
 """
 import os, time, csv, io, json, threading
 from datetime import datetime
 from pathlib import Path
+
+# ── THS Win32 操作互斥锁 ──
+from ths_lock import THS_WIN32_LOCK
 
 # ═══════════════════════════════════════════════
 # 策略1: 文件监控 — 监控同花顺自动导出的持仓文件
@@ -109,7 +117,10 @@ def try_read_sqlite():
 # 策略4: 窗口标题提取 (快速版)
 # ═══════════════════════════════════════════════
 def try_read_window_title():
-    """从同花顺窗口标题提取总资产/盈亏摘要"""
+    """从同花顺窗口标题提取总资产/盈亏摘要 (加锁, 与弹窗杀手互斥)"""
+    acquired = THS_WIN32_LOCK.acquire(timeout=3.0)
+    if not acquired:
+        return None
     try:
         import pygetwindow as gw
         windows = gw.getWindowsWithTitle("同花顺")
@@ -125,6 +136,8 @@ def try_read_window_title():
                 if pnl: info["pnl"] = pnl[0]
                 return info
     except: pass
+    finally:
+        THS_WIN32_LOCK.release()
     return None
 
 
@@ -158,18 +171,22 @@ class THSPositionReader:
                 self.last_read = now
                 return {"positions": positions, "source": "sqlite"}
 
-            # 3. UIA 窗口读取
-            positions = try_read_with_uia()
-            if positions:
-                self.cached_positions = positions
-                self.last_read = now
-                return {"positions": positions, "source": "uiautomation"}
+            # 3. 剪贴板读取 (clipper, 不涉及 Win32 窗口操作)
+            try:
+                import clipper
+                positions = clipper.read_positions(use_cache=False)
+                if positions:
+                    self.cached_positions = positions
+                    self.last_read = now
+                    return {"positions": positions, "source": "clipboard"}
+            except Exception:
+                pass
 
             # 4. 返回缓存
             if self.cached_positions:
                 return {"positions": self.cached_positions, "source": "cache"}
 
-            # 5. 窗口标题摘要
+            # 5. 窗口标题摘要 (加锁, 与弹窗杀手互斥)
             info = try_read_window_title()
             if info:
                 return {"positions": [], "source": "window_title", "summary": info}

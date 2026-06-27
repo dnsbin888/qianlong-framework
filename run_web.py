@@ -1,7 +1,7 @@
 """Flask — 托管 dashboard.html（含 iframe 嵌入 Streamlit）。
 
 用法:
-    cd /d d:\quant_framework
+    cd /d d:\\quant_framework
     python run_web.py
     浏览器访问: http://localhost:5002/dashboard
 
@@ -40,19 +40,74 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>策略回测 — 潜龙</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐉</text></svg>">
-<link rel="stylesheet" href="/static/css/style.css?v=3">
 <style>
+  /* === 内联关键样式（无需依赖外部CSS文件） === */
+  * { margin: 0; padding: 0; outline: none !important; box-sizing: border-box; }
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-thumb { border-radius: 4px; background: rgba(144,147,153,.3); }
+  *::-webkit-scrollbar-track { background: transparent; }
+  html, body {
+    width: 100vw; height: 100vh; overflow: hidden;
+    background: #000; color: #e3e3e3; font-size: 14px;
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    user-select: none; -webkit-user-select: none;
+  }
+  a, a:hover, a:active, a:visited { color: inherit; text-decoration: none; }
+
+  /* Topbar */
+  .topbar {
+    height: 44px; background: #141619; border-bottom: 1px solid #2a2c30;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px; position: relative; z-index: 100;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 24px; }
+  .logo-text { font-size: 18px; font-weight: 700; color: #409eff; letter-spacing: 2px; }
+  .topbar-nav { display: flex; align-items: center; gap: 2px; }
+  .topbar-nav a {
+    padding: 6px 13px; border-radius: 4px; font-size: 13px;
+    color: #b4b6b8; transition: all .2s; cursor: pointer; font-weight: 500;
+  }
+  .topbar-nav a:hover { color: #e3e3e3; background: rgba(255,255,255,.05); }
+  .topbar-nav a.active { color: #409eff; background: rgba(64,158,255,.1); }
+  .topbar-right { display: flex; align-items: center; gap: 10px; color: #888; font-size: 12px; }
+  .clock { color: #b4b6b8; font-variant-numeric: tabular-nums; }
+
+  /* Layout */
+  .main-container { display: flex; height: calc(100vh - 44px); }
+
+  /* Sidebar */
+  .sidebar {
+    width: 300px; min-width: 300px; background: #141619;
+    border-right: 1px solid #2a2c30; padding: 16px 14px;
+    display: flex; flex-direction: column; gap: 10px; overflow-y: auto;
+  }
+  .sidebar-title { font-size: 18px; font-weight: 600; color: #e3e3e3; }
+  .sidebar-divider { height: 1px; background: #2a2c30; margin: 2px 0; }
+  .filter-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .filter-label { font-size: 14px; color: #999; min-width: 56px; }
+  .filter-select {
+    flex: 1; background: #1d1f23; color: #e3e3e3; border: 1px solid #323337;
+    border-radius: 4px; padding: 7px 8px; font-size: 14px; cursor: pointer;
+  }
+  .btn-refresh {
+    width: 100%; padding: 9px; background: #409eff; color: #fff; border: none;
+    border-radius: 4px; font-size: 15px; cursor: pointer; transition: all .2s;
+  }
+  .btn-refresh:hover { background: #337ecc; }
+  .sidebar-stats { margin-top: auto; padding-top: 8px; border-top: 1px solid #2a2c30; }
+  .stat-item { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; }
+  .stat-label { color: #888; }
+  .stat-val { color: #409eff; font-weight: 600; }
+  .up { color: #FF4051; }
+  .down { color: #00b96b; }
+
+  /* Content + iframe */
   .content {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 44px);
-    overflow: hidden;
+    flex: 1; display: flex; flex-direction: column;
+    overflow: hidden; background: #0d0e10;
   }
   .content iframe {
-    flex: 1;
-    width: 100%;
-    border: none;
-    background: #000;
+    flex: 1; width: 100%; border: none; background: #000;
   }
 </style>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -204,7 +259,11 @@ function onSignalChange(){
 </html>"""
 
 if __name__ == '__main__':
-    PORT = 5002
+    PORT = 5001
+    # 确保 static 和 templates 目录存在
+    for _d in [os.path.join(PROJECT_DIR, 'static', 'css'),
+               os.path.join(PROJECT_DIR, 'templates')]:
+        os.makedirs(_d, exist_ok=True)
     print('🐉 潜龙 — 策略回测页面')
     print('   本地访问: http://localhost:{}/dashboard'.format(PORT))
     print('   请确保 Streamlit 已在 localhost:8501 运行')

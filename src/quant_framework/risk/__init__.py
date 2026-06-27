@@ -1,6 +1,7 @@
 """Risk management layer — rules engine and built-in rules."""
 
 from quant_framework.risk.engine import RiskEngine
+from quant_framework.risk.stop_loss_watchdog import StopLossWatchdog
 from quant_framework.risk.rules import (
     BlacklistRule,
     ConsecutiveLossRule,
@@ -30,4 +31,5 @@ __all__ = [
     "ConsecutiveLossRule",
     "SingleOrderAmountRule",
     "DailyTradeCountRule",
+    "StopLossWatchdog",
 ]

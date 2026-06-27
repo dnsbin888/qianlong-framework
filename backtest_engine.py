@@ -12,6 +12,7 @@ P2-3: 容量分析(CapacityAnalyzer: 基于换手率和流动性估算)
 """
 import numpy as np
 import pandas as pd
+import random
 from datetime import datetime, timedelta
 from collections import defaultdict
 
@@ -524,13 +525,14 @@ class BacktestEngine:
     """
 
     def __init__(self, stock_data, factor_cache, name_map=None,
-                 event_bus=None):
+                 event_bus=None, seed=42):
         """
         Args:
             stock_data: {symbol: DataFrame} — 从STOCK_DATA传入
             factor_cache: [StockInfo] — 从_FACTOR_CACHE传入
             name_map: {symbol: name} — 股票名称映射
             event_bus: EventBus 实例(共享则多个引擎可通信)
+            seed: 随机种子(P1-7修复: 固定种子保证回测可复现, 默认42)
         """
         self.stock_data = stock_data
         self.factor_cache = factor_cache
@@ -538,6 +540,7 @@ class BacktestEngine:
         self.portal = DataPortal(stock_data)  # P0-3: 内置数据门户
         self.event_bus = event_bus or EventBus()  # P2-2: 事件总线
         self._strategies = {}  # 注册的策略字典 {name: class}
+        self._seed = seed  # P1-7修复
 
     def register_strategy(self, strategy_cls):
         """注册自定义策略类
@@ -560,16 +563,16 @@ class BacktestEngine:
           2. 内置 TdxResonanceStrategy
           3. 内置 MovingAverageCrossStrategy
         """
-        # 内置策略
+        # 内置策略 (所有公式信号策略共用TdxResonanceStrategy)
         builtin = {
-            "tdx_resonance": TdxResonanceStrategy,
-            "ma_cross": MovingAverageCrossStrategy,
+            "tdx_resonance": TdxResonanceStrategy, "ma_cross": MovingAverageCrossStrategy,
+            "tdx2_final": TdxResonanceStrategy, "tdx2_xg": TdxResonanceStrategy,
+            "tdx2_b1": TdxResonanceStrategy, "tdx_qlj": TdxResonanceStrategy,
+            "tdx_ztxf": TdxResonanceStrategy, "tdx_bandit": TdxResonanceStrategy,
         }
         cls = self._strategies.get(strategy_name) or builtin.get(strategy_name)
         if cls is not None:
-            if strategy_name == "tdx_resonance":
-                return cls(signal_field=signal_field, min_power=min_power)
-            return cls()
+            return cls(signal_field=signal_field, min_power=min_power)
         return None
 
     def run(self, strategy="tdx_resonance", signal_field="signal_resonance",
@@ -578,8 +581,8 @@ class BacktestEngine:
             max_positions=3, position_pct=0.3, stop_loss=-0.05, take_profit=0.08,
             hold_days=1, trail1_profit=0.05, trail1_drop=0.02,
             trail2_profit=0.07, trail2_drop=0.03,
-            trail3_profit=0.12, trail3_drop=0.03,
-            sell_ratio_1=0.25, sell_ratio_2=0.25, sell_ratio_3=0.25,
+            trail3_profit=None, trail3_drop=None,
+            sell_ratio_1=None, sell_ratio_2=None, sell_ratio_3=None,
             limit_up_enabled=True, limit_up_open_drop=0.03,
             min_power=50, initial_capital=1_000_000,
             commission_rate=0.00025, stamp_duty=0.001,
@@ -598,6 +601,7 @@ class BacktestEngine:
             signal_store: {symbol: pd.Series} 预计算信号序列
         """
         # ── 获取策略实例 ──
+        print(f"[Engine-run] ENTERED strategy={strategy}")
         active_strategy = strategy_obj
         if active_strategy is None:
             active_strategy = self._get_strategy(strategy, signal_field, min_power)
@@ -636,12 +640,16 @@ class BacktestEngine:
                 sampled = sampled[:200]
         else:
             all_symbols = [s for s in self.stock_data.keys() if _is_a_stock(s)]
-            np.random.seed(42)
+            # P1-7修复: 使用实例种子替代时间戳, 保证回测可复现
+            np.random.seed(self._seed)
+            random.seed(self._seed)  # P1-7: 标准库random也固定
             sample_size = min(max_positions * 50, len(all_symbols))
             sample_size = max(sample_size, 50)
             sample_size = min(sample_size, 500)
             if sample_size > len(all_symbols): sample_size = len(all_symbols)
-            sampled = list(np.random.choice(all_symbols, sample_size, replace=False)) if all_symbols else []
+            # E265: 固定随机种子，确保同样参数回测结果可复现
+            _rng = np.random.RandomState(42 + sample_size)
+            sampled = list(_rng.choice(all_symbols, sample_size, replace=False)) if all_symbols else []
 
         # ── 3. 逐日回测 ──
         capital = initial_capital
@@ -651,8 +659,6 @@ class BacktestEngine:
         equity_curve = []
         daily_returns = []
         position_peaks = {}
-        position_sold_ratios = {}  # 每只持仓已卖出比例
-        limit_up_tracker = {}      # 涨停状态追踪 {symbol: {last_close, first_open, open_count}}
         pending_buys = []
 
         # P2-2: 上下文对象(可被策略修改)
@@ -667,6 +673,35 @@ class BacktestEngine:
             "formula_symbols": formula_symbols,
             "trading_days": trading_days,
         }
+
+        # P2-3: signal_store为空时从历史数据计算信号(解决_FACTOR_CACHE无历史数据)
+        import sys; print(f"[BT-DEBUG] signal_store={signal_store is not None} signal_field={signal_field}", flush=True)
+        if signal_store is None and signal_field:
+            print(f"[BT-DEBUG] 计算信号 field={signal_field}", flush=True)
+            signal_store = {}
+            try:
+                from quant_framework.factors.tdx_signals2 import factor_final_pick, factor_xg_signal, factor_b1_structure
+                from quant_framework.factors.tdx_signals import factor_resonance, factor_qlj, factor_ztxf
+                sig_funcs = {
+                    'signal_final': factor_final_pick, 'signal_xg': factor_xg_signal,
+                    'signal_b1': factor_b1_structure, 'signal_resonance': factor_resonance,
+                    'signal_qlj': factor_qlj, 'signal_ztxf': factor_ztxf
+                }
+                fn = sig_funcs.get(signal_field)
+                if fn:
+                    cnt=0
+                    for sym in sampled:
+                        df = self.stock_data.get(sym)
+                        if df is None or len(df) < 20: continue
+                        try:
+                            sig = fn(df)
+                            if hasattr(sig, 'values'):
+                                signal_store[sym] = sig
+                                cnt+=1
+                        except Exception: pass
+                    print(f"[BT] 信号计算: field={signal_field} fn={fn.__name__} stocks={cnt}/{len(sampled)}")
+            except Exception as e:
+                print(f"[BT] 信号计算失败: {e}")
 
         # P1-1: 基准对比
         benchmark_df = self.stock_data.get(benchmark_sym)
@@ -692,6 +727,9 @@ class BacktestEngine:
             for pb in pending_buys:
                 sym = pb["symbol"]
                 if not self.portal.has_data(sym, today):
+                    continue
+                # P4-04: 涨停不买 (A股铁律)
+                if limit_up_enabled and self.portal.is_limit_up(sym, today):
                     continue
                 buy_price = self.portal.get_price(sym, 'open', today)
                 if np.isnan(buy_price) or buy_price <= 0:
@@ -728,7 +766,7 @@ class BacktestEngine:
                                        shares=shares, date=today)
             pending_buys.clear()
 
-            # ── 3b. 检查持仓退出 (三级移动止盈 + 部分卖出 + 涨停规则) ──
+            # ── 3b. 检查持仓退出 ──
             still_held = []
             for pos in positions:
                 sym = pos["symbol"]
@@ -744,150 +782,52 @@ class BacktestEngine:
 
                 ret = (judge_price / pos["buy_price"] - 1)
                 days_held = (today - pos["buy_date"]).days
-                sym_key = pos["symbol"]
 
-                # 峰值追踪
+                sym_key = pos["symbol"]
                 if sym_key not in position_peaks or settle_price > position_peaks[sym_key]:
                     position_peaks[sym_key] = settle_price
                 peak = position_peaks.get(sym_key, settle_price)
                 peak_ret = (peak / pos["buy_price"] - 1)
 
-                # 已卖出比例
-                if sym_key not in position_sold_ratios:
-                    position_sold_ratios[sym_key] = 0.0
-                sold_ratio = position_sold_ratios.get(sym_key, 0.0)
-
-                # ── 涨停检测 ──
-                is_today_limit_up = self.portal.is_limit_up(sym, today)
-
-                # 涨停特殊处理: 封板中不卖出
-                if limit_up_enabled and is_today_limit_up:
-                    if sym_key not in limit_up_tracker:
-                        limit_up_tracker[sym_key] = {"last_close": None, "open_count": 0}
-                    limit_up_tracker[sym_key]["last_close"] = settle_price
-                    still_held.append(pos)
-                    continue
-
-                # 开板检测: 昨涨停今不涨停 → 开板回落 ≥ threshold → 全卖
-                if (limit_up_enabled and sym_key in limit_up_tracker
-                        and not is_today_limit_up):
-                    tracker = limit_up_tracker[sym_key]
-                    prev_close = tracker.get("last_close", 0)
-                    if prev_close and prev_close > 0:
-                        open_ret = (judge_price / prev_close - 1)
-                        if open_ret <= -limit_up_open_drop:
-                            limit_up_tracker.pop(sym_key, None)
-                            # 强制全卖
-                            sell_shares = pos["shares"]
-                            sell_price = self.portal.get_price(sym, 'low', today)
-                            if np.isnan(sell_price):
-                                sell_price = settle_price
-                            sell_price *= 0.998
-                            sell_amount = sell_price * sell_shares
-                            sell_commission = sell_amount * commission_rate
-                            if sell_commission < 5: sell_commission = 5
-                            sell_stamp = sell_amount * stamp_duty
-                            slippage = sell_amount * (0.00005 + np.random.uniform(0, 0.00025))
-                            total_cost = (pos.get("commission", 0) + pos.get("slippage", 0)
-                                          + sell_commission + sell_stamp + slippage)
-                            pnl = (sell_price - pos["buy_price"]) * sell_shares - total_cost
-                            available += pos["cost"] + pnl
-                            position_peaks.pop(sym_key, None)
-                            position_sold_ratios.pop(sym_key, None)
-
-                            trade_rec = {
-                                "symbol": sym, "name": self.name_map.get(sym, sym),
-                                "buy_date": str(pos["buy_date"])[:10], "sell_date": today_str,
-                                "buy_price": round(pos["buy_price"], 2),
-                                "sell_price": round(sell_price, 2),
-                                "return_pct": round((pnl / pos["cost"]) if pos["cost"] > 0 else 0, 4),
-                                "net_profit": round(pnl, 0), "hold_days": days_held,
-                                "exit_type": "trail_stop", "trail_reason": "涨停开板",
-                                "signal": getattr(active_strategy, 'name', strategy),
-                                "power_score": pos.get("power_score", 50),
-                                "cost_total": round(total_cost, 2),
-                            }
-                            trades.append(trade_rec)
-                            self.event_bus.publish(EventBus.ON_TRADE,
-                                type="sell", symbol=sym, price=sell_price,
-                                shares=sell_shares, date=today,
-                                exit_type="trail_stop", pnl=pnl)
-                            continue  # 已处理，跳过后续检查
-
-                # ── 退出决策 (三级移动止盈 → 止盈 → 止损 → 到期) ──
                 exit_type = None
                 trail_reason = ""
-                sell_ratio_current = 1.0  # 默认全卖
-                sell_all = False
-
-                # 三级移动止盈 (从高到低检查)
-                if trail3_drop > 0 and peak_ret >= trail3_profit and ret <= peak_ret - trail3_drop:
-                    exit_type = "trail_stop"
-                    trail_reason = "三级"
-                    sell_ratio_current = sell_ratio_3
-                elif trail2_drop > 0 and peak_ret >= trail2_profit and ret <= peak_ret - trail2_drop:
-                    exit_type = "trail_stop"
-                    trail_reason = "二级"
-                    sell_ratio_current = sell_ratio_2
+                if ret <= stop_loss:
+                    exit_type = "stop_loss"
                 elif trail1_drop > 0 and peak_ret >= trail1_profit and ret <= peak_ret - trail1_drop:
                     exit_type = "trail_stop"
                     trail_reason = "一级"
-                    sell_ratio_current = sell_ratio_1
-                elif ret <= stop_loss:
-                    exit_type = "stop_loss"
+                elif trail2_drop > 0 and peak_ret >= trail2_profit and ret <= peak_ret - trail2_drop:
+                    exit_type = "trail_stop"
+                    trail_reason = "二级"
+                elif trail3_drop is not None and trail3_drop > 0 and (trail3_profit or 0) > 0 and peak_ret >= (trail3_profit or 0.12) and ret <= peak_ret - trail3_drop:
+                    exit_type = "trail_stop"
+                    trail_reason = "三级"
                 elif ret >= take_profit:
                     exit_type = "take_profit"
                 elif days_held >= hold_days:
                     exit_type = "normal"
 
-                if exit_type:
-                    # ── 计算卖出股数 (部分/全卖) ──
-                    if exit_type == "trail_stop" and not sell_all:
-                        remaining_shares = int(pos["shares"] * (1 - sold_ratio))
-                        sell_shares = int(remaining_shares * sell_ratio_current / 100) * 100
-                        sell_shares = max(100, min(sell_shares, pos["shares"]))
-                        # 更新已卖出比例
-                        position_sold_ratios[sym_key] = sold_ratio + (sell_shares / pos["shares"])
-                        # 部分卖出后清除峰值，重新追踪
-                        position_peaks.pop(sym_key, None)
-                    else:
-                        sell_shares = pos["shares"]
-                        position_sold_ratios.pop(sym_key, None)
-                        position_peaks.pop(sym_key, None)
+                # P4-04: 跌停不卖 (A股铁律)
+                if exit_type and self.portal.is_limit_down(sym, today):
+                    exit_type = None  # 跌停日跳过卖出，下个交易日再试
 
-                    # ── 卖出价格 ──
+                if exit_type:
                     if exit_type == "stop_loss":
                         sell_price = self.portal.get_price(sym, 'low', today)
-                        if np.isnan(sell_price):
-                            sell_price = settle_price
+                        if np.isnan(sell_price): sell_price = settle_price
                         sell_price *= 0.998
                     else:
                         sell_price = settle_price
 
-                    sell_amount = sell_price * sell_shares
+                    sell_amount = sell_price * pos["shares"]
                     sell_commission = sell_amount * commission_rate
                     if sell_commission < 5: sell_commission = 5
                     sell_stamp = sell_amount * stamp_duty
-                    slippage = sell_amount * (0.00005 + np.random.uniform(0, 0.00025)
-                                              * min(sell_amount / 500000, 1))
-                    # 按比例分摊买入成本
-                    cost_ratio = sell_shares / pos["shares"]
-                    total_cost = ((pos.get("commission", 0) + pos.get("slippage", 0)) * cost_ratio
-                                  + sell_commission + sell_stamp + slippage)
+                    slippage = sell_amount * (0.00005 + np.random.uniform(0, 0.00025) * min(sell_amount/500000, 1))
+                    total_cost = (pos.get("commission",0) + pos.get("slippage",0) + sell_commission + sell_stamp + slippage)
 
-                    pnl = (sell_price - pos["buy_price"]) * sell_shares - total_cost
-                    available += (pos["cost"] * cost_ratio) + pnl
-
-                    # 部分卖出时，更新持仓记录
-                    if sell_shares < pos["shares"]:
-                        pos["shares"] -= sell_shares
-                        pos["cost"] *= (1 - cost_ratio)
-                        pos["commission"] *= (1 - cost_ratio)
-                        pos["slippage"] *= (1 - cost_ratio)
-                        still_held.append(pos)
-                    # 清掉涨停追踪
-                    if sym_key in limit_up_tracker and sell_shares >= pos.get("shares", sell_shares):
-                        limit_up_tracker.pop(sym_key, None)
+                    pnl = (sell_price - pos["buy_price"]) * pos["shares"] - total_cost
+                    available += pos["cost"] + pnl
 
                     trade_rec = {
                         "symbol": sym,
@@ -896,20 +836,20 @@ class BacktestEngine:
                         "sell_date": today_str,
                         "buy_price": round(pos["buy_price"], 2),
                         "sell_price": round(sell_price, 2),
-                        "return_pct": round((pnl / (pos["cost"] * cost_ratio)) if pos["cost"] > 0 and cost_ratio > 0 else 0, 4),
+                        "return_pct": round((pnl / pos["cost"]) if pos["cost"] > 0 else 0, 4),
                         "net_profit": round(pnl, 0),
                         "hold_days": days_held,
                         "exit_type": exit_type,
                         "trail_reason": trail_reason if exit_type == "trail_stop" else "",
-                        "sell_shares": sell_shares,
                         "signal": getattr(active_strategy, 'name', strategy),
                         "power_score": pos.get("power_score", 50),
                         "cost_total": round(total_cost, 2),
                     }
                     trades.append(trade_rec)
+                    # P2-2: 成交事件
                     self.event_bus.publish(EventBus.ON_TRADE,
                                            type="sell", symbol=sym, price=sell_price,
-                                           shares=sell_shares, date=today,
+                                           shares=pos["shares"], date=today,
                                            exit_type=exit_type, pnl=pnl)
                     active_strategy.on_trade(context, trade_rec)
                 else:
@@ -922,6 +862,10 @@ class BacktestEngine:
             # ── 3c. 策略生成信号(P2-1: 通过 handle_bar 解耦) ──
             if len(positions) < max_positions:
                 candidates = active_strategy.handle_bar(context, today, self.portal) or []
+                if not hasattr(self, '_dbg_sig'): self._dbg_sig = 0
+                if self._dbg_sig < 5:
+                    print(f"[Engine] {today_str}: pos={len(positions)} max={max_positions} cand={len(candidates)} sampled={len(context.get('sampled',[]))}")
+                    self._dbg_sig += 1
                 slots = max_positions - len(positions)
                 for c in candidates[:slots]:
                     pos_size = available * position_pct
@@ -954,7 +898,7 @@ class BacktestEngine:
                 else:
                     position_value += pos["cost"]
             total_equity = available + position_value
-            if True:  # 每天记录权益，曲线更平滑
+            if len(equity_curve) == 0 or (today - trading_days[0]).days % 5 == 0:
                 equity_curve.append({"date": today_str, "equity": round(total_equity, 0)})
 
             # P1-1: 基准权益
@@ -1315,7 +1259,8 @@ class BacktestEngine:
                         best_sharpe = sharpe
                         best_params = params.copy()
                         best_train_result = res
-                except Exception:
+                except Exception as _e:
+                    print(f"[WalkForward] 参数{params}失败: {_e}")
                     continue
 
             if best_params is None:
@@ -1445,314 +1390,6 @@ class BacktestEngine:
                     "存在过拟合风险。建议重新审视策略逻辑。")
         else:
             return "Walk-Forward检验结果待进一步分析。"
-
-    # ─────────────────────────────────────────────
-    # P0-因子-03: 因子组合回测 — 月度调仓 + 多因子评分
-    # ─────────────────────────────────────────────
-
-    def run_factor_portfolio(
-        self,
-        factor_spec: list[tuple],
-        method: str = "static",
-        top_k: int = 30,
-        start: str = "2022-01-01",
-        end: str = "2025-12-31",
-        max_positions: int = 30,
-        initial_capital: float = 1_000_000,
-        market_state_detector=None,
-        quality_filter=None,
-        benchmark_sym: str = "sh000300",
-    ):
-        """因子组合回测 — 月度再平衡，多因子评分选股。
-
-        支持三种模式:
-          - static: 固定因子权重
-          - adaptive: 市场自适应权重（牛市追涨、熊市抄底）
-          - rank: 排序等权
-
-        Args:
-            factor_spec: [(name, compute_fn, direction, weight), ...]
-            method: "static" | "adaptive" | "rank"
-            top_k: 每期持仓数
-            start/end: 回测区间
-            max_positions: 最大同时持仓数
-            initial_capital: 初始资金
-            market_state_detector: MarketState 实例（adaptive模式需要）
-            quality_filter: callable(sym, cache, idx) → bool
-            benchmark_sym: 基准标的
-
-        Returns:
-            dict: {code, metrics, equity_curve, benchmark_curve, ...}
-        """
-        import numpy as np
-        import pandas as pd
-        from collections import Counter
-
-        # ── 1. 获取所有日期的月末调仓日 ──
-        all_dates = set()
-        for symbol, df in self.stock_data.items():
-            if df is not None and len(df) > 0:
-                all_dates.update(df.index)
-        trading_days = sorted(all_dates)
-        trading_days = [d for d in trading_days
-                        if str(d)[:10] >= start and str(d)[:10] <= end]
-
-        # 提取月末交易日
-        td_series = pd.Series(trading_days)
-        td_df = pd.DataFrame({"date": pd.to_datetime(td_series)})
-        td_df["ym"] = td_df["date"].dt.to_period("M")
-        rebalance_dates = td_df.groupby("ym")["date"].max().tolist()
-        rebalance_dates = [d for d in rebalance_dates if d is not None]
-
-        if len(rebalance_dates) < 3:
-            return self._empty_result()
-
-        # ── 2. 采样股票池 ──
-        all_symbols = list(self.stock_data.keys())
-        sample_size = min(len(all_symbols), max_positions * 50)
-        sample_size = max(sample_size, 50)
-        import random
-        random.seed(42)
-        sampled = random.sample(all_symbols, sample_size) if sample_size < len(all_symbols) else all_symbols
-
-        # ── 3. 构建因子评分函数 ──
-        def get_weights_for_date(dt, ms_detector):
-            """根据市场状态获取自适应权重。"""
-            if method != "adaptive" or ms_detector is None:
-                return factor_spec
-            try:
-                date_int = int(dt.strftime("%Y%m%d")) if hasattr(dt, 'strftime') else int(str(dt)[:10].replace("-", ""))
-                state = ms_detector.get_state(date_int)
-            except Exception:
-                state = None
-
-            if state and hasattr(ms_detector, 'BULL'):
-                if state == ms_detector.BULL:
-                    return [
-                        ("ret_20d", +1, 0.35), ("bull_position", +1, 0.25),
-                        ("trend_bottom", +1, 0.20), ("add_position", +1, 0.20),
-                    ]
-                elif state == ms_detector.BEAR:
-                    return [
-                        ("trend_bottom", +1, 0.45), ("add_position", +1, 0.25),
-                        ("ret_20d", -1, 0.20), ("bull_position", -1, 0.10),
-                    ]
-            return factor_spec
-
-        def _parse_spec_item(spec_item, all_weights):
-            """解析 factor_spec 条目，返回 (name, compute_fn, direction, weight)。
-            支持 2/3/4 元组格式。
-            """
-            n = len(spec_item)
-            if n == 2:
-                return spec_item[0], None, spec_item[1], 1.0 / len(all_weights)
-            elif n == 3:
-                return spec_item[0], None, spec_item[1], spec_item[2]
-            else:  # n >= 4: (name, compute_fn, direction, weight)
-                return spec_item[0], spec_item[1], spec_item[2], spec_item[3]
-
-        def get_factor_value(factor_cache_entry, idx, fname, compute_fn=None):
-            """获取因子值 — 优先缓存，否则用 compute_fn 实时计算。"""
-            # 1. 尝试因子缓存
-            fvals = factor_cache_entry.get("factors", {})
-            arr = fvals.get(fname)
-            if arr is not None and len(arr) > 0 and idx < len(arr):
-                raw = arr[idx]
-                if raw is not None:
-                    try:
-                        if not (np.isnan(float(raw)) or np.isinf(float(raw))):
-                            return float(raw)
-                    except (TypeError, ValueError):
-                        pass
-
-            # 2. 使用传入的 compute_fn
-            if compute_fn and callable(compute_fn) and "df" in factor_cache_entry:
-                try:
-                    df = factor_cache_entry["df"]
-                    result = compute_fn(df)
-                    if isinstance(result, pd.Series) and idx < len(result):
-                        val = float(result.iloc[idx])
-                        if not (np.isnan(val) or np.isinf(val)):
-                            return val
-                except Exception:
-                    pass
-
-            return None
-
-        # ── 4. 逐月回测 ──
-        cash = initial_capital
-        holdings = {}               # symbol → shares
-        equity_curve = []
-        bench_equity = initial_capital
-        bench_curve = []
-        prev_prices = {}
-        states_log = []
-        all_prices_by_date = {}     # date → {symbol: price}
-
-        for ri, rdate in enumerate(rebalance_dates):
-            # 市场状态
-            ms = None
-            if market_state_detector and method == "adaptive":
-                try:
-                    date_int = int(rdate.strftime("%Y%m%d")) if hasattr(rdate, 'strftime') else int(str(rdate)[:10].replace("-", ""))
-                    ms = market_state_detector.get_state(date_int)
-                except Exception:
-                    ms = None
-
-            weights = get_weights_for_date(rdate, market_state_detector) if method == "adaptive" else factor_spec
-
-            # 计算每只股票的评分
-            scores = {}
-            market_prices = []
-
-            for sym in sampled:
-                if sym not in self.stock_data:
-                    continue
-                df = self.stock_data[sym]
-                if df is None or len(df) < 250:
-                    continue
-
-                # 找 rdate 或之前最近的有效日期
-                df_dates = df.index
-                valid_dates = [d for d in df_dates if d <= rdate]
-                if not valid_dates:
-                    continue
-                idx = len(valid_dates) - 1
-
-                price = float(df.iloc[idx]["close"])
-                if price <= 0:
-                    continue
-                market_prices.append(price)
-
-                # 质量过滤
-                if quality_filter and not quality_filter(sym, {"close": df["close"].values}, idx):
-                    continue
-
-                # 计算因子评分
-                score = 0.0
-                valid_n = 0
-                for spec_item in weights:
-                    fname, compute_fn, direction, weight = _parse_spec_item(spec_item, weights)
-                    fval = get_factor_value(
-                        {"factors": {}, "close": df["close"].values, "df": df},
-                        idx, fname, compute_fn
-                    )
-                    if fval is None:
-                        continue
-
-                    fval = np.clip(fval, -5, 5)
-                    score += fval * direction * weight
-                    valid_n += 1
-
-                if valid_n >= 1:
-                    scores[sym] = (score, price)
-
-            if len(scores) < top_k:
-                continue
-
-            all_prices_by_date[rdate] = {sym: scores[sym][1] for sym in scores}
-
-            # ── 卖出全部 ──
-            for sym, shares in list(holdings.items()):
-                if sym in scores:
-                    cash += shares * scores[sym][1] * 0.9997
-                del holdings[sym]
-
-            # ── 买入 Top K ──
-            ranked = sorted(scores.items(), key=lambda x: x[1][0], reverse=True)[:top_k]
-            alloc = cash * 0.95 / top_k
-            for sym, (score, price) in ranked:
-                shares = int(alloc / price / 100) * 100
-                if shares >= 100:
-                    cost = shares * price * 1.0003
-                    if cost <= cash:
-                        cash -= cost
-                        holdings[sym] = shares
-
-            # ── 计算市值 ──
-            mkt_val = sum(holdings[s] * scores[s][1] for s in holdings if s in scores)
-            total = cash + mkt_val
-            equity_curve.append({
-                "date": rdate, "equity": total, "n_holdings": len(holdings),
-                "n_valid": len(scores),
-            })
-            if ms:
-                states_log.append(ms)
-
-            # ── 基准: 等权持有所有候选项 ──
-            if ri > 0 and market_prices and prev_prices:
-                rets = []
-                for s in scores:
-                    if s in prev_prices and prev_prices[s] > 0 and scores[s][1] > 0:
-                        rets.append(scores[s][1] / prev_prices[s] - 1)
-                if rets:
-                    bench_equity *= (1 + np.mean(rets))
-            bench_curve.append({"date": rdate, "equity": bench_equity})
-            prev_prices = {sym: scores[sym][1] for sym in scores}
-
-        # ── 5. 清仓 ──
-        last_date = rebalance_dates[-1] if rebalance_dates else None
-        if last_date and last_date in all_prices_by_date:
-            prices = all_prices_by_date[last_date]
-            for sym, shares in list(holdings.items()):
-                if sym in prices:
-                    cash += shares * prices[sym] * 0.9997
-                del holdings[sym]
-
-        # ── 6. 计算指标 ──
-        eq = pd.DataFrame(equity_curve)
-        bn = pd.DataFrame(bench_curve)
-
-        if len(eq) < 3:
-            return self._empty_result()
-
-        eq = eq.set_index("date") if "date" in eq.columns else eq
-        bn = bn.set_index("date") if "date" in bn.columns else bn
-
-        total_ret = float(eq["equity"].iloc[-1] / eq["equity"].iloc[0] - 1)
-        bench_ret = float(bn["equity"].iloc[-1] / bn["equity"].iloc[0] - 1)
-        months = len(eq)
-        ann_ret = (1 + total_ret) ** (12 / months) - 1
-        bench_ann = (1 + bench_ret) ** (12 / months) - 1
-
-        monthly_ret = eq["equity"].pct_change().dropna()
-        bm_ret = bn["equity"].pct_change().dropna()
-
-        sharpe = float(monthly_ret.mean() / monthly_ret.std() * np.sqrt(12)) if monthly_ret.std() > 0 else 0
-        peak = eq["equity"].expanding().max()
-        max_dd = float(((eq["equity"] - peak) / peak).min())
-        win_rate = float((monthly_ret > 0).mean())
-
-        excess = monthly_ret - bm_ret
-        alpha = float(excess.mean() * 12)
-        ir = float(alpha / (excess.std() * np.sqrt(12))) if excess.std() > 0 else 0
-
-        # ── 7. 返回 ──
-        trades_summary = {
-            "n_trades": len(eq) * top_k,
-            "avg_positions": int(eq["n_holdings"].mean()) if "n_holdings" in eq.columns else top_k,
-        }
-
-        return {
-            "code": 200,
-            "metrics": {
-                "total_return": round(total_ret, 4),
-                "annual_return": round(ann_ret, 4),
-                "sharpe": round(sharpe, 2),
-                "max_drawdown": round(max_dd, 4),
-                "win_rate": round(win_rate, 4),
-                "alpha": round(alpha, 4),
-                "information_ratio": round(ir, 2),
-                "benchmark_return": round(bench_ret, 4),
-                "benchmark_annual": round(bench_ann, 4),
-                "total_periods": months,
-                "final_equity": round(float(eq["equity"].iloc[-1]), 2),
-            },
-            "trades": trades_summary,
-            "equity_curve": equity_curve,
-            "benchmark_curve": bench_curve,
-            "states_log": states_log,
-        }
 
 
 # ═══════════════════════════════════════════════

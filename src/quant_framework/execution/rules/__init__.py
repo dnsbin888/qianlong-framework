@@ -19,7 +19,7 @@ from quant_framework.execution.rules.base import BaseRule
 from quant_framework.execution.rules.stop_loss import AutoStopLossRule
 from quant_framework.execution.rules.trailing_stop import AutoTrailingStopRule
 from quant_framework.execution.rules.circuit_breaker import CircuitBreakerRule
-from quant_framework.execution.rules.daily_limits import MaxDailyTradesRule, DailyLossLimitRule
+from quant_framework.execution.rules.daily_limits import MaxDailyTradesRule, DailyLossLimitRule, ConsecutiveLossRule  # F4-修复
 from quant_framework.execution.rules.signal_filter import SignalQualityFilter
 from quant_framework.execution.rules.position_sizing import PositionSizingRule
 
@@ -27,5 +27,6 @@ __all__ = [
     "RuleEngine", "RuleAction", "BaseRule",
     "AutoStopLossRule", "AutoTrailingStopRule",
     "CircuitBreakerRule", "MaxDailyTradesRule", "DailyLossLimitRule",
+    "ConsecutiveLossRule",  # F4-修复
     "SignalQualityFilter", "PositionSizingRule",
 ]

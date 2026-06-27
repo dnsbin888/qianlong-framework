@@ -54,11 +54,18 @@ class SignalQualityFilter(BaseRule):
         vol_ratio = signal.get("vol_ratio", 1.0) or 1.0
         chg_pct = signal.get("change_pct", 0) or 0
 
-        # 1. 量比不足 → 降1级
-        if vol_ratio < self.vol_ratio_threshold and bs >= 4:
+        # 1. 量比不足 → 降1级（跳过新浪默认值1.0）
+        if vol_ratio != 1.0 and vol_ratio < self.vol_ratio_threshold and bs >= 4:
             bs -= 1
-        # 2. 追高风险 → 降1级
-        if chg_pct > self.chase_pct and bs >= 4:
+        # 2. 追高风险 → 降1级（分市场阈值）
+        sym = signal.get("symbol", "")
+        if sym.startswith("sh688") or sym.startswith("sz30"):
+            chase_limit = 15.0  # 科创/创业板 20%涨停
+        elif sym.startswith("bj"):
+            chase_limit = 25.0  # 北交所 30%涨停
+        else:
+            chase_limit = self.chase_pct  # 沪深主板 10%涨停
+        if chg_pct > chase_limit and bs >= 4:
             bs -= 1
         # 3. 弱势 → 降1级
         if chg_pct < self.weak_pct:

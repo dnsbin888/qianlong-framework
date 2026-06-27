@@ -22,7 +22,7 @@ echo   ==========================================
 echo      潜龙 — 策略回测看板 (Flask)
 echo   ==========================================
 echo.
-echo    本地访问: http://localhost:5002/dashboard
+echo    本地访问: http://localhost:5001/dashboard
 echo    请确保 Streamlit 已在 localhost:8501 运行
 echo.
 echo    按 Ctrl+C 停止服务

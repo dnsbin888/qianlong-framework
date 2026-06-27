@@ -81,6 +81,36 @@ class BacktestReport:
         return "\n".join(lines)
 
 
+# ═══════════════════════════════════════════════════════════════
+#  E227: 结构化日志适配器 (兼容策略的 logger.info(msg, **kw))
+# ═══════════════════════════════════════════════════════════════
+
+class _StrategyLogger:
+    """适配器：将策略的结构化日志调用 (``logger.info("msg", key=val)``)
+    转为标准 ``logging`` 模块输出。
+    """
+
+    def __init__(self, name: str) -> None:
+        import logging
+        self._logger = logging.getLogger(name)
+
+    def info(self, msg: str, **kwargs: object) -> None:
+        extra: str = " ".join(f"{k}={v}" for k, v in kwargs.items())
+        self._logger.info(f"{msg} | {extra}" if extra else msg)
+
+    def warning(self, msg: str, **kwargs: object) -> None:
+        extra = " ".join(f"{k}={v}" for k, v in kwargs.items())
+        self._logger.warning(f"{msg} | {extra}" if extra else msg)
+
+    def error(self, msg: str, **kwargs: object) -> None:
+        extra = " ".join(f"{k}={v}" for k, v in kwargs.items())
+        self._logger.error(f"{msg} | {extra}" if extra else msg)
+
+    def debug(self, msg: str, **kwargs: object) -> None:
+        extra = " ".join(f"{k}={v}" for k, v in kwargs.items())
+        self._logger.debug(f"{msg} | {extra}" if extra else msg)
+
+
 class BacktestEngine:
     """Historical backtesting engine.
 
@@ -179,8 +209,15 @@ class BacktestEngine:
             try:
                 strategy = cls(ctx, **cfg)
             except TypeError:
-                # Some strategies take a dataclass config object
-                strategy = cls(ctx)
+                # E228: 某些策略不接受额外参数，尝试无参构造
+                try:
+                    strategy = cls(ctx)
+                except TypeError:
+                    raise TypeError(
+                        f"策略 {cls.__name__} 实例化失败: "
+                        f"cls(ctx, **{cfg}) 和 cls(ctx) 均不匹配，"
+                        f"请检查 __init__ 签名"
+                    )
             strategy.on_init()
             strategies.append(strategy)
 
@@ -203,7 +240,7 @@ class BacktestEngine:
                     continue
 
                 # Update timestamp for this bar
-                self._clock = lambda dt=quote.datetime: dt if hasattr(quote, 'datetime') else datetime.now()
+                self._clock = lambda q=quote: q.timestamp
 
                 # Update position market values
                 self._update_market_values(quotes)
@@ -313,7 +350,9 @@ class BacktestEngine:
                 # For limit orders, don't fill immediately — add to pending queue
                 if order.order_type.value == "limit" and order.price is not None:
                     self._pending_orders.append(order)
-                    self._order_manager.mark_pending(order)
+                    # E231: 先注册到 _orders 再传 order_id (字符串)
+                    self._order_manager._orders[order.order_id] = order
+                    self._order_manager.mark_pending(order.order_id)
                 else:
                     trade = self._fill_sim.simulate_fill(
                         order,
@@ -352,7 +391,9 @@ class BacktestEngine:
 
                 if order.order_type.value == "limit" and order.price is not None:
                     self._pending_orders.append(order)
-                    self._order_manager.mark_pending(order)
+                    # E231: 先注册到 _orders 再传 order_id (字符串)
+                    self._order_manager._orders[order.order_id] = order
+                    self._order_manager.mark_pending(order.order_id)
                 else:
                     trade = self._fill_sim.simulate_fill(
                         order,
@@ -546,6 +587,166 @@ class BacktestEngine:
             strategy_id=strategy_id,
             name=strategy_id,
             data_provider=self._provider,
+            broker=self._fill_sim,
+            logger=_StrategyLogger(f"quant_framework.strategy.{strategy_id}"),
             config={"initial_cash": self.config.initial_cash},
         )
         return ctx
+
+
+# ═══════════════════════════════════════════════════════════════
+#  E225: 便捷回测接口
+# ═══════════════════════════════════════════════════════════════
+
+def quick_backtest(
+    strategy_name: str,
+    symbol: str,
+    start_date: str = "2024-01-01",
+    end_date: str = "",
+    initial_cash: float = 1_000_000.0,
+    **overrides: Any,
+) -> dict[str, Any]:
+    """一键回测：按策略名运行回测，返回简化报告。
+
+    Args:
+        strategy_name: 策略注册名 (如 "ma_cross", "macd_cross")
+        symbol: 股票代码 (如 "600000")
+        start_date: 回测开始日期
+        end_date: 回测结束日期 (空字符串=至今)
+        initial_cash: 初始资金
+        **overrides: 策略参数覆盖 (如 fast_period=10, slow_period=30)
+
+    Returns:
+        dict 包含: total_return, sharpe_ratio, max_drawdown,
+                  win_rate, total_trades, strategy_name, symbol
+        如果数据不足或策略不存在，返回空 dict + warning 日志
+    """
+    import hashlib
+    import json as _json
+    import logging
+    import os as _os
+    _logger = logging.getLogger("quant_framework.backtest")
+
+    # ═══ E252: 回测结果缓存层 ═══
+    _CACHE_DIR: str = r"D:\quant_framework\data\backtest_cache"
+    _os.makedirs(_CACHE_DIR, exist_ok=True)
+
+    # 计算缓存键 (参数哈希 → 唯一 key)
+    _cache_args: dict[str, Any] = {
+        "strategy": strategy_name, "symbol": symbol,
+        "start": start_date, "end": end_date,
+    }
+    if overrides:
+        _cache_args["overrides"] = dict(sorted(overrides.items()))
+    _cache_raw: str = _json.dumps(_cache_args, sort_keys=True)
+    _cache_key: str = hashlib.md5(_cache_raw.encode()).hexdigest()[:12]
+    _cache_path: str = _os.path.join(_CACHE_DIR, f"{_cache_key}.json")
+
+    # 缓存命中 → 直接返回
+    if _os.path.exists(_cache_path):
+        try:
+            with open(_cache_path, "r", encoding="utf-8") as _cf:
+                _cached = _json.load(_cf)
+            # 哈希校验: 防止代码更新导致旧缓存误用
+            if _cached.get("_cache_hash") == hashlib.md5(_cache_raw.encode()).hexdigest():
+                _logger.info(f"[CACHE] 命中: {_cache_key} (跳过计算)")
+                return {k: v for k, v in _cached.items() if not k.startswith("_")}
+        except Exception:
+            pass  # 缓存损坏 → 重新计算
+
+    try:
+        from datetime import datetime as _datetime
+        from quant_framework.strategy.registry import StrategyRegistry
+        from quant_framework.data.store import CSVDataStore
+        from quant_framework.data.providers.simulated import SimulatedDataProvider
+    except ImportError as e:
+        _logger.error(f"quick_backtest 依赖导入失败: {e}")
+        return {}
+
+    # 1. 获取策略元数据
+    registry = StrategyRegistry.instance()
+    meta = registry.get(strategy_name)
+    if meta is None:
+        _logger.warning(f"策略 '{strategy_name}' 未注册")
+        return {}
+
+    # 2. 构建数据源
+    store = CSVDataStore(data_dir=r"D:\quant_framework\data\market")
+    start_dt = _datetime.fromisoformat(start_date) if start_date else _datetime(2024, 1, 1)
+    end_dt = _datetime.fromisoformat(end_date) if end_date else _datetime.now()
+
+    provider = SimulatedDataProvider(
+        store=store,
+        symbols=[symbol],
+        period="1d",
+        start=start_dt,
+        end=end_dt,
+    )
+    try:
+        provider.connect()
+    except Exception as e:
+        _logger.warning(f"数据源连接失败: {e}")
+        return {}
+
+    # 3. 检查数据量
+    if not getattr(provider, "_timeline", None):
+        _logger.warning(f"回测数据不足: {symbol} 在 {start_date}~{end_date or 'now'} 无数据")
+        return {}
+
+    # 4. 创建引擎并运行
+    config = BacktestConfig(
+        initial_cash=initial_cash,
+        start_date=start_date,
+        end_date=end_date or _datetime.now().strftime("%Y-%m-%d"),
+    )
+    engine = BacktestEngine(provider, config=config)
+
+    # 5. 添加策略 (通过上下文创建实例后手动注入)
+    ctx = engine._create_context(strategy_name)
+    strategy = registry.create_strategy(strategy_name, ctx, symbol=symbol, **overrides)
+    if strategy is None:
+        _logger.warning(f"策略 '{strategy_name}' 实例化失败")
+        return {}
+    strategy.on_init()
+
+    # E228: 构建正确的 config 对象 (修复 "missing cfg" TypeError)
+    _cfg_kwargs: dict[str, Any] = {}
+    for _pname, _pinfo in meta.params.items():
+        _cfg_kwargs[_pname] = _pinfo.get("default")
+    _cfg_kwargs["symbol"] = symbol
+    _cfg_kwargs.update(overrides)  # E230: 合并参数覆盖
+    _cfg = meta.config_cls(**_cfg_kwargs)
+    engine._strategy_registry.append((meta.strategy_cls, {"cfg": _cfg}))
+
+    # 6. 运行
+    try:
+        report = engine.run()
+    except Exception as e:
+        _logger.warning(f"回测运行失败: {e}")
+        return {}
+
+    # 7. 返回简化报告
+    m = report.metrics
+    _result: dict[str, Any] = {
+        "strategy_name": strategy_name,
+        "symbol": symbol,
+        "start_date": start_date,
+        "end_date": end_date or _datetime.now().strftime("%Y-%m-%d"),
+        "total_return": getattr(m, "total_return", 0.0),
+        "annual_return": getattr(m, "annual_return", 0.0),
+        "sharpe_ratio": getattr(m, "sharpe_ratio", 0.0),
+        "max_drawdown": getattr(m, "max_drawdown", 0.0),
+        "win_rate": getattr(m, "win_rate", 0.0),
+        "total_trades": getattr(m, "total_trades", 0),
+    }
+
+    # E252: 保存缓存
+    try:
+        _result["_cache_hash"] = hashlib.md5(_cache_raw.encode()).hexdigest()
+        with open(_cache_path, "w", encoding="utf-8") as _cf:
+            _json.dump(_result, _cf, ensure_ascii=False)
+        _logger.info(f"[CACHE] 已保存: {_cache_key}")
+    except Exception:
+        pass
+
+    return {k: v for k, v in _result.items() if not k.startswith("_")}

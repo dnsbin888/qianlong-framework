@@ -621,7 +621,8 @@ class LiveStrategyEngine:
         ann_ret = (1 + total_ret) ** (12 / months) - 1 if months > 0 else 0
 
         wins = [t for t in self.trades if t["pnl"] > 0]
-        losses = [t for t in self.trades if t["pnl"] <= 0]
+        losses = [t for t in self.trades if t["pnl"] < 0]  # P1-8修复: profit==0 不计入亏损
+        draws = len(self.trades) - len(wins) - len(losses)  # P1-8修复: 平局单独统计
 
         win_rate = len(wins) / len(self.trades) if self.trades else 0
         avg_win = np.mean([t["pnl_pct"] for t in wins]) if wins else 0
@@ -639,6 +640,8 @@ class LiveStrategyEngine:
         print(f"  Total Trades:      {len(self.trades):>8}")
         print(f"  Winning:           {len(wins):>8}  ({win_rate:.1%})")
         print(f"  Losing:            {len(losses):>8}")
+        if draws:
+            print(f"  Draws (breakeven): {draws:>8}")
         print(f"  Avg Win:           {avg_win:>8.2%}")
         print(f"  Avg Loss:          {avg_loss:>8.2%}")
         print(f"  Profit Factor:     {profit_factor:>8.2f}")

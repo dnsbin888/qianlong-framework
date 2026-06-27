@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import sqlite3
+import threading
 from datetime import datetime
 from typing import Any
 
@@ -36,6 +37,7 @@ class TradeRecorder:
         os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
         self._db_path = db_path
         self._conn: sqlite3.Connection | None = None
+        self._lock = threading.Lock()  # E250 P1-5: 线程安全
         self._init_db()
 
     def _init_db(self) -> None:
@@ -112,9 +114,9 @@ class TradeRecorder:
         conn.close()
 
     def _get_conn(self) -> sqlite3.Connection:
-        """Get or create a connection."""
+        """Get or create a connection. (E250 P1-5: 线程安全)"""
         if self._conn is None:
-            self._conn = sqlite3.connect(self._db_path)
+            self._conn = sqlite3.connect(self._db_path, check_same_thread=False)
             self._conn.row_factory = sqlite3.Row
         return self._conn
 

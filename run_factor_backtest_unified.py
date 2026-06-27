@@ -205,7 +205,7 @@ def display_results(metrics, equity_df, bench_df=None, mode_label=""):
 def run_single(factor_name, n_stocks, start_date, end_date):
     """单因子 IC/ICIR 分析。
 
-    对指定因子，逐股票计算因子值与未来1/5/20日收益的 Spearman 秩相关，
+    对指定因子，逐股票计算因子值与未来1/3/5/7/12/20日收益的 Spearman 秩相关，
     汇总所有股票的 IC 分布。
     """
     from scipy import stats
@@ -226,7 +226,7 @@ def run_single(factor_name, n_stocks, start_date, end_date):
     print(f"\n  Computing time-series IC for '{factor_name}' on {len(valid)} stocks...")
     t0 = time.time()
 
-    ic_1d, ic_5d, ic_20d = [], [], []
+    ic_1d, ic_3d, ic_5d, ic_7d, ic_12d, ic_20d = [], [], [], [], [], []
     n_pairs = 0
 
     for si, sym in enumerate(valid):
@@ -266,11 +266,15 @@ def run_single(factor_name, n_stocks, start_date, end_date):
 
         close = df["close"]
         ret1 = close.pct_change(1).shift(-1)
+        ret3 = close.pct_change(3).shift(-3)
         ret5 = close.pct_change(5).shift(-5)
+        ret7 = close.pct_change(7).shift(-7)
+        ret12 = close.pct_change(12).shift(-12)
         ret20 = close.pct_change(20).shift(-20)
 
         for ret_name, ret_series, collector in [
-            ("1d", ret1, ic_1d), ("5d", ret5, ic_5d), ("20d", ret20, ic_20d)
+            ("1d", ret1, ic_1d), ("3d", ret3, ic_3d), ("5d", ret5, ic_5d),
+            ("7d", ret7, ic_7d), ("12d", ret12, ic_12d), ("20d", ret20, ic_20d),
         ]:
             aligned = pd.concat([fseries, ret_series], axis=1).dropna()
             if len(aligned) < 15:
@@ -294,7 +298,10 @@ def run_single(factor_name, n_stocks, start_date, end_date):
     print(f"  {'Period':<8} {'IC Mean':>10} {'IC Std':>10} {'ICIR':>8} {'IC>0%':>8} {'N':>6}")
     print(f"  {'-'*8} {'-'*10} {'-'*10} {'-'*8} {'-'*8} {'-'*6}")
 
-    for period_label, ic_list in [("1d", ic_1d), ("5d", ic_5d), ("20d", ic_20d)]:
+    for period_label, ic_list in [
+        ("1d", ic_1d), ("3d", ic_3d), ("5d", ic_5d),
+        ("7d", ic_7d), ("12d", ic_12d), ("20d", ic_20d),
+    ]:
         if len(ic_list) < 5:
             continue
         arr = np.array(ic_list)
@@ -307,8 +314,9 @@ def run_single(factor_name, n_stocks, start_date, end_date):
     # 保存
     if args.output:
         pd.DataFrame({
-            "period": ["1d"] * len(ic_1d) + ["5d"] * len(ic_5d) + ["20d"] * len(ic_20d),
-            "ic": ic_1d + ic_5d + ic_20d,
+            "period": (["1d"] * len(ic_1d) + ["3d"] * len(ic_3d) + ["5d"] * len(ic_5d)
+                       + ["7d"] * len(ic_7d) + ["12d"] * len(ic_12d) + ["20d"] * len(ic_20d)),
+            "ic": ic_1d + ic_3d + ic_5d + ic_7d + ic_12d + ic_20d,
         }).to_csv(args.output, index=False)
         print(f"\n  IC data saved to: {args.output}")
 

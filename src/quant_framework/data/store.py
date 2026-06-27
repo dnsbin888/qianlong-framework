@@ -108,7 +108,7 @@ class CSVDataStore(DataStore):
 
             records = [
                 {
-                    "datetime": b.dt.isoformat(),
+                    "date": b.dt.isoformat(),
                     "open": b.open,
                     "high": b.high,
                     "low": b.low,
@@ -124,8 +124,8 @@ class CSVDataStore(DataStore):
             if os.path.exists(path):
                 existing = pd.read_csv(path)
                 combined = pd.concat([existing, new_df], ignore_index=True)
-                combined.drop_duplicates(subset=["datetime"], keep="last", inplace=True)
-                combined.sort_values("datetime", inplace=True)
+                combined.drop_duplicates(subset=["date"], keep="last", inplace=True)
+                combined.sort_values("date", inplace=True)
                 combined.to_csv(path, index=False)
             else:
                 new_df.to_csv(path, index=False)
@@ -141,14 +141,17 @@ class CSVDataStore(DataStore):
             return []
 
         df = pd.read_csv(path)
-        df["datetime"] = pd.to_datetime(df["datetime"])
-        mask = (df["datetime"] >= start) & (df["datetime"] <= end)
-        df = df[mask].sort_values("datetime")
+
+        # E226: 兼容 date / datetime 两种列名
+        time_col: str = "datetime" if "datetime" in df.columns else "date"
+        df[time_col] = pd.to_datetime(df[time_col])
+        mask = (df[time_col] >= start) & (df[time_col] <= end)
+        df = df[mask].sort_values(time_col)
 
         return [
             Bar(
                 symbol=symbol,
-                datetime=row["datetime"].to_pydatetime(),
+                dt=row[time_col].to_pydatetime(),
                 open=float(row["open"]),
                 high=float(row["high"]),
                 low=float(row["low"]),
@@ -170,7 +173,10 @@ class CSVDataStore(DataStore):
         if not os.path.exists(path):
             return pd.DataFrame()
 
-        df = pd.read_csv(path, parse_dates=["datetime"], index_col="datetime")
+        df = pd.read_csv(path)
+        time_col: str = "datetime" if "datetime" in df.columns else "date"
+        df[time_col] = pd.to_datetime(df[time_col])
+        df.set_index(time_col, inplace=True)
         mask = (df.index >= start) & (df.index <= end)
         return df[mask].sort_index()
 

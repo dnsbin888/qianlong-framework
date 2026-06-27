@@ -47,17 +47,27 @@ def log(msg, level="INFO"):
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(line + "\n")
 
+# 是否弹窗（默认关闭，需要时改为 True）
+SHOW_POPUP = False
+
 def alert(msg):
-    """桌面弹窗告警"""
+    """静默告警 — 写日志 + 钉钉通知，不弹 Windows 对话框"""
     log(f"ALERT: {msg}", "ALERT")
     with open(ALERT_FILE, "w", encoding="utf-8") as f:
         f.write(f"{datetime.datetime.now()}\n{msg}\n")
-    # 尝试弹窗
+    # 钉钉通知（静默推送）
     try:
-        import ctypes
-        ctypes.windll.user32.MessageBoxW(0, msg, "交易告警!", 0x30)
+        from dingtalk_alerts import trade_signal
+        trade_signal("", "", "alert", msg, 0, 0, "", source="守护进程")
     except Exception:
         pass
+    # 可选弹窗（默认关闭，需 SHOW_POPUP = True）
+    if SHOW_POPUP:
+        try:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(0, msg, "交易告警!", 0x30)
+        except Exception:
+            pass
 
 # ═══════════════════ 主循环 ═══════════════════
 def main():

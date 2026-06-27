@@ -3,62 +3,52 @@ import os, time, csv, io, threading
 from datetime import datetime
 
 EXPORT_FILE = r"d:\quant_framework\live_positions.csv"
+_ths_window_missing = False  # E40: 去重标记，避免重复刷屏
 
 def export_ths_positions():
-    """通过 UI 自动化导出同花顺持仓 — 右键菜单方式"""
+    """通过 UI 自动化导出同花顺持仓 — 后台静默模式，不抢焦点"""
     try:
         from pywinauto import Application, findwindows
         from pywinauto.keyboard import send_keys
-        import pyautogui
 
         # 查找 xiadan 交易窗口 "网上股票交易系统5.0"
         dlg = findwindows.find_window(title_re=".*网上股票交易系统.*")
         if not dlg:
-            print("[AutoExport] xiadan window not found")
+            global _ths_window_missing
+            if not _ths_window_missing:
+                print("[AutoExport] THS window not found (suppressing repeats)")
+                _ths_window_missing = True
             return False
+        _ths_window_missing = False  # 窗口恢复了，重置标记
 
         app = Application().connect(handle=dlg)
         window = app.window(handle=dlg)
-        window.set_focus()
-        time.sleep(0.3)
 
-        # 点击"持仓"标签页 (通常在第2个tab, Alt+2)
-        send_keys('%2')  # Alt+2 切换到持仓
-        time.sleep(0.3)
+        # 最小化窗口再操作，避免抢焦点弹窗
+        was_minimized = window.is_minimized()
+        if not was_minimized:
+            window.minimize()
+            time.sleep(0.3)
 
-        # 方式A: 尝试 Ctrl+S (同花顺导出常用快捷键)
+        # 方式A: Ctrl+S 导出 (后台窗口也能接收)
         send_keys('^s')
         time.sleep(0.5)
         if _check_save_dialog():
+            if not was_minimized:
+                try: window.restore()
+                except: pass
             return True
 
-        # 方式B: 菜单栏导出 (Alt+F → 导出)
-        send_keys('%f')  # Alt+F 打开文件菜单
-        time.sleep(0.2)
-        send_keys('x')   # 导出(X)
-        time.sleep(0.5)
-        if _check_save_dialog():
-            return True
-
-        # 方式C: 右键导出 — 在持仓列表区域右键
-        rect = window.rectangle()
-        # 在持仓列表中间位置右键
-        x = rect.left + rect.width() // 2
-        y = rect.top + rect.height() // 2
-        pyautogui.click(x, y, button='right')
-        time.sleep(0.3)
-        send_keys('e')  # 导出(E)
-        time.sleep(0.5)
-        if _check_save_dialog():
-            return True
-
+        if not was_minimized:
+            try: window.restore()
+            except: pass
         return os.path.exists(EXPORT_FILE) and os.path.getsize(EXPORT_FILE) > 50
 
     except ImportError:
         print("[AutoExport] pywinauto not installed")
         return False
     except Exception as e:
-        print(f"[AutoExport] Error: {e}")
+        print(f"[AutoExport] Error [{type(e).__name__}]: {e}")
         return False
 
 
@@ -144,7 +134,8 @@ def start_auto_export(interval_seconds=60):
             try:
                 if is_trading_time():
                     export_ths_positions()
-            except: pass
+            except Exception as e:
+                print(f"[AutoExport] Loop error [{type(e).__name__}]: {e}")
             time.sleep(interval_seconds)
 
     t = threading.Thread(target=_loop, daemon=True)

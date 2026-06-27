@@ -60,14 +60,17 @@ def _every(condition: pd.Series, n: int) -> pd.Series:
 
 
 def _barslast(condition: pd.Series) -> pd.Series:
-    """BARSLAST(X): 上一次条件成立到当前的周期数"""
-    result = pd.Series(np.nan, index=condition.index)
-    last_true = -1
-    for i, idx in enumerate(condition.index):
-        if condition.iloc[i]:
-            last_true = i
-        result.iloc[i] = i - last_true if last_true >= 0 else np.nan
-    return result
+    """BARSLAST(X): 上一次条件成立到当前的周期数（向量化版）"""
+    cond_arr = np.asarray(condition.values, dtype=bool)
+    true_positions = np.where(cond_arr)[0]
+    if len(true_positions) == 0:
+        return pd.Series(np.nan, index=condition.index)
+    positions = np.arange(len(condition))
+    indices = np.searchsorted(true_positions, positions, side='right') - 1
+    result = np.full(len(condition), np.nan)
+    valid = indices >= 0
+    result[valid] = positions[valid] - true_positions[indices[valid]]
+    return pd.Series(result, index=condition.index)
 
 
 def _filter(condition: pd.Series, n: int) -> pd.Series:
@@ -436,6 +439,252 @@ def factor_resonance(df: pd.DataFrame) -> pd.Series:
     return both.where(both > 0, single.astype(int))
 
 
+def factor_yaogu_bandit(df: pd.DataFrame) -> pd.Series:
+    """妖股先锋×波段擒妖 — 强势启动 + 量能确认 + 趋势共振。
+
+    对应通达信: 妖股先锋x_波段擒妖选股.cos (六合一竞价擒龙系列，完全加密公式)
+
+    反推逻辑（基于2026-06-22当日选出的5只样本分析）:
+      000519 中兵红箭  +9.98%   CCI=245  量比=2.14  DIF>DEA  站所有均线
+      002068 黑猫股份  +10.05%  CCI=193  量比=2.76  DIF>DEA  站所有均线
+      300560 中富通    +9.60%   CCI=257  量比=2.06  DIF>DEA  站所有均线
+      301356 天振股份  +20.01%  CCI=354  量比=6.92  DIF>DEA  站所有均线
+      301548 崇德科技  +20.00%  CCI=323  量比=3.01  DIF>DEA  站所有均线
+
+    触发条件 (5/5 AND):
+      1. CCI(14) > 150 — 超强势能
+      2. 量比 > 2.0 — 放量确认 (当日量/5日均量)
+      3. 收盘价 > MA5 > MA10 > MA20 — 均线多头排列
+      4. MACD: DIF > DEA — 多头趋势
+      5. 今日涨幅 > 5% — 加速突破
+
+    返回: 0/1 信号 (满足全部5个条件=1)
+    """
+    c, o, h, l, v = df["close"], df["open"], df["high"], df["low"], df["volume"]
+
+    # 1. CCI(14)
+    tp = (h + l + c) / 3.0
+    ma_tp = tp.rolling(14).mean()
+    mad = (tp - ma_tp).abs().rolling(14).mean()
+    cci = (tp - ma_tp) / (0.015 * mad.replace(0, np.nan))
+    cond_cci = cci > 150
+
+    # 2. 量比 (当日量 / 5日均量)
+    ma_vol5 = v.rolling(5).mean()
+    vol_ratio = v / ma_vol5.replace(0, np.nan)
+    cond_vol = vol_ratio > 2.0
+
+    # 3. 均线多头排列: C > MA5 > MA10 > MA20
+    ma5 = c.rolling(5).mean()
+    ma10 = c.rolling(10).mean()
+    ma20 = c.rolling(20).mean()
+    cond_ma = (c > ma5) & (ma5 > ma10) & (ma10 > ma20)
+
+    # 4. MACD 多头: DIF > DEA
+    dif = _ema(c, 12) - _ema(c, 26)
+    dea = _ema(dif, 9)
+    cond_macd = dif > dea
+
+    # 5. 今日涨幅 > 5%
+    ret_today = c / _ref(c, 1) - 1
+    cond_ret = ret_today > 0.05
+
+    signal = (cond_cci & cond_vol & cond_ma & cond_macd & cond_ret).astype(int)
+    return signal
+
+
+# ---- 波段擒妖 (源码精确版) ----
+
+
+def factor_bandit_sniper(df: pd.DataFrame) -> pd.Series:
+    """波段擒妖 — 牛线突破 + 55日新高V反 + MACD多头。
+
+    对应通达信: 波段擒妖选股 (完整源码翻译)
+
+    逻辑:
+      XG = CROSS(C, 牛线) AND DIF>DEA AND 今日涨幅>9%
+        牛线 = EMA(DMA(typ_price, deviation_ratio), 200) * 1.118
+      B1 = 今日突破55日新高 AND 上次信号是破位T (V型反转确认)
+      FINAL = XG AND B1
+
+    返回: 0/1 信号
+    """
+    c, h, l = df["close"], df["high"], df["low"]
+
+    # ── 牛线 ──
+    # typ = (2.15*C + L + H) / 4
+    typ = (2.15 * c + l + h) / 4.0
+    # weight = ABS((3.48*C + H + L)/4 - EMA(C,23)) / EMA(C,23)
+    ema23 = _ema(c, 23)
+    cmp_price = (3.48 * c + h + l) / 4.0
+    weight = (cmp_price - ema23).abs() / ema23.replace(0, np.nan)
+    # 牛线 = EMA(DMA(typ, weight), 200) * 1.118
+    niu = _ema(_dma(typ, weight), 200) * 1.118
+
+    # ── MACD ──
+    dif = _ema(c, 12) - _ema(c, 26)
+    dea = _ema(dif, 9)
+
+    # ── XG: 突破牛线 + MACD多头 + 涨幅>9% ──
+    cross_niu = (_ref(c, 1) <= _ref(niu, 1)) & (c > niu)
+    xg = cross_niu & (dif > dea) & (c / _ref(c, 1) > 1.09)
+
+    # ── ATR ──
+    tr = pd.concat([h - l, (h - _ref(c, 1)).abs(), (l - _ref(c, 1)).abs()], axis=1).max(axis=1)
+    atr = _ema(tr, 14)
+
+    # ── AA = HHV(H,20) - 2*ATR ──
+    aa = _hhv(h, 20) - 2.0 * atr
+
+    # ── BB: CROSS(C, REF(HHV(H,55),1)) 突破55日最高价 ──
+    ref_hhv55 = _ref(_hhv(h, 55), 1)
+    bb = (_ref(c, 1) <= _ref(ref_hhv55, 1)) & (c > ref_hhv55)
+
+    # ── T: CROSS(MIN(MA(C,13), AA), C) 支撑线交叉 ──
+    ma13 = c.rolling(13).mean()
+    min_ma13_aa = pd.concat([ma13, aa], axis=1).min(axis=1)
+    t = (_ref(min_ma13_aa, 1) <= _ref(c, 1)) & (min_ma13_aa > c)
+
+    # ── B1: BB今日发生 AND 前次T比前次BB更近 (V反确认) ──
+    bbb = _barslast(bb)
+    r = _barslast(t)
+    # BBB=0 且 昨日 R < 昨日 BBB
+    b1 = bbb.fillna(999).astype(int) == 0
+    b1 = b1 & (_ref(r, 1).fillna(999) < _ref(bbb, 1).fillna(999))
+
+    # ── 最终: XG AND B1 ──
+    return (xg & b1).astype(int)
+
+
+def factor_yaogu_resonance_bandit(df: pd.DataFrame) -> pd.Series:
+    """妖股先锋×波段擒妖 双重共振 — 擒龙决+涨停先锋 AND 波段擒妖。
+
+    对应通达信: 妖股先锋x_波段擒妖选股.cos (双公式交集)
+    即: 双信号共振选股 AND 波段擒妖 同时触发
+    """
+    resonance = factor_resonance(df)
+    bandit = factor_bandit_sniper(df)
+    return (resonance.fillna(0).astype(bool) & bandit.fillna(0).astype(bool)).astype(int)
+
+
+# ---- 妖股先锋×波段擒妖 组合改进变体 (已有,保持不变) ----
+
+def factor_yaogu_bandit_ab(df: pd.DataFrame) -> pd.Series:
+    """A+B: 延迟1天确认 + 回调买入 (CCI回落到100以下才入)。
+
+    逻辑链: 昨日触发原始信号 AND 今日CCI<100 (高位回落确认)
+    类型: 0/1 信号
+    """
+    c, h, l, v = df["close"], df["high"], df["low"], df["volume"]
+
+    # 昨日信号
+    signal_yesterday = _ref(factor_yaogu_bandit(df), 1)
+
+    # 今日CCI < 100 (高位回落)
+    tp = (h + l + c) / 3.0
+    ma_tp = tp.rolling(14).mean()
+    mad = (tp - ma_tp).abs().rolling(14).mean()
+    cci_today = (tp - ma_tp) / (0.015 * mad.replace(0, np.nan))
+    pullback = cci_today < 100
+
+    out = (signal_yesterday.fillna(0).astype(bool) & pullback.fillna(False)).astype(int)
+    return out
+
+
+def factor_yaogu_bandit_ac(df: pd.DataFrame) -> pd.Series:
+    """A+C: 延迟1天确认 + 强度分层 (0~1连续分值)。
+
+    逻辑链: 昨日触发原始信号 AND 今日逆势强度评分
+    - CCI回落程度: CCI越低越好 (买在回调)
+    - 均线结构保持: MA5>MA10>MA20 各 +0.15
+    - MACD多头保持: DIF>DEA +0.15
+    - 量能收敛: 量比<2 +0.15
+    - 跌幅可控: 跌幅<3% +0.15
+    类型: continuous (0~1)
+    """
+    c, h, l, v = df["close"], df["high"], df["low"], df["volume"]
+
+    # 昨日信号
+    signal_yesterday = _ref(factor_yaogu_bandit(df), 1).fillna(0).astype(bool)
+    s = signal_yesterday.astype(float)
+
+    # --- 强度评分 (仅昨日有信号的行) ---
+    # 1. CCI回落: CCI在0~150之间分数线性给 (越低越好)
+    tp = (h + l + c) / 3.0
+    ma_tp = tp.rolling(14).mean()
+    mad = (tp - ma_tp).abs().rolling(14).mean()
+    cci = (tp - ma_tp) / (0.015 * mad.replace(0, np.nan))
+    score_cci = np.clip((150 - cci.fillna(200)) / 150, 0, 1) * 0.25
+
+    # 2. 均线结构: 每满足一层 +0.10
+    ma5 = c.rolling(5).mean()
+    ma10 = c.rolling(10).mean()
+    ma20 = c.rolling(20).mean()
+    score_ma = ((c > ma5).astype(int) * 0.10
+                + (ma5 > ma10).astype(int) * 0.10
+                + (ma10 > ma20).astype(int) * 0.10)
+
+    # 3. MACD 多头保持 +0.15
+    dif = _ema(c, 12) - _ema(c, 26)
+    dea = _ema(dif, 9)
+    score_macd = (dif > dea).astype(float) * 0.15
+
+    # 4. 量能收敛 (量比<2 加分, 放量减分) +0.15
+    vol_ratio = v / v.rolling(5).mean().replace(0, np.nan)
+    score_vol = np.clip((2 - vol_ratio.fillna(3)) / 2, 0, 1) * 0.15
+
+    # 5. 跌幅可控 (当日跌幅<3%) +0.10
+    ret_today = c / _ref(c, 1) - 1
+    score_ret = np.clip((0.03 + ret_today.fillna(0)) / 0.06, 0, 1) * 0.10
+
+    strength = score_cci + score_ma + score_macd + score_vol + score_ret
+    strength = strength.fillna(0)
+
+    return s * strength  # 昨日有信号=强度分, 无信号=0
+
+
+def factor_yaogu_bandit_abc(df: pd.DataFrame) -> pd.Series:
+    """A+B+C: 延迟1天 + 回调确认 + 强度分层。
+
+    逻辑链: 昨日触发原始信号 AND 今日CCI<100 AND 逆势强度评分
+    类型: continuous (0~1)
+    """
+    c, h, l, v = df["close"], df["high"], df["low"], df["volume"]
+
+    # 昨日信号
+    signal_yesterday = _ref(factor_yaogu_bandit(df), 1).fillna(0).astype(bool)
+
+    # 今日CCI < 100 (回调确认)
+    tp = (h + l + c) / 3.0
+    ma_tp = tp.rolling(14).mean()
+    mad = (tp - ma_tp).abs().rolling(14).mean()
+    cci_today = (tp - ma_tp) / (0.015 * mad.replace(0, np.nan))
+    pullback = cci_today < 100
+
+    # 前置条件: 昨日有信号 AND 今日回调
+    eligible = signal_yesterday & pullback.fillna(False)
+    s = eligible.astype(float)
+
+    # --- 强度评分 (与AC相同) ---
+    score_cci = np.clip((150 - cci_today.fillna(200)) / 150, 0, 1) * 0.25
+    ma5 = c.rolling(5).mean()
+    ma10 = c.rolling(10).mean()
+    ma20 = c.rolling(20).mean()
+    score_ma = ((c > ma5).astype(int) * 0.10
+                + (ma5 > ma10).astype(int) * 0.10
+                + (ma10 > ma20).astype(int) * 0.10)
+    dif = _ema(c, 12) - _ema(c, 26)
+    dea = _ema(dif, 9)
+    score_macd = (dif > dea).astype(float) * 0.15
+    vol_ratio = v / v.rolling(5).mean().replace(0, np.nan)
+    score_vol = np.clip((2 - vol_ratio.fillna(3)) / 2, 0, 1) * 0.15
+    ret_today = c / _ref(c, 1) - 1
+    score_ret = np.clip((0.03 + ret_today.fillna(0)) / 0.06, 0, 1) * 0.10
+    strength = (score_cci + score_ma + score_macd + score_vol + score_ret).fillna(0)
+
+    return s * strength
+
+
 # ======================================================================
 # 因子注册表 — 通达信信号因子
 # ======================================================================
@@ -566,5 +815,59 @@ TDX_SIGNAL_FACTORS: dict[str, dict] = {
         "type": "signal",
         "compute": factor_resonance,
         "description": "擒龙决 AND 涨停先锋 同时触发 — 打板+分歧低吸双确认, 高胜率选股",
+    },
+    "tdx_yaogu_bandit": {
+        "name": "tdx_yaogu_bandit",
+        "label": "妖股先锋×波段擒妖(反推版)",
+        "category": "momentum",
+        "direction": 1,
+        "type": "signal",
+        "compute": factor_yaogu_bandit,
+        "description": "[反推版] CCI>150+量比>2+均线多头+MACD多头+涨幅>5% — 保留作对比",
+    },
+    "tdx_bandit_sniper": {
+        "name": "tdx_bandit_sniper",
+        "label": "波段擒妖(源码版)",
+        "category": "momentum",
+        "direction": 1,
+        "type": "signal",
+        "compute": factor_bandit_sniper,
+        "description": "牛线突破+55日新高V反+MACD多头+涨幅>9% — 波段擒妖源码精确翻译",
+    },
+    "tdx_yaogu_resonance_bandit": {
+        "name": "tdx_yaogu_resonance_bandit",
+        "label": "双信号共振×波段擒妖",
+        "category": "pattern",
+        "direction": 1,
+        "type": "signal",
+        "compute": factor_yaogu_resonance_bandit,
+        "description": "擒龙决+涨停先锋 AND 波段擒妖 同时触发 — 实际选出5只标的的原始公式组合",
+    },
+    "tdx_yaogu_bandit_ab": {
+        "name": "tdx_yaogu_bandit_ab",
+        "label": "妖股A+B(延迟+回调)",
+        "category": "momentum",
+        "direction": 1,
+        "type": "signal",
+        "compute": factor_yaogu_bandit_ab,
+        "description": "昨日触发原始信号 + 今日CCI<100 — 延迟1天确认+高位回落买入",
+    },
+    "tdx_yaogu_bandit_ac": {
+        "name": "tdx_yaogu_bandit_ac",
+        "label": "妖股A+C(延迟+分层)",
+        "category": "momentum",
+        "direction": 1,
+        "type": "continuous",
+        "compute": factor_yaogu_bandit_ac,
+        "description": "昨日触发原始信号 + 今日逆势强度评分(0~1) — 延迟确认+分仓买入",
+    },
+    "tdx_yaogu_bandit_abc": {
+        "name": "tdx_yaogu_bandit_abc",
+        "label": "妖股A+B+C(全组合)",
+        "category": "momentum",
+        "direction": 1,
+        "type": "continuous",
+        "compute": factor_yaogu_bandit_abc,
+        "description": "昨日触发+CCI<100回调+强度评分 — 延迟确认+回调买入+分仓",
     },
 }

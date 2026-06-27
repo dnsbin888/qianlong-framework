@@ -20,7 +20,7 @@ def compute_ic_series(factor_values, forward_returns, periods=[1, 5, 20]):
         fv = factor_values[date]
         fr = forward_returns[date]
         common = set(fv.keys()) & set(fr.keys())
-        if len(common) < 30:
+        if len(common) < 15:  # E220: 采样200只只有~20只/天，降至15
             continue
 
         f_vals = np.array([fv[s] for s in common])
@@ -117,13 +117,18 @@ def analyze_factors_from_cache(factor_cache, stock_data, lookback_days=60):
         if d and len(d) >= 8 and ps > 0:
             date_key = d[:10]
             factor_values[date_key][sym] = ps
+    print(f"[IC-DEBUG] factor_values: {len(factor_values)}天, {sum(len(v) for v in factor_values.values())}条")
 
     # 构建前向收益: {date: {symbol: {period: return}}}
     forward_returns = defaultdict(lambda: defaultdict(dict))
+    stock_ok = 0
     for sym, df in (stock_data or {}).items():
         if len(df) < lookback_days + 20:
             continue
+        stock_ok += 1
         close = df['close'].values
+        for i in range(lookback_days, len(close)):
+            date_key = str(df.index[i])[:10]
         for i in range(lookback_days, len(close)):
             date_key = str(df.index[i])[:10]
             cur = close[i]
@@ -134,6 +139,9 @@ def analyze_factors_from_cache(factor_cache, stock_data, lookback_days=60):
     ic_series = compute_ic_series(factor_values, forward_returns)
     stats = compute_ic_stats(ic_series)
     layered = layered_backtest(factor_values, forward_returns)
+    print(f"[IC-DEBUG] forward_returns: {len(forward_returns)}天, {stock_ok}只股票满足数据长度")
+    print(f"[IC-DEBUG] 日期交集: {len(set(factor_values.keys()) & set(forward_returns.keys()))}天")
+    print(f"[IC-DEBUG] ic_series: { {p: len(s) for p,s in ic_series.items()} }")
 
     return {
         'ic_stats': stats,
