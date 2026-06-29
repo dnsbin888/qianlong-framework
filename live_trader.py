@@ -1368,23 +1368,19 @@ def start_auto_sync():
         # FIX: 持仓跟踪兜底，连续3次空仓确认后才跳过（防旧数据虚报）
         if not state.positions:
             state.empty_cycles = getattr(state, 'empty_cycles', 0) + 1
-            if state.empty_cycles < 3:
-                tracked = _load_position_tracker()
-                if tracked:
-                    fb = []
-                    for sym, pos in tracked.items():
-                        fb.append({"symbol": sym, "quantity": pos.get("qty", 0),
-                                   "cost_price": pos.get("avg_cost", 0),
-                                   "market_value": 0, "profit_pct": 0, "profit_amt": 0})
-                    state.positions = fb
-                    print(f"[AutoTrade] THS不可用，持仓跟踪兜底: {len(fb)}只")
+            # P0修复: 不再清空跟踪文件。空仓可能是THS导出中断，不销毁历史数据
+            tracked = _load_position_tracker()
+            if tracked:
+                fb = []
+                for sym, pos in tracked.items():
+                    fb.append({"symbol": sym, "quantity": pos.get("qty", 0),
+                               "cost_price": pos.get("avg_cost", 0),
+                               "market_value": 0, "profit_pct": 0, "profit_amt": 0})
+                state.positions = fb
+                print(f"[AutoTrade] THS不可用，持仓跟踪兜底: {len(fb)}只 (连续{state.empty_cycles}次)")
             else:
-                # 连续3次空仓 → 确认空仓 → 清掉虚报文件
-                _save_position_tracker({})
-                try:
-                    import json as _jj; _jj.dump({}, open(r"D:\quant_framework\live_positions_track.json","w"))
-                except Exception as _e:
-                    print(f"[Trader] 跟踪文件清空失败: {_e}")
+                if state.empty_cycles >= 3:
+                    print(f"[AutoTrade] ⚠️ 连续{state.empty_cycles}次空仓 + 跟踪文件为空，请检查THS/联动精灵")
         else:
             state.empty_cycles = 0  # 有持仓了，重置计数器
         # E205: 更新日亏损(基于持仓市值变化)

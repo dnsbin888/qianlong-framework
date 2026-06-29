@@ -126,6 +126,9 @@ def get_ic_weights(window: str = "5d", min_ic: float = 0.02) -> dict[str, float]
     raw = {}
     for f in active:
         ic = f.get(ic_key, 0) or 0
+        mult = f.get("weight_multiplier", 1.0)  # P0-1: 健康引擎写入的乘数
+        if isinstance(mult, (int, float)) and mult >= 0:
+            ic = ic * mult  # 乘数降权: 0.5=减半, 0.0=归零
         if ic > min_ic:
             raw[f["name"]] = ic - min_ic
         else:

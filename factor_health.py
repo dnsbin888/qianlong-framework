@@ -41,13 +41,22 @@ def compute_health(factor: dict, ic_report: dict = None) -> dict:
     if ic5 < 0:
         ic_score *= 0.5  # 负IC惩罚
 
-    # 2. 分层回测分 (30%) — 从 IC 报告读取
+    # 2. 分层回测分 (30%) — 从 IC 多窗口数据计算
+    # 代理: IC 在长窗口保持或增强 → 分层效果好; 衰减 → 分层效果差
     layer_score = 50  # 默认
     if ic_report:
-        layered = ic_report.get("layered_backtest", {})
-        lb = layered.get(name, {})
-        spread = lb.get("spread", 0) or 0
-        layer_score = min(100, max(0, spread * 10 + 50))  # spread=5%→100分
+        # 兼容两种格式: factors dict (大写key) 和 ic_results dict (小写key)
+        facs = ic_report.get("factors", {}) or ic_report.get("ic_results", {})
+        if name in facs:
+            fac_data = facs[name]
+            _ic5 = abs(float(fac_data.get("IC_5d") or fac_data.get("ic_5d") or fac_data.get("ic_5d", {}).get("mean_ic") or 0))
+            _ic20 = abs(float(fac_data.get("IC_20d") or fac_data.get("ic_20d") or fac_data.get("ic_20d", {}).get("mean_ic") or 0))
+            # IC 稳定性 = 长窗口IC / 短窗口IC, 稳定或增长 → 高分
+            if _ic5 > 0.01:
+                stability = min(2.0, (_ic20 / _ic5) if _ic5 > 0 else 1.0)
+                layer_score = min(100, int(40 + stability * 30))
+            else:
+                layer_score = 40
 
     # 3. 衰减分 (20%) — 检查 IC 历史趋势
     decay_score = _compute_decay(name)
@@ -86,7 +95,7 @@ def _compute_decay(name: str) -> int:
     snapshots = _load_history(name)
     if len(snapshots) < 2:
         return 70  # 无历史, 默认中等
-    ics = [s.get("ic_5d", 0) or 0 for s in snapshots[-5:]]
+    ics = [(s.get("IC_5d") or s.get("ic_5d") or 0) for s in snapshots[-5:]]
     if len(ics) < 2:
         return 70
     trend = ics[-1] - ics[0]
@@ -194,6 +203,13 @@ def run_health_check() -> dict:
         h = compute_health(factor, ic_report)
         results.append({"name": factor["name"], "display": factor.get("display", ""), **h})
 
+        # P0-2: 同步 IC 到 registry (统一数据源)
+        _sync_ic_to_registry(factor["name"], ic_report)
+
+        # 恢复健康 → 清除乘数
+        if h["status"] == "healthy":
+            _clear_multiplier(factor["name"])
+
         # 自动操作
         for action in h.get("actions", []):
             auto_actions.append({"factor": factor["name"], "action": action,
@@ -206,6 +222,9 @@ def run_health_check() -> dict:
 
     # 保存快照
     save_snapshot()
+
+    # P0-1: 同步权重到 factor_weights.json (选股器读取)
+    _sync_weights_to_json()
 
     return {
         "checked_at": datetime.now().isoformat(),
@@ -221,27 +240,80 @@ def run_health_check() -> dict:
 
 
 def _apply_action(name: str, action: str):
-    """执行自动操作。"""
+    """执行自动操作。权重乘数写入 registry, factor_registry.get_ic_weights() 自动读取。"""
     try:
         with open(REGISTRY_PATH, "r") as f:
             reg = json.load(f)
-        for f in reg["factors"]:
-            if f["name"] != name:
+        for fac in reg["factors"]:
+            if fac["name"] != name:
                 continue
             if action == "权重减半":
-                pass  # strategy_weights.py 已自动从 IC 读取
+                fac["weight_multiplier"] = 0.5
+                fac["_health_action"] = f"权重减半 ({datetime.now().strftime('%m-%d %H:%M')})"
             elif action == "权重归零":
-                pass  # IC 接近 0 时权重自动为 0
+                fac["weight_multiplier"] = 0.0
+                fac["_health_action"] = f"权重归零 ({datetime.now().strftime('%m-%d %H:%M')})"
             elif action == "自动退役":
-                f["status"] = "retired"
-                f["retired_reason"] = f"健康度不足, 自动退役 ({datetime.now().strftime('%Y-%m-%d')})"
+                fac["status"] = "retired"
+                fac["retired_reason"] = f"健康度不足, 自动退役 ({datetime.now().strftime('%Y-%m-%d')})"
+                fac.pop("weight_multiplier", None)
             elif action == "停止实盘":
-                f["_trading_paused"] = True
+                fac["_trading_paused"] = True
         reg["updated"] = datetime.now().strftime("%Y-%m-%d %H:%M")
         with open(REGISTRY_PATH, "w") as f:
             json.dump(reg, f, ensure_ascii=False, indent=2)
     except Exception as e:
         logger.error(f"自动操作失败 {name}/{action}: {e}")
+
+
+def _clear_multiplier(name: str):
+    """健康恢复时清除权重乘数。"""
+    try:
+        with open(REGISTRY_PATH, "r") as f:
+            reg = json.load(f)
+        for fac in reg["factors"]:
+            if fac["name"] == name and "weight_multiplier" in fac:
+                del fac["weight_multiplier"]
+                fac.pop("_health_action", None)
+                with open(REGISTRY_PATH, "w") as f2:
+                    json.dump(reg, f2, ensure_ascii=False, indent=2)
+                break
+    except Exception:
+        pass
+
+
+def _sync_weights_to_json():
+    """P0-1: 将带乘数的权重同步到 factor_weights.json (选股器消费)。"""
+    try:
+        from factor_registry import get_ic_weights
+        weights = get_ic_weights("5d")
+        wpath = r"D:\quant_web\data\factor_weights.json"
+        import os as _os2
+        _os2.makedirs(_os2.dirname(wpath), exist_ok=True)
+        with open(wpath, "w", encoding="utf-8") as f:
+            json.dump(weights, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
+def _sync_ic_to_registry(name: str, ic_report: dict):
+    """P0-2: 将 IC 报告中的值同步到 registry, 确保单一事实源。"""
+    try:
+        ic_results = ic_report.get("ic_results", {})
+        if name not in ic_results:
+            return
+        ics = ic_results[name]
+        ic_map = {}
+        for key in ["ic_1d", "ic_3d", "ic_5d", "ic_7d", "ic_10d", "ic_12d", "ic_15d", "ic_20d"]:
+            entry = ics.get(key, {})
+            val = entry.get("mean_ic") if isinstance(entry, dict) else entry
+            if val is not None and isinstance(val, (int, float)):
+                ic_map[key] = round(float(val), 4)
+        if ic_map:
+            from factor_registry import update_ic
+            update_ic(name, ic_map)
+    except Exception:
+        pass
 
 
 def _log_action(action: dict):
@@ -263,13 +335,95 @@ def _log_action(action: dict):
 
 def compute_correlation_matrix() -> dict:
     """因子相关性矩阵 (Spearman)。
-    从最新 IC 快照中提取因子值，计算两两相关性。
-    >0.80 → 高度冗余, >0.93 → 严重冗余 (已发现 chase/chip/resonance 等)
+    从 factor_registry 读取活跃因子的 IC 时间序列，计算两两 Spearman 相关。
+    >0.80 → 高度冗余, >0.93 → 严重冗余
     """
-    snapshots = sorted(os.listdir(HEALTH_HISTORY_DIR)) if os.path.exists(HEALTH_HISTORY_DIR) else []
-    if not snapshots:
-        return {"error": "无历史快照, 请先运行 full_market_ic.py"}
-    return {"last_snapshot": snapshots[-1], "note": "相关性数据从IC报告分层回测提取, 全量矩阵需运行 full_market_ic.py --corr"}
+    try:
+        from factor_registry import get_active_factors
+        active = get_active_factors()
+        if len(active) < 2:
+            return {"error": "活跃因子不足", "matrix": [], "redundant_pairs": []}
+
+        # 从历史快照收集各因子的 IC 序列
+        snapshots = sorted(os.listdir(HEALTH_HISTORY_DIR))[-20:] if os.path.exists(HEALTH_HISTORY_DIR) else []
+        if len(snapshots) < 5:
+            return {"error": "历史快照不足(需>=5)", "matrix": [], "redundant_pairs": []}
+
+        # 构建 {factor_name: [ic_values...]} — 兼容 dict 和 list 两种格式
+        factor_ic_series = {}
+        for sn in snapshots:
+            try:
+                with open(os.path.join(HEALTH_HISTORY_DIR, sn)) as f:
+                    snap = json.load(f)
+                facs = snap.get("factors", {})
+                if isinstance(facs, dict):
+                    for name, ic_data in facs.items():
+                        ic = ic_data.get("IC_5d") or ic_data.get("ic_5d") or 0
+                        if name not in factor_ic_series:
+                            factor_ic_series[name] = []
+                        factor_ic_series[name].append(ic)
+                elif isinstance(facs, list):
+                    for fac in facs:
+                        name = fac.get("name", "")
+                        ic = fac.get("ic_score") or fac.get("IC_5d") or fac.get("ic_5d") or 0
+                        if name not in factor_ic_series:
+                            factor_ic_series[name] = []
+                        factor_ic_series[name].append(ic)
+            except Exception:
+                continue
+
+        # 只保留活跃且有足够数据的因子
+        valid = {}
+        for f in active:
+            name = f["name"]
+            if name in factor_ic_series and len(factor_ic_series[name]) >= 5:
+                valid[name] = factor_ic_series[name]
+
+        if len(valid) < 2:
+            return {"error": "有效IC序列不足", "matrix": [], "redundant_pairs": []}
+
+        # 计算两两 Spearman 相关
+        import numpy as np
+        from scipy.stats import spearmanr
+
+        names = sorted(valid.keys())
+        n = len(names)
+        matrix = []
+        redundant_pairs = []
+
+        for i in range(n):
+            row = []
+            for j in range(n):
+                if i == j:
+                    row.append(1.0)
+                else:
+                    try:
+                        corr, _ = spearmanr(valid[names[i]], valid[names[j]])
+                        corr = round(float(corr), 4)
+                    except Exception:
+                        corr = 0.0
+                    row.append(corr)
+                    # 冗余检测 (只记录上三角)
+                    if i < j and abs(corr) > 0.80:
+                        level = "严重冗余" if abs(corr) > 0.93 else "高度冗余"
+                        redundant_pairs.append({
+                            "factor_a": names[i], "factor_b": names[j],
+                            "correlation": corr, "level": level,
+                        })
+            matrix.append({"factor": names[i], "correlations": row})
+
+        redundant_pairs.sort(key=lambda x: -abs(x["correlation"]))
+
+        return {
+            "factors": names,
+            "matrix": matrix,
+            "redundant_pairs": redundant_pairs,
+            "snapshots_used": len(snapshots),
+            "note": "Spearman秩相关, >0.80高度冗余, >0.93严重冗余",
+        }
+    except Exception as e:
+        logger.error(f"相关性矩阵计算失败: {e}")
+        return {"error": str(e), "matrix": [], "redundant_pairs": []}
 
 
 def compute_ir(name: str) -> dict:
@@ -277,7 +431,7 @@ def compute_ir(name: str) -> dict:
     snapshots = _load_history(name)
     if len(snapshots) < 5:
         return {"ir": None, "note": "需至少5次快照"}
-    ics = [s.get("ic_5d", 0) or 0 for s in snapshots]
+    ics = [(s.get("IC_5d") or s.get("ic_5d") or 0) for s in snapshots]
     import numpy as np
     mean_ic = np.mean(ics)
     std_ic = np.std(ics) if len(ics) > 1 else 1
