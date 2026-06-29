@@ -447,9 +447,19 @@ def generate_from_ai(desc: str, model: str = "deepseek") -> str | None:
         print(f"[AI-Factor] 未知模型: {model}, 可用: {list(AI_MODELS.keys())}")
         return None
 
+    # 优先环境变量，其次配置文件
     api_key = os.environ.get("DEEPSEEK_API_KEY" if model == "deepseek" else "OPENAI_API_KEY")
     if not api_key:
-        print(f"[AI-Factor] 请设置环境变量 {'DEEPSEEK_API_KEY' if model=='deepseek' else 'OPENAI_API_KEY'}")
+        try:
+            cfg_path = r"D:\quant_framework\live_trader_config.json"
+            with open(cfg_path, "r") as f:
+                _cfg = json.load(f)
+            api_key = _cfg.get("aiKey", "")
+        except: pass
+    if not api_key:
+        print(f"[AI-Factor] 请设置API Key")
+        print(f"  方法1: 在 live_trader_config.json 的 aiKey 字段填入key")
+        print(f"  方法2: 环境变量 DEEPSEEK_API_KEY")
         print(f"  手动模式: python factor_pipeline.py --ai manual")
         return None
 

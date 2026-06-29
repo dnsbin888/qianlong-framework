@@ -191,7 +191,8 @@ def run_streamlit(script_name):
         print("\n  正在安装 streamlit + plotly ...")
         subprocess.run([sys.executable, "-m", "pip", "install", "streamlit", "plotly", "-q"])
     try:
-        result = subprocess.run(["netstat", "-ano"], capture_output=True, text=True)
+        result = subprocess.run(["netstat", "-ano"], capture_output=True, text=True,
+                               encoding='gbk', errors='replace')
         for line in result.stdout.split("\n"):
             if f":{STREAMLIT_PORT}" in line and "LISTENING" in line:
                 pid = line.strip().split()[-1]

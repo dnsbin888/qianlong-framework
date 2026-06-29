@@ -79,6 +79,7 @@ class PaperAccount:
         # R1-1: 注入 SimulatedBroker，使 RuleEngine 可直接执行订单
         self._rule_engine = RuleEngine(broker=self._broker)
         self._setup_rules()
+        self._restore_peaks()
 
     def set_risk_data(self, factor_cache=None, stock_data=None):
         """E60: 更新风控所需的数据源"""
@@ -91,6 +92,7 @@ class PaperAccount:
         # ── 规则引擎 ──
         self._rule_engine = RuleEngine(broker=self._broker)
         self._setup_rules()
+        self._restore_peaks()
 
         # ── 运行时追踪（首次初始化，后续调用不重置） ──
         if not hasattr(self, '_daily_trade_count') or self._daily_trade_count is None:
@@ -254,6 +256,18 @@ class PaperAccount:
                 self._day_start_equity = d.get("day_start_equity")
             except Exception as _e:
                 print(f"[Paper] 状态文件加载失败: {_e}")
+
+    def _restore_peaks(self):
+        """从持仓数据恢复移动止盈峰值 (重启后不丢失)"""
+        try:
+            for sym, pos in self.positions.items():
+                peak_pnl = pos.get("_peak_pnl")
+                if peak_pnl and peak_pnl > 0:
+                    # 恢复峰值到所有 TrailingStopRule
+                    for rule in getattr(self._rule_engine, '_position_rules', []):
+                        if hasattr(rule, '_peaks'):
+                            rule._peaks[sym] = max(rule._peaks.get(sym, 0), peak_pnl)
+        except Exception: pass
 
     def _save(self):
         try:
@@ -511,18 +525,18 @@ class PaperAccount:
 
     _trade_lock = threading.Lock()  # 防多线程穿仓
 
-    def place_order(self, symbol, side, price=None, qty=100, trade_type="manual"):
+    def place_order(self, symbol, side, price=None, qty=100, trade_type="manual", reason=""):
         """下单 — P0-模拟-02: 全面强制 T+1 约束。"""
         try:
             with self._trade_lock:  # 线程安全: 检查+扣除是原子操作
-                return self._place_order_locked(symbol, side, price, qty, trade_type)
+                return self._place_order_locked(symbol, side, price, qty, trade_type, reason)
         except Exception as e:
             import traceback
             traceback.print_exc()
             print(f"[Paper] place_order EXCEPTION: {e}")
             return {"success": False, "error": f"下单异常: {e}"}
 
-    def _place_order_locked(self, symbol, side, price=None, qty=100, trade_type="manual"):
+    def _place_order_locked(self, symbol, side, price=None, qty=100, trade_type="manual", reason=""):
         if side == "reset":
             self.cash = 1_000_000.0
             self._positions_compat = {}
@@ -595,8 +609,10 @@ class PaperAccount:
             slippage = round((actual_price - sig_price) / max(sig_price, 0.01) * 100, 2) if sig_price > 0 else 0
             self._trades_archive.append({
                 "symbol": sym, "name": name, "side": "buy", "price": round(price, 2),
-                "qty": qty, "cost": round(cost, 2), "time": datetime.now().strftime("%H:%M:%S"),
-                "type": trade_type, "slippage_pct": slippage,
+                "qty": qty, "cost": round(cost, 2),
+                "date": today, "time": datetime.now().strftime("%H:%M:%S"),
+                "type": trade_type, "reason": reason or ("买入" if trade_type=="manual" else "信号买入"),
+                "pnl": None, "slippage_pct": slippage,
             })
             self._save()
             return {"success": True, "action": "buy", "symbol": sym, "price": round(price, 2),
@@ -653,7 +669,8 @@ class PaperAccount:
                 "cost": round(cost_price * qty, 2), "pnl": round(pnl, 2),
                 "cost_price": round(cost_price, 2),
                 "buy_date": buy_date, "sell_date": today,
-                "time": datetime.now().strftime("%H:%M:%S"), "type": trade_type,
+                "date": today, "time": datetime.now().strftime("%H:%M:%S"),
+                "type": trade_type, "reason": reason or ("卖出" if trade_type=="manual" else "信号卖出"),
             }
             self._trades_archive.append(_sell_trade)
             self._save()
@@ -899,11 +916,16 @@ class PaperAccount:
             print(f"[Paper] 卖出检查: {len(self.positions)}只持仓 ")
         for sym, pos in list(self.positions.items()):
             old_price = pos.get("last_price", pos["avg_cost"])
-            fresh_price = self._resolve_price(sym, fallback=None)  # 不给fallback，得null才知道失败
-            if fresh_price and fresh_price > 0 and fresh_price != 10.0:  # 10.0=默认值=无效
+            fresh_price = self._resolve_price(sym, fallback=None)
+            if fresh_price and fresh_price > 0 and fresh_price != 10.0:
                 pos["last_price"] = fresh_price
+                # 追踪峰值PNL: 移动止盈需要知道"最高涨到过多少"
+                pnl = (fresh_price / pos["avg_cost"] - 1) if pos["avg_cost"] > 0 else 0
+                peak_pnl = pos.get("_peak_pnl", pnl)
+                if pnl > peak_pnl:
+                    pos["_peak_pnl"] = pnl
             elif not fresh_price or fresh_price <= 0:
-                fresh_price = old_price  # 保持上次有效价格，不回退
+                fresh_price = old_price
             # E90: 诊断 — 价格更新后计算账面盈亏
             pnl_pct = (fresh_price / pos["avg_cost"] - 1) * 100 if fresh_price and pos["avg_cost"] > 0 else 0
             if pnl_pct < -3:
@@ -938,16 +960,16 @@ class PaperAccount:
                 except: pass
                 price = pos.get("last_price", pos["avg_cost"])
                 qty = pos["qty"]
-                r = self.place_order(sym, "sell", price, qty, trade_type="auto")
+                r = self.place_order(sym, "sell", price, qty, trade_type="auto", reason=f"持仓到期({held}天>={max_days}天)")
                 if r.get("success"):
-                    r["reason"] = f"持仓到期({held}天>={max_days}天)"
                     actions.append(r)
                     self._daily_trade_count += 1
                     print(f"[Paper] 持仓到期卖出 {sym} x{qty} @{price:.2f} (已持{held}天)")
 
         for sym, pos in list(self.positions.items()):
-            market_data = {"price": pos.get("last_price", pos["avg_cost"])}
-            pos_with_sym = {**pos, "symbol": sym}
+            peak_price = pos.get("_peak_price", pos.get("avg_cost", 0))
+            market_data = {"price": pos.get("last_price", pos["avg_cost"]), "peak_price": peak_price}
+            pos_with_sym = {**pos, "symbol": sym, "_peak_price": peak_price}
 
             rule_actions = self._rule_engine.check_position(pos_with_sym, market_data, context)
             for ra in rule_actions:
@@ -965,9 +987,8 @@ class PaperAccount:
                     exec_price = exec_price
                 else:
                     exec_price = ra.price
-                r = self.place_order(ra.symbol or sym, "sell", exec_price, sell_qty, trade_type="auto")
+                r = self.place_order(ra.symbol or sym, "sell", exec_price, sell_qty, trade_type="auto", reason=ra.reason)
                 if r.get("success"):
-                    r["reason"] = ra.reason
                     actions.append(r)
                     self._daily_trade_count += 1
                     # 钉钉通知
@@ -982,9 +1003,8 @@ class PaperAccount:
                     if remaining > 0 and pos["avg_cost"] > 0:
                         pnl = (ra.price / pos["avg_cost"] - 1)
                         if pnl <= ra.meta.get("stop_loss_threshold", -0.05):
-                            r2 = self.place_order(sym, "sell", ra.price, remaining, trade_type="auto")
+                            r2 = self.place_order(sym, "sell", ra.price, remaining, trade_type="auto", reason=f"止盈T止损({pnl*100:.1f}%)")
                             if r2.get("success"):
-                                r2["reason"] = f"止盈T止损({pnl*100:.1f}%)"
                                 actions.append(r2)
                                 self._daily_trade_count += 1
 
@@ -1004,9 +1024,8 @@ class PaperAccount:
                 sell_qty = max(100, int(total_qty * sell_ratio) // 100 * 100)
                 if sell_qty >= 100:
                     price = pos.get("last_price", pos.get("avg_cost", 0))
-                    r = self.place_order(sym, "sell", price, sell_qty, trade_type="auto")
+                    r = self.place_order(sym, "sell", price, sell_qty, trade_type="auto", reason=f"账户日亏{label}({account_loss_pct*100:.1f}%)")
                     if r.get("success"):
-                        r["reason"] = f"账户日亏{label}({account_loss_pct*100:.1f}%)"
                         actions.append(r)
                         self._daily_trade_count += 1
                         print(f"[Paper] 账户日亏{label} {sym} x{sell_qty} @{price:.2f}")
@@ -1029,9 +1048,8 @@ class PaperAccount:
                     excess_val = mkt_val - target_val
                     sell_qty = max(100, int(excess_val / (price + 0.01)) // 100 * 100)
                     if sell_qty >= 100 and sell_qty <= pos["qty"]:
-                        r = self.place_order(sym, "sell", price, sell_qty, trade_type="auto")
+                        r = self.place_order(sym, "sell", price, sell_qty, trade_type="auto", reason=f"集中度{label}({mkt_val/total_eq*100:.0f}%>{threshold*100:.0f}%)减{sell_qty}股")
                         if r.get("success"):
-                            r["reason"] = f"集中度{label}({mkt_val/total_eq*100:.0f}%>{threshold*100:.0f}%)减{sell_qty}股"
                             actions.append(r)
                             self._daily_trade_count += 1
                             print(f"[Paper] 集中度减仓 {sym}: {mkt_val/total_eq*100:.0f}%→{threshold*100:.0f}% ({label})")
@@ -1046,9 +1064,8 @@ class PaperAccount:
                 qty = pos.get("qty", 0)
                 price = pos.get("last_price", pos.get("avg_cost", 0))
                 if qty >= 100 and price > 0:
-                    r = self.place_order(sym, "sell", price, qty, trade_type="auto")
+                    r = self.place_order(sym, "sell", price, qty, trade_type="auto", reason="日亏清算(最大头寸优先)")
                     if r.get("success"):
-                        r["reason"] = "日亏清算(最大头寸优先)"
                         actions.append(r)
                         self._daily_trade_count += 1
                         print(f"[Paper] 日亏清算卖出 {sym} x{qty} @{price:.2f}")
@@ -1123,7 +1140,7 @@ class PaperAccount:
                 # 仓位计算（A01: 用实时价）
                 qty = self._position_sizer.calculate_shares(bs, self.cash, real_price)
                 if qty >= 100:
-                    r = self.place_order(sym, "buy", real_price, qty, trade_type="auto")
+                    r = self.place_order(sym, "buy", real_price, qty, trade_type="auto", reason=f"信号{bs}级({int(self._position_sizer.sizing_map.get(bs, 0.15)*100)}%仓)")
                     buy_this_cycle += 1
                     # E32: 买入失败记日志
                     if not r.get("success"):
@@ -1158,9 +1175,8 @@ class PaperAccount:
                 qty = pos.get("qty", 0)
                 if qty > 0:
                     price = pos.get("last_price", pos.get("avg_cost", 0))
-                    r = self.place_order(sym, "sell", price, qty, trade_type="auto")
+                    r = self.place_order(sym, "sell", price, qty, trade_type="auto", reason=f"超额减仓(持仓{len(self.positions)}>{max_positions})")
                     if r.get("success"):
-                        r["reason"] = f"超额减仓(持仓{len(self.positions)}>{max_positions})"
                         actions.append(r)
                         self._daily_trade_count += 1
                         sold += 1

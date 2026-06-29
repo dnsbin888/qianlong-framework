@@ -6,7 +6,7 @@ def check_port(port):
     try:
         result = subprocess.run(
             f'netstat -ano | findstr :{port}',
-            shell=True, capture_output=True, text=True, timeout=5
+            shell=True, capture_output=True, text=True, encoding='gbk', errors='replace', timeout=5
         )
         if result.stdout.strip():
             print(f'  ⚠️  端口 {port} 已被占用:')

@@ -53,11 +53,44 @@ def _load():
         return False
 
 
+def normalize_code(symbol: str) -> str:
+    """口径归一: 任意格式 → sh/sz+6位数字 (唯一真相格式)
+
+    600001 → sh600001   000001 → sz000001
+    sh600001 → sh600001  SZ300 → sz300
+    600001.SH → sh600001
+    """
+    import re
+    s = str(symbol).strip().lower()
+    # 去掉 QMT 后缀 .sh/.sz
+    s = re.sub(r'\.(sh|sz)$', '', s)
+    # 提取字母前缀和数字
+    m = re.search(r'^(sh|sz)?(\d{5,6})', s)
+    if not m:
+        return s  # 无法识别，原样返回
+    pref, num = m.group(1), m.group(2)
+    if pref:
+        return pref + num
+    # 按第一位数字判断市场
+    if num[0] in ('6', '5', '8'):
+        return 'sh' + num
+    return 'sz' + num
+
+
+def to_qmt_code(symbol: str) -> str:
+    """转为 QMT/xtquant 格式: sh600001 → 600001.SH"""
+    code = normalize_code(symbol)
+    if code.startswith('sh'):
+        return code[2:] + '.SH'
+    return code[2:] + '.SZ'
+
+
 def _clean_code(symbol: str) -> str:
-    """清洗股票代码为纯6位数字（联动精灵格式）"""
-    code = str(symbol).replace('sh', '').replace('sz', '').replace('bj', '')
-    code = code.replace('SH', '').replace('SZ', '').replace('BJ', '')
-    return code
+    """提取纯6位数字（联动精灵 DLL 格式）"""
+    import re
+    code = normalize_code(symbol)
+    m = re.search(r'\d{5,6}', code)
+    return m.group(0) if m else str(symbol)
 
 
 # ── 联动精灵/同花顺 路径 ──
@@ -77,7 +110,7 @@ def _ensure_running(exe_path: str, name: str, timeout: int = 5) -> bool:
     try:
         import subprocess
         r = subprocess.run(['tasklist', '/FI', f'IMAGENAME eq {exe_name}'],
-                          capture_output=True, text=True, timeout=3)
+                          capture_output=True, text=True, encoding='gbk', errors='replace', timeout=3)
         if exe_name.lower() in r.stdout.lower():
             return True
     except:
@@ -179,3 +212,138 @@ def cancel(code: str) -> dict:
     except Exception as e:
         print(f"[LinkTrader] CANCEL failed: {e}")
         return {"success": False, "error": str(e)}
+
+
+# ═══════════════════ 窗口联动 (Win32 API) ═══════════════════
+
+# 看盘软件窗口检测关键词
+_WINDOW_KEYWORDS = ["通达信", "同花顺", "TdxW", "Hexin", "THS"]
+_user32 = None
+
+
+def _get_user32():
+    global _user32
+    if _user32 is None:
+        import ctypes.wintypes as _w
+        _user32 = ctypes.windll.user32
+        _user32.EnumWindows = _user32.EnumWindows
+        _user32.GetWindowTextW = _user32.GetWindowTextW
+        _user32.GetWindowTextLengthW = _user32.GetWindowTextLengthW
+        _user32.IsWindowVisible = _user32.IsWindowVisible
+        _user32.SetForegroundWindow = _user32.SetForegroundWindow
+        _user32.ShowWindow = _user32.ShowWindow
+        _user32.SW_RESTORE = 9
+    return _user32
+
+
+def _find_trade_window():
+    """找第一个可见的看盘软件窗口，返回 (hwnd, title)。"""
+    u32 = _get_user32()
+    result = [None, ""]
+
+    @ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
+    def _enum(hwnd, _lparam):
+        if not u32.IsWindowVisible(hwnd):
+            return True
+        length = u32.GetWindowTextLengthW(hwnd)
+        if length == 0:
+            return True
+        buf = ctypes.create_unicode_buffer(length + 2)
+        u32.GetWindowTextW(hwnd, buf, length + 2)
+        title = buf.value
+        if any(kw in title for kw in _WINDOW_KEYWORDS):
+            result[0] = hwnd
+            result[1] = title
+            return False  # 找到，停止枚举
+        return True
+
+    u32.EnumWindows(_enum, 0)
+    return result[0], result[1]
+
+
+def lookup(code: str) -> str:
+    """正向联动: 激活看盘软件窗口，输入代码打开K线。
+
+    Returns:
+        软件名称 (如 "通达信"/"同花顺") 或空字符串。
+    """
+    import time as _t
+    hwnd, title = _find_trade_window()
+    if not hwnd:
+        print("[LinkTrader] 未找到看盘软件窗口")
+        return ""
+
+    u32 = _get_user32()
+    clean = _clean_code(code)
+
+    try:
+        # 激活窗口
+        u32.ShowWindow(hwnd, u32.SW_RESTORE)
+        _t.sleep(0.1)
+        u32.SetForegroundWindow(hwnd)
+        _t.sleep(0.15)
+
+        # 模拟键盘输入: 输入代码 + 回车
+        import ctypes.wintypes as _w
+        _keybd = ctypes.windll.user32.keybd_event
+        # 先清空输入 (按 Escape)
+        _keybd(0x1B, 0, 0, 0)  # VK_ESCAPE
+        _t.sleep(0.05)
+
+        # 逐字符输入代码
+        for ch in clean:
+            vk = _char_to_vk(ch)
+            if vk:
+                _keybd(vk, 0, 0, 0)
+                _t.sleep(0.02)
+                _keybd(vk, 0, 2, 0)  # KEYEVENTF_KEYUP = 2
+
+        _t.sleep(0.1)
+        # 回车
+        _keybd(0x0D, 0, 0, 0)
+        _t.sleep(0.02)
+        _keybd(0x0D, 0, 2, 0)
+
+        # 识别软件名
+        if "通达信" in title or "TdxW" in title:
+            sw = "通达信"
+        elif "同花顺" in title or "Hexin" in title:
+            sw = "同花顺"
+        else:
+            sw = title[:10]
+
+        print(f"[LinkTrader] LOOKUP {clean} → {sw}")
+        return sw
+    except Exception as e:
+        print(f"[LinkTrader] LOOKUP failed: {e}")
+        return ""
+
+
+def active_stock() -> str:
+    """反向联动: 读取看盘软件窗口标题，提取当前股票代码。
+
+    Returns:
+        字符串如 "sh600228" 或空字符串。
+    """
+    import re
+    hwnd, title = _find_trade_window()
+    if not hwnd or not title:
+        return ""
+
+    # 从标题提取代码: 匹配 6位数字 模式
+    m = re.search(r'([Ss][Hh]|[Ss][Zz])?([6][0-9]{5}|[03][0-9]{5}|[8][0-9]{5})', title)
+    if m:
+        code = (m.group(1) or 'sh').lower() + m.group(2)
+        return code
+    return ""
+
+
+def _char_to_vk(ch: str) -> int:
+    """字符 → 虚拟键码 (A-Z, 0-9, 小数点)"""
+    if 'A' <= ch <= 'Z':
+        return ord(ch)
+    if 'a' <= ch <= 'z':
+        return ord(ch.upper())
+    if '0' <= ch <= '9':
+        return ord(ch)
+    return 0

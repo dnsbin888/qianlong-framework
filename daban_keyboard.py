@@ -59,7 +59,7 @@ def get_keyboard_status():
     driver_running = False
     try:
         result = subprocess.run(['tasklist', '/fi', 'IMAGENAME eq kpp.exe'],
-                                capture_output=True, text=True, timeout=3)
+                                capture_output=True, text=True, encoding='gbk', errors='replace', timeout=3)
         driver_running = 'kpp.exe' in result.stdout
     except:
         pass
