@@ -1396,6 +1396,25 @@ def start_auto_sync():
         except Exception as _e:
             print(f"[Trader] 日亏损计算失败: {_e}")
             state.risk["daily_loss"] = 0
+        # Plan I: 每日权益记录
+        try:
+            eq_file = r"D:\quant_framework\live_equity_log.json"
+            eq_log = {}
+            if os.path.exists(eq_file):
+                eq_log = json.load(open(eq_file, "r", encoding="utf-8"))
+            today = now.strftime("%Y-%m-%d")
+            if today not in {e[0] for e in eq_log.get("log", [])}:
+                total_eq = CONFIG.get("live_cash", 0)
+                try:
+                    for p in state.positions:
+                        total_eq += float(p.get("market_value", 0) or 0)
+                except: pass
+                if total_eq > 0:
+                    eq_log.setdefault("log", []).append([today, total_eq])
+                    eq_log["updated"] = now.isoformat()
+                    json.dump(eq_log, open(eq_file, "w", encoding="utf-8"), ensure_ascii=False)
+        except Exception: pass
+
         # 自动交易执行 (E246: 联动精灵DLL 或 pyautogui)
         if CONFIG["auto_trade_enabled"] and _can_trade():
             signals = []
