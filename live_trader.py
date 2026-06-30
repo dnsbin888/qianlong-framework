@@ -170,6 +170,28 @@ try:
 except ImportError:
     print("[Trader] EventBus 不可用, 配置同步仅文件模式")
 
+# P0-B: 策略构建器参数覆盖 (最高优先级)
+try:
+    import os as _os6
+    sp = r"D:\quant_framework\user_customizations\user_strategies.json"
+    if _os6.path.exists(sp):
+        strategies = json.load(open(sp, "r", encoding="utf-8")).get("strategies", [])
+        active = [s for s in strategies if s.get("status") == "real" and s.get("type") == "builder"]
+        if active:
+            s = active[0]
+            tp = s.get("take_profit", [0.05, 0.07, 0.10])
+            CONFIG["tp1_stop_loss"] = s.get("stop_loss", CONFIG["tp1_stop_loss"])
+            CONFIG["tp2_stop_loss"] = s.get("stop_loss", CONFIG["tp2_stop_loss"])
+            CONFIG["tp3_stop_loss"] = s.get("stop_loss", CONFIG["tp3_stop_loss"])
+            CONFIG["tp1_profit_pct"] = tp[0] if len(tp)>0 else CONFIG["tp1_profit_pct"]
+            CONFIG["tp2_profit_pct"] = tp[1] if len(tp)>1 else CONFIG["tp2_profit_pct"]
+            CONFIG["tp3_profit_pct"] = tp[2] if len(tp)>2 else CONFIG["tp3_profit_pct"]
+            CONFIG["max_hold_days"] = s.get("hold_days", CONFIG["max_hold_days"])
+            CONFIG["signal_min_strength"] = s.get("trigger", {}).get("min_score", CONFIG.get("signal_min_strength", 3))
+            print(f"[Trader] 策略参数已应用: {s['name']} stop={CONFIG['tp1_stop_loss']} tp={tp}")
+except Exception as _e:
+    print(f"[Trader] 策略参数加载失败: {_e}")
+
 # S17: 参数变更历史（用于回滚）
 _PARAM_HISTORY = []
 _PARAM_HISTORY_FILE = r"d:\quant_framework\data\param_history.jsonl"
