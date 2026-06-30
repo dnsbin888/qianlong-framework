@@ -1399,34 +1399,53 @@ def start_auto_sync():
         # 自动交易执行 (E246: 联动精灵DLL 或 pyautogui)
         if CONFIG["auto_trade_enabled"] and _can_trade():
             signals = []
-            # E32-2: 实盘信号源与模拟盘统一 — 从 _FACTOR_CACHE 直读
+            # Plan I: 统一信号源 — 策略构建器驱动
             try:
-                import app as _app
-                cache = getattr(_app, '_FACTOR_CACHE', None)
-                if cache and getattr(_app, '_CACHE_READY', False):
-                    for s in cache[:200]:
-                        sym = getattr(s, 'symbol', '')
-                        if not sym: continue
+                sys.path.insert(0, r"D:\quant_web")
+                from data_loader import load_stock_data_from_cache as _lds
+                sd = _lds()
+                if not sd:
+                    import pickle, gzip, os as _os5
+                    sp = r"D:\quant_web\stock_data.pkl.gz"
+                    if not _os5.path.exists(sp): sp = r"D:\quant_web\stock_data.pkl"
+                    sd = pickle.load(gzip.open(sp, "rb")) if sp.endswith(".gz") else pickle.load(open(sp, "rb"))
+                if sd:
+                    sys.path.insert(0, r"D:\quant_framework")
+                    from strategy_engine import generate_for_live
+                    raw = generate_for_live(sd, top_k=15)
+                    for r in raw:
                         signals.append({
-                            'symbol': sym,
-                            'name': getattr(s, 'name', '') or '',
-                            'buy_signal': getattr(s, 'buy_signal', 0) or 0,
-                            'close': getattr(s, 'close', 0) or 0,
-                            'change_pct': getattr(s, 'change_pct', 0) or 0,
-                            'vol_ratio': getattr(s, 'vol_ratio', 1) or 1,
-                            'industry': getattr(s, 'industry', '') or '',
-                            'power_score': getattr(s, 'power_score', 0) or 0,
+                            'symbol': r.get('symbol', ''),
+                            'name': r.get('name', ''),
+                            'buy_signal': r.get('buy_signal', 0),
+                            'close': r.get('close', 0),
+                            'score': r.get('score', 0),
+                            'change_pct': 0,
+                            'vol_ratio': 1,
+                            'industry': '',
+                            'power_score': r.get('score', 0),
                         })
+                    if signals: print(f"[AutoTrade] 策略信号: {len(signals)}只 (source=strategy_engine)")
             except Exception as _e:
-                print(f"[AutoTrade] 信号读取失败(FACTOR_CACHE): {_e}")
-            # HTTP兜底
-            if not signals:
+                print(f"[AutoTrade] 策略信号失败: {_e}, 回退老源")
                 try:
-                    import urllib.request, json as _j
-                    _r = urllib.request.urlopen('http://127.0.0.1:5002/api/signal-center', timeout=10)
-                    signals = _j.loads(_r.read().decode()).get('signals', [])
-                except Exception as _e:
-                    print(f"[AutoTrade] HTTP兜底也失败: {_e}")
+                    import app as _app
+                    cache = getattr(_app, '_FACTOR_CACHE', None)
+                    if cache and getattr(_app, '_CACHE_READY', False):
+                        for s in cache[:200]:
+                            sym = getattr(s, 'symbol', '')
+                            if not sym: continue
+                            signals.append({
+                                'symbol': sym, 'name': getattr(s, 'name', '') or '',
+                                'buy_signal': getattr(s, 'buy_signal', 0) or 0,
+                                'close': getattr(s, 'close', 0) or 0,
+                                'change_pct': getattr(s, 'change_pct', 0) or 0,
+                                'vol_ratio': getattr(s, 'vol_ratio', 1) or 1,
+                                'industry': getattr(s, 'industry', '') or '',
+                                'power_score': getattr(s, 'power_score', 0) or 0,
+                            })
+                        if signals: print(f"[AutoTrade] 老信号兜底: {len(signals)}只")
+                except Exception: pass
             actions = auto_engine.check_rules(signals[:20] if signals else None)
             # A2: 熔断自动恢复 — 新的一天或日亏恢复到-3%以内
             state.circuit_breaker = getattr(state, 'circuit_breaker', False)

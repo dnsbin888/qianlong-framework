@@ -227,13 +227,14 @@ def get_active_user_strategies() -> list[dict]:
             if s.get("status") == "sim" and s.get("type") == "builder"]
 
 
-def evaluate_strategy(strategy: dict, stock_code: str, compute_fns: dict) -> dict | None:
+def evaluate_strategy(strategy: dict, stock_code: str, compute_fns: dict, stock_data: dict = None) -> dict | None:
     """用用户策略评估单只股票, 返回信号或None。
 
     Args:
         strategy: 策略定义 (含 factors, trigger, stop_loss 等)
         stock_code: 股票代码
         compute_fns: {factor_name: compute_function} 字典
+        stock_data: 预加载的 {symbol: DataFrame}（可选，传入则跳过加载）
 
     Returns:
         None 或 {strategy, signal, score, entry_price, stop_loss, take_profit, reason}
@@ -242,19 +243,20 @@ def evaluate_strategy(strategy: dict, stock_code: str, compute_fns: dict) -> dic
     if not factors_cfg or not compute_fns:
         return None
 
-    # 加载该股票的历史数据
-    try:
-        import numpy as np, pandas as pd, sys
-        sys.path.insert(0, r"D:\quant_web")
-        from data_loader import load_stock_data_from_cache
-        stock_data = load_stock_data_from_cache()
-        if not stock_data:
-            import gzip, pickle, os
-            sp = r"D:\quant_web\stock_data.pkl.gz"
-            if not os.path.exists(sp): sp = r"D:\quant_web\stock_data.pkl"
-            stock_data = pickle.load(gzip.open(sp, "rb")) if sp.endswith(".gz") else pickle.load(open(sp, "rb"))
-    except Exception:
-        return None
+    # 加载股票数据（如果调用方没传）
+    if stock_data is None:
+        try:
+            import numpy as np, pandas as pd, sys
+            sys.path.insert(0, r"D:\quant_web")
+            from data_loader import load_stock_data_from_cache
+            stock_data = load_stock_data_from_cache()
+            if not stock_data:
+                import gzip, pickle, os
+                sp = r"D:\quant_web\stock_data.pkl.gz"
+                if not os.path.exists(sp): sp = r"D:\quant_web\stock_data.pkl"
+                stock_data = pickle.load(gzip.open(sp, "rb")) if sp.endswith(".gz") else pickle.load(open(sp, "rb"))
+        except Exception:
+            return None
 
     # 代码格式适配
     df = None
