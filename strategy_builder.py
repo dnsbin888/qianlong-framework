@@ -111,7 +111,7 @@ def run_backtest(name: str, days: int = 90, sample: int = 300, walk_forward: boo
     except Exception as e:
         return {"success": False, "message": f"数据加载失败: {e}"}
 
-    all_syms = list(stock_data.keys())
+    all_syms = sorted(stock_data.keys())  # 排序保证采样稳定
     first_df = next(iter(stock_data.values()))
     all_dates = sorted(set(str(ts)[:10] for ts in first_df.index))[-days:]
 
