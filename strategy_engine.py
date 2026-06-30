@@ -11,7 +11,7 @@ import numpy as np
 
 
 def _load_active_strategy(target: str = "sim") -> dict | None:
-    """读活跃策略: sim=模拟盘, real=实盘"""
+    """读活跃策略: sim=模拟盘, real=实盘。优先取 _evo_applied 的"""
     sp = r"D:\quant_framework\user_customizations\user_strategies.json"
     if not os.path.exists(sp):
         return None
@@ -20,9 +20,18 @@ def _load_active_strategy(target: str = "sim") -> dict | None:
                   if s.get("status") == target and s.get("type") == "builder" and s.get("factors")]
     if not candidates:
         return None
-    # 优先用 _evo_applied 标记的
     evo = [s for s in candidates if s.get("_evo_applied")]
     return (evo or candidates)[0]
+
+
+def _load_all_active_strategies(target: str = "sim") -> list[dict]:
+    """读所有活跃策略。支持多策略并行。"""
+    sp = r"D:\quant_framework\user_customizations\user_strategies.json"
+    if not os.path.exists(sp):
+        return []
+    data = json.load(open(sp, "r", encoding="utf-8"))
+    return [s for s in data.get("strategies", [])
+            if s.get("status") in (target, "sim_running") and s.get("type") == "builder" and s.get("factors")]
 
 
 def _map_score_to_signal(score: float) -> int:
@@ -77,25 +86,29 @@ def generate(strategy: dict, stock_data: dict, top_k: int = 20) -> list[dict]:
 
 
 def generate_for_paper(stock_data: dict, top_k: int = 15) -> list[dict]:
-    """纸引擎用: 取 status=sim 的策略生成信号。无信号时自动降级到fallback"""
-    strategy = _load_active_strategy("sim")
-    if not strategy:
+    """纸引擎用: 取 ALL status=sim 的策略，每个出 top_k 信号，去重合并。"""
+    all_strategies = _load_all_active_strategies("sim")
+    if not all_strategies:
         return _fallback_signals(stock_data, top_k)
-    try:
-        signals = generate(strategy, stock_data, top_k)
-        if signals:
-            return signals
-        # 策略无信号 — 降级阈值或fallback
-        print(f"[StrategyEngine] 策略 '{strategy['name']}' 无信号(阈值{strategy.get('trigger',{}).get('min_score','?')})，降级...")
-        strategy["trigger"]["min_score"] = max(40, strategy.get("trigger", {}).get("min_score", 60) - 20)
-        signals = generate(strategy, stock_data, top_k)
-        if signals:
-            print(f"[StrategyEngine] 降级后 {len(signals)} 信号")
-            return signals
-        return _fallback_signals(stock_data, top_k)
-    except Exception as e:
-        print(f"[StrategyEngine] 纸引擎信号失败: {e}, 回退...")
-        return _fallback_signals(stock_data, top_k)
+    all_signals = []
+    seen = set()
+    for strategy in all_strategies:
+        try:
+            per_k = max(5, top_k // len(all_strategies))
+            signals = generate(strategy, stock_data, per_k)
+            for s in signals:
+                key = s["symbol"]
+                if key not in seen:
+                    seen.add(key)
+                    all_signals.append(s)
+            if signals:
+                print(f"[StrategyEngine] {strategy['name']}: {len(signals)}信号")
+        except Exception as e:
+            print(f"[StrategyEngine] {strategy['name']} 失败: {e}")
+    if all_signals:
+        print(f"[StrategyEngine] 合并: {len(all_signals)}信号 (来自{len(all_strategies)}策略)")
+        return sorted(all_signals, key=lambda x: -x["score"])[:top_k]
+    return _fallback_signals(stock_data, top_k)
 
 
 def generate_for_live(stock_data: dict, top_k: int = 15) -> list[dict]:

@@ -112,6 +112,7 @@ def run_backtest(name: str, days: int = 90, sample: int = 300, walk_forward: boo
         return {"success": False, "message": f"数据加载失败: {e}"}
 
     all_syms = sorted(stock_data.keys())  # 排序保证采样稳定
+    import random as _rnd; _rnd.seed(42)  # 固定种子——回测结果可复现
     first_df = next(iter(stock_data.values()))
     all_dates = sorted(set(str(ts)[:10] for ts in first_df.index))[-days:]
 
@@ -244,9 +245,10 @@ def evaluate_strategy(strategy: dict, stock_code: str, compute_fns: dict, stock_
         return None
 
     # 加载股票数据（如果调用方没传）
+    import pandas as pd
     if stock_data is None:
         try:
-            import numpy as np, pandas as pd, sys
+            import numpy as np, sys
             sys.path.insert(0, r"D:\quant_web")
             from data_loader import load_stock_data_from_cache
             stock_data = load_stock_data_from_cache()
@@ -276,12 +278,25 @@ def evaluate_strategy(strategy: dict, stock_code: str, compute_fns: dict, stock_
     weighted_score = 0
     all_pass = True
 
+    # 因子方向: 从registry获取direction, short因子分数取反
+    import json as _j2, os as _os2
+    _factor_dir = {}
+    try:
+        _reg = _j2.load(open(r"D:\quant_framework\factor_registry.json","r",encoding="utf-8"))
+        for _f in _reg.get("factors",[]):
+            _factor_dir[_f["name"]] = _f.get("direction","long")
+    except: pass
     for fc in factors_cfg:
         fn = compute_fns.get(fc["name"])
         if not fn:
             continue
         val = fn(past)
-        if val is None or val < fc.get("threshold", 0):
+        if val is None:
+            continue
+        # Short因子: 高分=利空。映射: score → 100-score (保留排名, 方向翻转)
+        if _factor_dir.get(fc["name"]) == "short":
+            val = max(0, 100 - val)
+        if val < fc.get("threshold", 0):
             all_pass = False
             continue
         w = fc.get("weight", 50)
