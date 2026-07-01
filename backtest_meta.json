@@ -1,0 +1,385 @@
+{
+  "latest": {
+    "run_id": "tdx2_final_20260629_073040",
+    "strategy": "tdx2_final",
+    "timestamp": "20260629_073040",
+    "config": {
+      "strategy": "tdx2_final",
+      "max_positions": 3,
+      "position_pct": 0.3,
+      "stop_loss": -0.03,
+      "take_profit": 0.05,
+      "start": "2022-01-01",
+      "end": "2025-12-31"
+    },
+    "n_trades": 32,
+    "n_days": 198,
+    "equity_file": "equity_tdx2_final_20260629_073040.csv",
+    "trades_file": "trades_tdx2_final_20260629_073040.csv",
+    "cache_hash": "none"
+  },
+  "history": [
+    {
+      "run_id": "tdx2_final_20260608_152219",
+      "strategy": "tdx2_final",
+      "timestamp": "20260608_152219",
+      "config": {
+        "strategy": "tdx2_final",
+        "stop_loss": -0.05,
+        "take_profit": 0.08,
+        "max_pos": 3
+      },
+      "n_trades": 3,
+      "n_days": 522,
+      "equity_file": "equity_tdx2_final_20260608_152219.csv",
+      "trades_file": "trades_tdx2_final_20260608_152219.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx2_final_20260608_152219",
+      "strategy": "tdx2_final",
+      "timestamp": "20260608_152219",
+      "config": {
+        "strategy": "tdx2_final",
+        "stop_loss": -0.08,
+        "take_profit": 0.12,
+        "max_pos": 5
+      },
+      "n_trades": 5,
+      "n_days": 522,
+      "equity_file": "equity_tdx2_final_20260608_152219.csv",
+      "trades_file": "trades_tdx2_final_20260608_152219.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "cmp_20260608_152309",
+      "strategy": "cmp",
+      "timestamp": "20260608_152309",
+      "config": {
+        "a": 1
+      },
+      "n_trades": 0,
+      "n_days": 5,
+      "equity_file": "equity_cmp_20260608_152309.csv",
+      "trades_file": "trades_cmp_20260608_152309.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "cmp_20260608_152309_1",
+      "strategy": "cmp",
+      "timestamp": "20260608_152309",
+      "config": {
+        "a": 2
+      },
+      "n_trades": 0,
+      "n_days": 5,
+      "equity_file": "equity_cmp_20260608_152309_1.csv",
+      "trades_file": "trades_cmp_20260608_152309_1.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx2_final_20260608_162915",
+      "strategy": "tdx2_final",
+      "timestamp": "20260608_162915",
+      "config": {
+        "strategy": "tdx2_final",
+        "max_positions": 3,
+        "position_pct": 0.3,
+        "stop_loss": -0.05,
+        "take_profit": 0.3,
+        "start": "2024-06-01",
+        "end": "2024-09-30"
+      },
+      "n_trades": 0,
+      "n_days": 0,
+      "equity_file": "equity_tdx2_final_20260608_162915.csv",
+      "trades_file": "trades_tdx2_final_20260608_162915.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx2_final_20260608_162944",
+      "strategy": "tdx2_final",
+      "timestamp": "20260608_162944",
+      "config": {
+        "strategy": "tdx2_final",
+        "max_positions": 3,
+        "position_pct": 0.3,
+        "stop_loss": -0.05,
+        "take_profit": 0.3,
+        "start": "2024-01-01",
+        "end": "2025-06-01"
+      },
+      "n_trades": 0,
+      "n_days": 0,
+      "equity_file": "equity_tdx2_final_20260608_162944.csv",
+      "trades_file": "trades_tdx2_final_20260608_162944.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx_resonance_20260608_163049",
+      "strategy": "tdx_resonance",
+      "timestamp": "20260608_163049",
+      "config": {
+        "strategy": "tdx_resonance",
+        "max_positions": 3,
+        "position_pct": 0.3,
+        "stop_loss": -0.05,
+        "take_profit": 0.3,
+        "start": "2024-01-01",
+        "end": "2025-06-01"
+      },
+      "n_trades": 11,
+      "n_days": 68,
+      "equity_file": "equity_tdx_resonance_20260608_163049.csv",
+      "trades_file": "trades_tdx_resonance_20260608_163049.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx_resonance_20260608_163128",
+      "strategy": "tdx_resonance",
+      "timestamp": "20260608_163128",
+      "config": {
+        "strategy": "tdx_resonance",
+        "max_positions": 3,
+        "position_pct": 0.3,
+        "stop_loss": -0.05,
+        "take_profit": 0.3,
+        "start": "2023-01-01",
+        "end": "2025-06-01"
+      },
+      "n_trades": 19,
+      "n_days": 119,
+      "equity_file": "equity_tdx_resonance_20260608_163128.csv",
+      "trades_file": "trades_tdx_resonance_20260608_163128.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx_resonance_20260608_163143",
+      "strategy": "tdx_resonance",
+      "timestamp": "20260608_163143",
+      "config": {
+        "strategy": "tdx_resonance",
+        "max_positions": 3,
+        "position_pct": 0.3,
+        "stop_loss": -0.05,
+        "take_profit": 0.3,
+        "start": "2023-01-01",
+        "end": "2025-06-01"
+      },
+      "n_trades": 18,
+      "n_days": 119,
+      "equity_file": "equity_tdx_resonance_20260608_163143.csv",
+      "trades_file": "trades_tdx_resonance_20260608_163143.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx_resonance_20260608_164201",
+      "strategy": "tdx_resonance",
+      "timestamp": "20260608_164201",
+      "config": {
+        "strategy": "tdx_resonance",
+        "max_positions": 3,
+        "position_pct": 0.3,
+        "stop_loss": -0.05,
+        "take_profit": 0.3,
+        "start": "2024-06-01",
+        "end": "2024-09-30"
+      },
+      "n_trades": 0,
+      "n_days": 17,
+      "equity_file": "equity_tdx_resonance_20260608_164201.csv",
+      "trades_file": "trades_tdx_resonance_20260608_164201.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx_resonance_20260608_164330",
+      "strategy": "tdx_resonance",
+      "timestamp": "20260608_164330",
+      "config": {
+        "strategy": "tdx_resonance",
+        "max_positions": 3,
+        "position_pct": 0.3,
+        "stop_loss": -0.05,
+        "take_profit": 0.3,
+        "start": "2024-01-01",
+        "end": "2025-06-01"
+      },
+      "n_trades": 10,
+      "n_days": 68,
+      "equity_file": "equity_tdx_resonance_20260608_164330.csv",
+      "trades_file": "trades_tdx_resonance_20260608_164330.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx_resonance_20260608_164853",
+      "strategy": "tdx_resonance",
+      "timestamp": "20260608_164853",
+      "config": {
+        "strategy": "tdx_resonance",
+        "max_positions": 3,
+        "position_pct": 0.3,
+        "stop_loss": -0.05,
+        "take_profit": 0.3,
+        "start": "2023-01-01",
+        "end": "2025-06-01"
+      },
+      "n_trades": 19,
+      "n_days": 119,
+      "equity_file": "equity_tdx_resonance_20260608_164853.csv",
+      "trades_file": "trades_tdx_resonance_20260608_164853.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx2_final_20260608_205915",
+      "strategy": "tdx2_final",
+      "timestamp": "20260608_205915",
+      "config": {
+        "strategy": "tdx2_final",
+        "max_positions": 3,
+        "position_pct": 0.3,
+        "stop_loss": -0.03,
+        "take_profit": 0.05,
+        "start": "2022-01-01",
+        "end": "2025-12-31"
+      },
+      "n_trades": 0,
+      "n_days": 0,
+      "equity_file": "equity_tdx2_final_20260608_205915.csv",
+      "trades_file": "trades_tdx2_final_20260608_205915.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx2_final_20260608_210211",
+      "strategy": "tdx2_final",
+      "timestamp": "20260608_210211",
+      "config": {
+        "strategy": "tdx2_final",
+        "max_positions": 3,
+        "position_pct": 0.3,
+        "stop_loss": -0.03,
+        "take_profit": 0.05,
+        "start": "2022-01-01",
+        "end": "2025-12-31"
+      },
+      "n_trades": 0,
+      "n_days": 0,
+      "equity_file": "equity_tdx2_final_20260608_210211.csv",
+      "trades_file": "trades_tdx2_final_20260608_210211.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx2_final_20260608_214420",
+      "strategy": "tdx2_final",
+      "timestamp": "20260608_214420",
+      "config": {
+        "strategy": "tdx2_final",
+        "max_positions": 3,
+        "position_pct": 0.3,
+        "stop_loss": -0.05,
+        "take_profit": 0.08,
+        "start": "2024-01-01",
+        "end": "2025-06-01"
+      },
+      "n_trades": 0,
+      "n_days": 0,
+      "equity_file": "equity_tdx2_final_20260608_214420.csv",
+      "trades_file": "trades_tdx2_final_20260608_214420.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx_resonance_20260608_214442",
+      "strategy": "tdx_resonance",
+      "timestamp": "20260608_214442",
+      "config": {
+        "strategy": "tdx_resonance",
+        "max_positions": 3,
+        "position_pct": 0.3,
+        "stop_loss": -0.05,
+        "take_profit": 0.1,
+        "start": "2023-01-01",
+        "end": "2025-06-01"
+      },
+      "n_trades": 18,
+      "n_days": 119,
+      "equity_file": "equity_tdx_resonance_20260608_214442.csv",
+      "trades_file": "trades_tdx_resonance_20260608_214442.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx_resonance_20260608_214558",
+      "strategy": "tdx_resonance",
+      "timestamp": "20260608_214558",
+      "config": {
+        "strategy": "tdx_resonance",
+        "max_positions": 3,
+        "position_pct": 0.3,
+        "stop_loss": -0.05,
+        "take_profit": 0.3,
+        "start": "2023-01-01",
+        "end": "2025-06-01"
+      },
+      "n_trades": 19,
+      "n_days": 119,
+      "equity_file": "equity_tdx_resonance_20260608_214558.csv",
+      "trades_file": "trades_tdx_resonance_20260608_214558.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx_resonance_20260609_073110",
+      "strategy": "tdx_resonance",
+      "timestamp": "20260609_073110",
+      "config": {
+        "strategy": "tdx_resonance",
+        "max_positions": 5,
+        "position_pct": 0.3,
+        "stop_loss": -0.05,
+        "take_profit": 0.3,
+        "start": "2022-01-01",
+        "end": "2025-06-30"
+      },
+      "n_trades": 41,
+      "n_days": 843,
+      "equity_file": "equity_tdx_resonance_20260609_073110.csv",
+      "trades_file": "trades_tdx_resonance_20260609_073110.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx_resonance_20260609_212557",
+      "strategy": "tdx_resonance",
+      "timestamp": "20260609_212557",
+      "config": {
+        "strategy": "tdx_resonance",
+        "max_positions": 3,
+        "position_pct": 0.3,
+        "stop_loss": -0.05,
+        "take_profit": 0.15,
+        "start": "2022-01-01",
+        "end": "2025-06-30"
+      },
+      "n_trades": 41,
+      "n_days": 843,
+      "equity_file": "equity_tdx_resonance_20260609_212557.csv",
+      "trades_file": "trades_tdx_resonance_20260609_212557.csv",
+      "cache_hash": "93ec7a2c7167"
+    },
+    {
+      "run_id": "tdx2_final_20260629_073040",
+      "strategy": "tdx2_final",
+      "timestamp": "20260629_073040",
+      "config": {
+        "strategy": "tdx2_final",
+        "max_positions": 3,
+        "position_pct": 0.3,
+        "stop_loss": -0.03,
+        "take_profit": 0.05,
+        "start": "2022-01-01",
+        "end": "2025-12-31"
+      },
+      "n_trades": 32,
+      "n_days": 198,
+      "equity_file": "equity_tdx2_final_20260629_073040.csv",
+      "trades_file": "trades_tdx2_final_20260629_073040.csv",
+      "cache_hash": "none"
+    }
+  ]
+}

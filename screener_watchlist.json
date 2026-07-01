@@ -1,0 +1,89 @@
+{
+  "stocks": [
+    {
+      "symbol": "sh113639",
+      "added_at": "2026-06-20T14:26:03.309693",
+      "reason": "选股器",
+      "status": "active"
+    },
+    {
+      "symbol": "sh118051",
+      "added_at": "2026-06-20T14:26:03.309693",
+      "reason": "选股器",
+      "status": "active"
+    },
+    {
+      "symbol": "sh113688",
+      "added_at": "2026-06-20T14:26:03.309693",
+      "reason": "选股器",
+      "status": "active"
+    },
+    {
+      "symbol": "sh113589",
+      "added_at": "2026-06-20T14:26:03.309693",
+      "reason": "选股器",
+      "status": "active"
+    },
+    {
+      "symbol": "sh113624",
+      "added_at": "2026-06-20T14:26:03.309693",
+      "reason": "选股器",
+      "status": "active"
+    },
+    {
+      "symbol": "sh118038",
+      "added_at": "2026-06-20T15:01:57.005289",
+      "reason": "智能选股",
+      "status": "active"
+    },
+    {
+      "symbol": "sh000001",
+      "added_at": "2026-06-20T16:15:15.420627",
+      "reason": "选股器",
+      "status": "active"
+    },
+    {
+      "symbol": "sh000159",
+      "added_at": "2026-06-20T16:28:30.679866",
+      "reason": "选股器",
+      "status": "active"
+    },
+    {
+      "symbol": "sh000011",
+      "added_at": "2026-06-20T16:28:40.191244",
+      "reason": "选股器",
+      "status": "active"
+    },
+    {
+      "symbol": "sh000002",
+      "added_at": "2026-06-20T16:54:48.420571",
+      "reason": "Top5",
+      "status": "active"
+    },
+    {
+      "symbol": "sh000690",
+      "added_at": "2026-06-20T16:54:48.420571",
+      "reason": "Top5",
+      "status": "active"
+    },
+    {
+      "symbol": "sh000683",
+      "added_at": "2026-06-20T16:54:48.420571",
+      "reason": "Top5",
+      "status": "active"
+    },
+    {
+      "symbol": "sh000688",
+      "added_at": "2026-06-20T16:54:48.420571",
+      "reason": "Top5",
+      "status": "active"
+    },
+    {
+      "symbol": "sh603588",
+      "added_at": "2026-06-29T16:14:51.673764",
+      "reason": "选股器",
+      "status": "active"
+    }
+  ],
+  "version": 1
+}

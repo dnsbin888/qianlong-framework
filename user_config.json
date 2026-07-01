@@ -1,0 +1,20 @@
+{
+  "_note": "用户配置 — 修改后30秒内自动生效, 无需重启",
+
+  "trading": {
+    "signal_min_strength": 3,
+    "max_positions": 5,
+    "max_daily_trades": 5,
+    "position_sizing": {"5": 0.10, "4": 0.08, "3": 0.06, "2": 0.04, "1": 0.02}
+  },
+
+  "factors": {
+    "use_v15_factors": true,
+    "v15_min_score": 40
+  },
+
+  "auto_trade": {
+    "sim_enabled": true,
+    "real_enabled": false
+  }
+}

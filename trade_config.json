@@ -1,0 +1,66 @@
+{
+  "version": "1.0",
+  "updated": "2026-06-28 03:31",
+  "description": "交易规则配置 — 单一事实源。引擎/paper/live 从此读取，不硬编码。",
+  "stop_loss": {
+    "hard": -0.055,
+    "soft": -0.03,
+    "sell_ratio": 1.0,
+    "description": "硬止损-5%清仓, 软止损-3%卖半"
+  },
+  "take_profit": {
+    "tp1": {
+      "profit_pct": 0.05,
+      "trail_pct": 0.01,
+      "sell_ratio": 0.33,
+      "stop_loss": -0.03
+    },
+    "tp2": {
+      "profit_pct": 0.07,
+      "trail_pct": 0.02,
+      "sell_ratio": 0.33,
+      "stop_loss": -0.05
+    },
+    "tp3": {
+      "profit_pct": 0.12,
+      "trail_pct": 0.03,
+      "sell_ratio": 0.33,
+      "stop_loss": -0.05
+    },
+    "description": "三级移动止盈: 盈利达阈值后, 从峰值回落触发部分卖出"
+  },
+  "circuit_breaker": {
+    "max_daily_loss_pct": -0.05,
+    "initial_capital": 1000000,
+    "description": "日亏损超阈值拒绝新买入"
+  },
+  "daily_limits": {
+    "max_trades": 4,
+    "max_daily_loss_pct": -0.05,
+    "max_consecutive_loss": 3,
+    "description": "日交易上限, 连续亏损停"
+  },
+  "position": {
+    "max_count": 5,
+    "single_pct": 0.3,
+    "hard_pct": 0.5,
+    "min_cash_reserve": 50000,
+    "max_hold_days": 3,
+    "description": "仓位管理规则"
+  },
+  "signal_filter": {
+    "min_strength": 3,
+    "vol_ratio_threshold": 1.2,
+    "chase_pct": 8.0,
+    "weak_pct": -5.0,
+    "description": "信号过滤规则"
+  },
+  "position_sizing": {
+    "5": 0.1,
+    "4": 0.08,
+    "3": 0.06,
+    "2": 0.04,
+    "1": 0.02,
+    "description": "信号强度→仓位比例"
+  }
+}

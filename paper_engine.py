@@ -230,11 +230,21 @@ class PaperAccount:
                 self._broker._cash = float(file_cash)
                 self._trades_archive = d.get("trade_log", [])
                 self.auto_enabled = d.get("auto_enabled", False)
-                # 兼容旧记录: 补全缺失的 date 字段
+                # 兼容旧记录: 补全缺失的 date 字段 + 去重
                 _today = datetime.now().strftime("%Y-%m-%d")
+                _seen = set()
+                _deduped = []
                 for _t in self._trades_archive:
                     if not _t.get("date"):
                         _t["date"] = _today
+                    _k = (_t.get("symbol",""), _t.get("side",""), _t.get("qty",0),
+                          _t.get("price",0), _t.get("time",""), _t.get("date",""))
+                    if _k not in _seen:
+                        _seen.add(_k)
+                        _deduped.append(_t)
+                if len(_deduped) < len(self._trades_archive):
+                    print(f"[Paper] 去重: 移除 {len(self._trades_archive)-len(_deduped)} 条重复记录")
+                    self._trades_archive = _deduped
                 # C18: 回补缺失的买入记录
                 self._repair_missing_buys()
                 # E259根治: 从 trade_log.csv 恢复缺失记录
@@ -531,7 +541,11 @@ class PaperAccount:
     _trade_lock = threading.Lock()  # 防多线程穿仓
 
     def place_order(self, symbol, side, price=None, qty=100, trade_type="manual", reason=""):
-        """下单 — P0-模拟-02: 全面强制 T+1 约束。"""
+        """下单 — P0-模拟-02: 全面强制 T+1 约束。
+
+        行业惯例: paper_engine 只负责执行，不负责去重。
+        去重应由上游信号引擎通过唯一 signal_id 保证。
+        """
         try:
             with self._trade_lock:  # 线程安全: 检查+扣除是原子操作
                 return self._place_order_locked(symbol, side, price, qty, trade_type, reason)

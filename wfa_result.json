@@ -1,0 +1,143 @@
+{
+  "stock": "600519",
+  "params": {
+    "n_folds": 4,
+    "train_days": 252,
+    "test_days": 63,
+    "train_ratio": 0.8,
+    "param_grid": {
+      "stop_loss": [
+        -0.03,
+        -0.05,
+        -0.07
+      ],
+      "take_profit": [
+        0.05,
+        0.08,
+        0.1
+      ]
+    },
+    "period": "2022-01-01 ~ 2025-06-01",
+    "pool_size": 50,
+    "elapsed_seconds": 49.5
+  },
+  "folds": [
+    {
+      "fold": 1,
+      "train_period": "2022-01-01 ~ 2022-09-07",
+      "test_period": "2022-09-07 ~ 2022-11-08",
+      "best_params": {
+        "stop_loss": -0.05,
+        "take_profit": 0.05
+      },
+      "train_sharpe": -7.72,
+      "train_return": -0.1738,
+      "train_max_dd": -0.1738,
+      "test_sharpe": 0,
+      "test_return": 0,
+      "test_max_dd": 0,
+      "test_n_trades": 0,
+      "test_win_rate": 0,
+      "sharpe_decay": 7.72,
+      "equity_train": [],
+      "equity_test": []
+    },
+    {
+      "fold": 2,
+      "train_period": "2022-11-08 ~ 2023-07-15",
+      "test_period": "2023-07-15 ~ 2023-09-16",
+      "best_params": {
+        "stop_loss": -0.07,
+        "take_profit": 0.05
+      },
+      "train_sharpe": -5.52,
+      "train_return": -0.0952,
+      "train_max_dd": -0.0952,
+      "test_sharpe": 6.0,
+      "test_return": 0.0002,
+      "test_max_dd": 0,
+      "test_n_trades": 1,
+      "test_win_rate": 1.0,
+      "sharpe_decay": 11.52,
+      "equity_train": [],
+      "equity_test": []
+    },
+    {
+      "fold": 3,
+      "train_period": "2023-09-16 ~ 2024-05-22",
+      "test_period": "2024-05-22 ~ 2024-07-24",
+      "best_params": {
+        "stop_loss": -0.05,
+        "take_profit": 0.05
+      },
+      "train_sharpe": -3.21,
+      "train_return": -0.094,
+      "train_max_dd": -0.1419,
+      "test_sharpe": 0,
+      "test_return": 0,
+      "test_max_dd": 0,
+      "test_n_trades": 0,
+      "test_win_rate": 0,
+      "sharpe_decay": 3.21,
+      "equity_train": [],
+      "equity_test": []
+    },
+    {
+      "fold": 4,
+      "train_period": "2024-07-24 ~ 2025-03-30",
+      "test_period": "2025-03-30 ~ 2025-06-01",
+      "best_params": {
+        "stop_loss": -0.07,
+        "take_profit": 0.05
+      },
+      "train_sharpe": -4.01,
+      "train_return": -0.1243,
+      "train_max_dd": -0.1578,
+      "test_sharpe": -6.43,
+      "test_return": -0.0339,
+      "test_max_dd": -0.0368,
+      "test_n_trades": 2,
+      "test_win_rate": 0.5,
+      "sharpe_decay": -2.42,
+      "equity_train": [],
+      "equity_test": []
+    }
+  ],
+  "summary": {
+    "n_folds": 4,
+    "avg_test_sharpe": -0.11,
+    "avg_test_return": -0.0084,
+    "avg_test_max_drawdown": -0.0092,
+    "avg_sharpe_decay": 5.01,
+    "param_stability": {
+      "stop_loss": {
+        "values_chosen": [
+          "-0.05",
+          "-0.07",
+          "-0.05",
+          "-0.07"
+        ],
+        "unique_count": 2,
+        "stability_score": 0.33
+      },
+      "take_profit": {
+        "values_chosen": [
+          "0.05",
+          "0.05",
+          "0.05",
+          "0.05"
+        ],
+        "unique_count": 1,
+        "stability_score": 0.67
+      },
+      "overall_grade": "一般",
+      "overall_score": 0.5
+    },
+    "conclusion": "警告: 参数不稳定或样本外Sharpe大幅衰减, 存在过拟合风险。建议重新审视策略逻辑。"
+  },
+  "config": {
+    "n_folds": 4,
+    "train_ratio": 0.8,
+    "total_period": "2022-01-01 ~ 2025-06-01"
+  }
+}

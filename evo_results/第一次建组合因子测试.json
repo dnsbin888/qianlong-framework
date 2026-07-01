@@ -1,0 +1,168 @@
+{
+  "strategy": "第一次建组合因子测试",
+  "best_params": {
+    "stop_loss": -0.017,
+    "take_profit": 0.07,
+    "hold_days": 6,
+    "sharpe": 3.28
+  },
+  "best_fitness": 3.282333979161555,
+  "ranges": {
+    "stop_loss": [
+      -0.045,
+      -0.015
+    ],
+    "take_profit": [
+      0.03,
+      0.075
+    ],
+    "hold_days": [
+      2,
+      8
+    ]
+  },
+  "history": [
+    {
+      "trial": 139,
+      "sharpe": 3.28,
+      "stop_loss": -0.017,
+      "take_profit": 0.07,
+      "hold_days": 6
+    },
+    {
+      "trial": 80,
+      "sharpe": 3.2,
+      "stop_loss": -0.015,
+      "take_profit": 0.07,
+      "hold_days": 7
+    },
+    {
+      "trial": 288,
+      "sharpe": 3.2,
+      "stop_loss": -0.015,
+      "take_profit": 0.07,
+      "hold_days": 7
+    },
+    {
+      "trial": 84,
+      "sharpe": 3.18,
+      "stop_loss": -0.019,
+      "take_profit": 0.07,
+      "hold_days": 6
+    },
+    {
+      "trial": 236,
+      "sharpe": 3.14,
+      "stop_loss": -0.016,
+      "take_profit": 0.07,
+      "hold_days": 7
+    },
+    {
+      "trial": 65,
+      "sharpe": 3.13,
+      "stop_loss": -0.02,
+      "take_profit": 0.07,
+      "hold_days": 6
+    },
+    {
+      "trial": 117,
+      "sharpe": 3.09,
+      "stop_loss": -0.021,
+      "take_profit": 0.07,
+      "hold_days": 6
+    },
+    {
+      "trial": 31,
+      "sharpe": 3.07,
+      "stop_loss": -0.017,
+      "take_profit": 0.07,
+      "hold_days": 7
+    },
+    {
+      "trial": 109,
+      "sharpe": 3.07,
+      "stop_loss": -0.017,
+      "take_profit": 0.07,
+      "hold_days": 7
+    },
+    {
+      "trial": 287,
+      "sharpe": 3.07,
+      "stop_loss": -0.017,
+      "take_profit": 0.07,
+      "hold_days": 7
+    },
+    {
+      "trial": 268,
+      "sharpe": 3.05,
+      "stop_loss": -0.017,
+      "take_profit": 0.05,
+      "hold_days": 6
+    },
+    {
+      "trial": 141,
+      "sharpe": 2.99,
+      "stop_loss": -0.021,
+      "take_profit": 0.06,
+      "hold_days": 6
+    },
+    {
+      "trial": 38,
+      "sharpe": 2.98,
+      "stop_loss": -0.018,
+      "take_profit": 0.05,
+      "hold_days": 6
+    },
+    {
+      "trial": 224,
+      "sharpe": 2.92,
+      "stop_loss": -0.019,
+      "take_profit": 0.05,
+      "hold_days": 6
+    },
+    {
+      "trial": 275,
+      "sharpe": 2.92,
+      "stop_loss": -0.016,
+      "take_profit": 0.05,
+      "hold_days": 7
+    },
+    {
+      "trial": 232,
+      "sharpe": 2.89,
+      "stop_loss": -0.023,
+      "take_profit": 0.06,
+      "hold_days": 6
+    },
+    {
+      "trial": 161,
+      "sharpe": 2.88,
+      "stop_loss": -0.019,
+      "take_profit": 0.06,
+      "hold_days": 7
+    },
+    {
+      "trial": 57,
+      "sharpe": 2.87,
+      "stop_loss": -0.016,
+      "take_profit": 0.04,
+      "hold_days": 6
+    },
+    {
+      "trial": 292,
+      "sharpe": 2.87,
+      "stop_loss": -0.016,
+      "take_profit": 0.04,
+      "hold_days": 6
+    },
+    {
+      "trial": 187,
+      "sharpe": 2.86,
+      "stop_loss": -0.02,
+      "take_profit": 0.05,
+      "hold_days": 6
+    }
+  ],
+  "generations": 300,
+  "overfit_warning": false
+}

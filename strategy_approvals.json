@@ -1,0 +1,221 @@
+{
+  "strategies": {
+    "S_mqrspsis": {
+      "state": "draft",
+      "state_entered_at": "2026-06-24T16:12:50.389448",
+      "history": [],
+      "performance": {}
+    },
+    "S_mqrsskpw": {
+      "state": "sim_running",
+      "state_entered_at": "2026-07-01T01:57:35.459256",
+      "history": [],
+      "performance": {}
+    },
+    "S_mqrtnj9v": {
+      "state": "sim_running",
+      "state_entered_at": "2026-06-24T16:39:04.720510",
+      "history": [],
+      "performance": {}
+    },
+    "S_mqrtogbc": {
+      "state": "sim_running",
+      "state_entered_at": "2026-06-24T16:39:47.545899",
+      "history": [],
+      "performance": {}
+    },
+    "S_mqrtrann": {
+      "state": "sim_running",
+      "state_entered_at": "2026-06-24T16:42:00.160555",
+      "history": [],
+      "performance": {}
+    },
+    "S_mqt6glr7": {
+      "state": "sim_running",
+      "state_entered_at": "2026-06-25T15:25:22.863865",
+      "history": [],
+      "performance": {}
+    },
+    "S_mqtfzl22": {
+      "state": "draft",
+      "state_entered_at": "2026-06-25T19:52:04.447243",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtijnzy": {
+      "state": "draft",
+      "state_entered_at": "2026-06-25T21:03:40.614088",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtikjg3": {
+      "state": "draft",
+      "state_entered_at": "2026-06-25T21:04:21.372710",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtimyxc": {
+      "state": "draft",
+      "state_entered_at": "2026-06-25T21:06:14.749743",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtitx47": {
+      "state": "draft",
+      "state_entered_at": "2026-06-25T21:11:39.194160",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtivhb9": {
+      "state": "draft",
+      "state_entered_at": "2026-06-25T21:12:51.825960",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtj1lky": {
+      "state": "draft",
+      "state_entered_at": "2026-06-25T21:17:37.296016",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtjk0ho": {
+      "state": "draft",
+      "state_entered_at": "2026-06-25T21:31:56.415613",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtjm4nx": {
+      "state": "draft",
+      "state_entered_at": "2026-06-25T21:33:35.146924",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtmb5dr": {
+      "state": "draft",
+      "state_entered_at": "2026-06-25T22:49:01.706584",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtmc1zf": {
+      "state": "draft",
+      "state_entered_at": "2026-06-25T22:49:43.960574",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtmenx1": {
+      "state": "draft",
+      "state_entered_at": "2026-06-25T22:51:45.803100",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtmhvz4": {
+      "state": "draft",
+      "state_entered_at": "2026-06-25T22:54:16.107178",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtolen5": {
+      "state": "draft",
+      "state_entered_at": "2026-06-25T23:52:59.499741",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtouerp": {
+      "state": "draft",
+      "state_entered_at": "2026-06-25T23:59:59.567740",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtov50o": {
+      "state": "draft",
+      "state_entered_at": "2026-06-26T00:00:33.701864",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtoxbij": {
+      "state": "draft",
+      "state_entered_at": "2026-06-26T00:02:15.327405",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtoyspp": {
+      "state": "draft",
+      "state_entered_at": "2026-06-26T00:03:24.267429",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtp168j": {
+      "state": "draft",
+      "state_entered_at": "2026-06-26T00:05:15.103496",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtpdz64": {
+      "state": "draft",
+      "state_entered_at": "2026-06-26T00:15:12.474551",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtpejup": {
+      "state": "draft",
+      "state_entered_at": "2026-06-26T00:15:39.279244",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtpzv7b": {
+      "state": "draft",
+      "state_entered_at": "2026-06-26T00:32:13.765004",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqtqol52": {
+      "state": "draft",
+      "state_entered_at": "2026-06-26T00:51:27.387486",
+      "history": [],
+      "performance": {}
+    },
+    "S_mqudur2l": {
+      "state": "draft",
+      "state_entered_at": "2026-06-26T11:40:05.929574",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqudwbm1": {
+      "state": "draft",
+      "state_entered_at": "2026-06-26T11:41:19.315495",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mqudxix2": {
+      "state": "draft",
+      "state_entered_at": "2026-06-26T11:42:15.314395",
+      "history": [],
+      "performance": {}
+    },
+    "S_outer_mque3y6c": {
+      "state": "draft",
+      "state_entered_at": "2026-06-26T11:47:15.034727",
+      "history": [],
+      "performance": {}
+    },
+    "": {
+      "state": "draft",
+      "state_entered_at": "2026-06-28T07:33:08.885088",
+      "history": [],
+      "performance": {}
+    },
+    "AI单因子测试": {
+      "state": "draft",
+      "state_entered_at": "2026-07-01T01:31:36.687798",
+      "history": [],
+      "performance": {}
+    },
+    "第一次建组合因子测试": {
+      "state": "sim_running",
+      "state_entered_at": "2026-07-01T01:48:11.333929",
+      "history": [],
+      "performance": {}
+    }
+  },
+  "last_updated": "2026-07-01T01:48:11.325929"
+}

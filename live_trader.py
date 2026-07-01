@@ -1293,7 +1293,7 @@ class AutoTradeEngine:
                     auto_engine._confirm_pool = _CONFIRM_POOL
                 else:
                     print(f"[AutoTrade] 确认线程池满，跳过{sym}确认")
-            # C14: 卖出后更新连续亏损追踪（已移出buy块，原位置在buy块内永远不执行）
+            # 卖出后更新连续亏损追踪
             if act["type"] == "sell":
                 pnl = act.get("profit_pct", 0)
                 if pnl < 0: self.consecutive_losses += 1
@@ -1570,8 +1570,28 @@ def get_trading_status():
             _qmt_asset = qmt_trader.get_asset()
         except Exception:
             pass
+    # 计算实际单票最大仓位 (持仓市值/总资产)
+    _max_single_actual = 0
+    _max_single_sym = ""
+    _all_positions = _qmt_positions if _qmt_positions else state.positions
+    _total_eq = _qmt_asset.get("total_asset", 0) if _qmt_asset else sum(
+        p.get("market_value", 0) for p in _all_positions)
+    if _total_eq > 0:
+        for _p in _all_positions:
+            _mv = _p.get("market_value", 0)
+            _pct = round(_mv / _total_eq * 100, 1)
+            if _pct > _max_single_actual:
+                _max_single_actual = _pct
+                _max_single_sym = _p.get("symbol", "")
+    # 连续亏损次数 (从自动交易引擎)
+    _cons_loss = getattr(auto_engine, 'consecutive_losses', 0)
+    # 合并到 risk 对象
+    state.risk["max_single_pct"] = _max_single_actual
+    state.risk["max_single_sym"] = _max_single_sym
+    state.risk["consecutive_losses"] = _cons_loss
+
     return {
-        "positions": _qmt_positions if _qmt_positions else state.positions,
+        "positions": _all_positions,
         "orders": state.orders[-20:],
         "fills": state.fills[-20:],
         "pnl": state.pnl,

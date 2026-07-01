@@ -1,0 +1,172 @@
+{
+  "heatmap": {
+    "x": [
+      "止盈5%",
+      "止盈8%",
+      "止盈10%",
+      "止盈15%"
+    ],
+    "y": [
+      "止损3%",
+      "止损5%",
+      "止损7%",
+      "止损10%"
+    ],
+    "z": [
+      [
+        -0.78,
+        -0.79,
+        -0.92,
+        -1.03
+      ],
+      [
+        -0.76,
+        -0.77,
+        -0.89,
+        -0.99
+      ],
+      [
+        -0.81,
+        -0.82,
+        -0.94,
+        -1.03
+      ],
+      [
+        -0.75,
+        -0.75,
+        -0.88,
+        -0.97
+      ]
+    ]
+  },
+  "results": [
+    {
+      "stop_loss": -0.03,
+      "take_profit": 0.05,
+      "sharpe": -0.78,
+      "total_return": -0.1658,
+      "n_trades": 33
+    },
+    {
+      "stop_loss": -0.03,
+      "take_profit": 0.08,
+      "sharpe": -0.79,
+      "total_return": -0.1694,
+      "n_trades": 33
+    },
+    {
+      "stop_loss": -0.03,
+      "take_profit": 0.1,
+      "sharpe": -0.92,
+      "total_return": -0.1968,
+      "n_trades": 33
+    },
+    {
+      "stop_loss": -0.03,
+      "take_profit": 0.15,
+      "sharpe": -1.03,
+      "total_return": -0.2188,
+      "n_trades": 34
+    },
+    {
+      "stop_loss": -0.05,
+      "take_profit": 0.05,
+      "sharpe": -0.76,
+      "total_return": -0.17,
+      "n_trades": 33
+    },
+    {
+      "stop_loss": -0.05,
+      "take_profit": 0.08,
+      "sharpe": -0.77,
+      "total_return": -0.173,
+      "n_trades": 33
+    },
+    {
+      "stop_loss": -0.05,
+      "take_profit": 0.1,
+      "sharpe": -0.89,
+      "total_return": -0.2004,
+      "n_trades": 33
+    },
+    {
+      "stop_loss": -0.05,
+      "take_profit": 0.15,
+      "sharpe": -0.99,
+      "total_return": -0.2193,
+      "n_trades": 34
+    },
+    {
+      "stop_loss": -0.07,
+      "take_profit": 0.05,
+      "sharpe": -0.81,
+      "total_return": -0.1788,
+      "n_trades": 33
+    },
+    {
+      "stop_loss": -0.07,
+      "take_profit": 0.08,
+      "sharpe": -0.82,
+      "total_return": -0.1816,
+      "n_trades": 33
+    },
+    {
+      "stop_loss": -0.07,
+      "take_profit": 0.1,
+      "sharpe": -0.94,
+      "total_return": -0.2097,
+      "n_trades": 33
+    },
+    {
+      "stop_loss": -0.07,
+      "take_profit": 0.15,
+      "sharpe": -1.03,
+      "total_return": -0.2278,
+      "n_trades": 34
+    },
+    {
+      "stop_loss": -0.1,
+      "take_profit": 0.05,
+      "sharpe": -0.75,
+      "total_return": -0.1691,
+      "n_trades": 33
+    },
+    {
+      "stop_loss": -0.1,
+      "take_profit": 0.08,
+      "sharpe": -0.75,
+      "total_return": -0.1727,
+      "n_trades": 33
+    },
+    {
+      "stop_loss": -0.1,
+      "take_profit": 0.1,
+      "sharpe": -0.88,
+      "total_return": -0.2004,
+      "n_trades": 33
+    },
+    {
+      "stop_loss": -0.1,
+      "take_profit": 0.15,
+      "sharpe": -0.97,
+      "total_return": -0.2188,
+      "n_trades": 34
+    }
+  ],
+  "params": {
+    "stop_losses": [
+      -0.03,
+      -0.05,
+      -0.07,
+      -0.1
+    ],
+    "take_profits": [
+      0.05,
+      0.08,
+      0.1,
+      0.15
+    ],
+    "stocks": 200,
+    "period": "2023-01-01~2025-06-30"
+  }
+}
