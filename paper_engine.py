@@ -230,6 +230,11 @@ class PaperAccount:
                 self._broker._cash = float(file_cash)
                 self._trades_archive = d.get("trade_log", [])
                 self.auto_enabled = d.get("auto_enabled", False)
+                # 兼容旧记录: 补全缺失的 date 字段
+                _today = datetime.now().strftime("%Y-%m-%d")
+                for _t in self._trades_archive:
+                    if not _t.get("date"):
+                        _t["date"] = _today
                 # C18: 回补缺失的买入记录
                 self._repair_missing_buys()
                 # E259根治: 从 trade_log.csv 恢复缺失记录
