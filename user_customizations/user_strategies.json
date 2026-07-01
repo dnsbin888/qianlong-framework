@@ -246,6 +246,26 @@
         "stability": "🔴 波动大",
         "method": "60天全区间"
       }
+    },
+    {
+      "name": "九因子统一策略V1",
+      "display_name": "九因子统一策略V1",
+      "type": "builder",
+      "factors": [
+        {"name": "defensive_v2",   "threshold": 40, "weight": 126},
+        {"name": "growth_proxy",   "threshold": 40, "weight": 167},
+        {"name": "qmt_composite",  "threshold": 40, "weight": 117},
+        {"name": "chase_v2",       "threshold": 40, "weight": 98},
+        {"name": "momentum_score", "threshold": 40, "weight": 98},
+        {"name": "trend_score",    "threshold": 40, "weight": 91},
+        {"name": "chip_v2",        "threshold": 30, "weight": 71},
+        {"name": "bull_line",      "threshold": 30, "weight": 29}
+      ],
+      "trigger": {"type": "weighted_sum", "min_score": 60},
+      "hold_days": 5,
+      "status": "sim",
+      "created_at": "2026-07-01 23:15",
+      "note": "9因子统一,120d IC加权, growth做空对冲, 风控从主配置读取"
     }
   ]
 }

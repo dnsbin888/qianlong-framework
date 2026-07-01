@@ -111,10 +111,13 @@ def run_backtest(name: str, days: int = 90, sample: int = 300, walk_forward: boo
     except Exception as e:
         return {"success": False, "message": f"数据加载失败: {e}"}
 
-    all_syms = sorted(stock_data.keys())  # 排序保证采样稳定
-    import random as _rnd; _rnd.seed(42)  # 固定种子——回测结果可复现
-    first_df = next(iter(stock_data.values()))
-    all_dates = sorted(set(str(ts)[:10] for ts in first_df.index))[-days:]
+    all_syms = sorted(stock_data.keys())
+    import random as _rnd; _rnd.seed(42)
+    best_df = max(stock_data.values(), key=lambda df: len(df) if isinstance(df, pd.DataFrame) else 0)
+    all_dates = sorted(set(str(ts)[:10] for ts in best_df.index))[-days:]
+    print(f"[BT] stocks={len(stock_data)}, all_syms={len(all_syms)}, dates={len(all_dates)}, sample={sample}")
+    if len(all_dates) < 30:
+        return {"success": False, "message": f"交易日不足 ({len(all_dates)}天), 请检查数据"}
 
     def _evaluate_window(date_list, trigger_min):
         """在一个日期列表上评估策略，返回日收益序列。"""
@@ -127,25 +130,37 @@ def run_backtest(name: str, days: int = 90, sample: int = 300, walk_forward: boo
                     except KeyError: continue
                 if len(pool) >= sample: break
             if len(pool) < 30: continue
-            scores = []
+            scores = []; checked = 0; passed = 0
             for sym in pool:
                 df = stock_data[sym]
                 try: idx = df.index.get_loc(pd.Timestamp(date_str))
                 except KeyError: continue
-                if idx < 60: continue
+                if idx < 20: continue
                 past = df.iloc[max(0,idx-60):idx+1]
                 if len(past) < 20: continue
-                total_score = 0; all_pass = True
+                total_score = 0; total_weight = 0; valid_count = 0
                 for fc in factors_cfg:
                     fn = compute_fns.get(fc["name"])
-                    if not fn: all_pass = False; break
+                    if not fn: continue
                     val = fn(past)
-                    if val is None or val < fc.get("threshold", 0): all_pass = False; break
-                    total_score += val * fc.get("weight", 1.0)
-                if not all_pass or total_score < trigger_min: continue
+                    if val is None: continue
+                    w = fc.get("weight", 1.0)
+                    total_weight += w
+                    total_score += val * w
+                    valid_count += 1
+                checked += 1
+                if valid_count < 2: continue
+                if total_weight > 0:
+                    total_score = total_score / total_weight
+                if total_score < trigger_min: continue
                 if idx + 5 >= len(df): continue
                 fwd = (float(df.iloc[idx+5]["close"]) - float(df.iloc[idx]["close"])) / max(float(df.iloc[idx]["close"]), 0.01)
                 scores.append(fwd)
+                if idx + 5 >= len(df): continue
+                fwd = (float(df.iloc[idx+5]["close"]) - float(df.iloc[idx]["close"])) / max(float(df.iloc[idx]["close"]), 0.01)
+                scores.append(fwd); passed += 1
+            checked += 1
+            if di == 0: print(f"[BT] date={date_str} pool={len(pool)} checked={checked} passed={passed}")
             if scores: daily.append(float(np.mean(scores)))
         return daily
 

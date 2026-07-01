@@ -21,17 +21,17 @@ CONF = {
     "fallback2": r"D:\quant_web\stock_data.pkl",
     "output": r"D:\quant_framework\full_market_ic_report.json",
     "sample": 500,
-    "days": 90,
-    "ic_days": 90,  # P7-5: IC专用加载天数 (Web用60天, IC用90天)
+    "days": 120,
+    "ic_days": 120,
     "windows": [1, 3, 5, 7, 10, 12, 15, 20],
-    "min_days": 20,  # 修复: 60天窗口只有33个交易日, 原60导致全部跳过
+    "min_days": 30
 }
 
 
 def load_data(keep_days: int = None) -> dict[str, pd.DataFrame]:
     # P7-5: IC脚本独立加载更多数据 (Web 60天, IC 90天)
     if keep_days is None:
-        keep_days = getattr(CONF, 'ic_days', 90)
+        keep_days = CONF.get('ic_days', 120)
     sys.path.insert(0, r"D:\quant_web")
     from data_loader import load_stock_data_cache
     p = CONF["stock_data"]
@@ -87,6 +87,39 @@ def _factor_low(df: pd.DataFrame) -> float | None:
 
     # 简单评分: 跌幅越大分越高
     return round(abs(chg5) * 100, 1)
+
+
+# ═══ P0: 代理基本面因子 (price-only value/quality) ═══
+
+def _factor_value_proxy(df: pd.DataFrame) -> float | None:
+    """估值代理: 价格距200日高点的折扣率 (折扣越大=越便宜=得分越高)"""
+    if len(df) < 60: return None
+    c = df["close"].values
+    if c[-1] <= 0: return None
+    high200 = np.max(c[-60:]) if len(c) >= 60 else np.max(c)
+    discount = (high200 - c[-1]) / max(high200, 0.01)
+    return round(min(100, max(0, discount * 200 + 30)), 1)
+
+def _factor_quality_proxy(df: pd.DataFrame) -> float | None:
+    """质量代理: 60日风险调整收益 (收益/波动=越高越好)"""
+    if len(df) < 60: return None
+    c = df["close"].values
+    if c[-1] <= 0: return None
+    ret_60d = (c[-1] - c[-60]) / max(c[-60], 0.01) if len(c) >= 60 else 0
+    daily_rets = np.diff(c[-61:]) / np.maximum(np.abs(c[-61:-1]), 0.01) if len(c) >= 61 else [0]
+    vol_60d = float(np.std(daily_rets) * np.sqrt(252)) if len(daily_rets) >= 20 else 0.02
+    quality = ret_60d / max(vol_60d, 0.01)
+    return round(min(100, max(0, quality * 30 + 50)), 1)
+
+def _factor_growth_proxy(df: pd.DataFrame) -> float | None:
+    """成长代理: 近5日相对近20日的动量加速度 (加速上涨=高成长)"""
+    if len(df) < 20: return None
+    c = df["close"].values
+    if c[-1] <= 0: return None
+    mom5 = (c[-1] - c[-6]) / max(c[-6], 0.01) if len(c) >= 6 else 0
+    mom20 = (c[-1] - c[-21]) / max(c[-21], 0.01) if len(c) >= 21 else 0
+    accel = mom5 - mom20  # 正=加速上涨, 负=减速
+    return round(min(100, max(0, accel * 300 + 50)), 1)
 
 
 # ═══ 旧体系对照因子 (全市场重新计算) ═══
@@ -274,11 +307,10 @@ def _spearman_ic(x: np.ndarray, y: np.ndarray) -> float:
 
 def scan_dates(data: dict[str, pd.DataFrame], days: int) -> list[str]:
     """找出最近N个有足够覆盖的交易日。"""
-    # 取第一只股票的最后 days*2 个日期作为候选
-    first_df = next(iter(data.values()))
-    if not isinstance(first_df, pd.DataFrame):
-        return []
-    all_dates = sorted(set(str(ts)[:10] for ts in first_df.index))
+    # 取日期最多的股票 (非第一个, 可能稀疏)
+    best = max(data.values(), key=lambda df: len(df) if isinstance(df, pd.DataFrame) else 0)
+    if not isinstance(best, pd.DataFrame): return []
+    all_dates = sorted(set(str(ts)[:10] for ts in best.index))
     return all_dates[-days:] if len(all_dates) >= days else all_dates
 
 
