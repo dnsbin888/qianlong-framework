@@ -30,7 +30,7 @@
   "qoQty": "100",
   "aiKey": "sk-57879209a1ee43a4ac1c9e9b7f4248dd",
   "aiModel": "deepseek",
-  "auto_trade_enabled": true,
+  "auto_trade_enabled": false,
   "live_total_asset": 100000,
   "live_cash": 100000,
   "trading_channel": "qmt",

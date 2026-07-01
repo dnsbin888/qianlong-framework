@@ -664,10 +664,13 @@ class PaperAccount:
             if not pos.get("_verified", False):
                 return {"success": False, "error": "无源持仓不可卖出("+sym+")，请先买入或手动重置"}
             buy_date = pos.get("buy_date", "")
-            if buy_date == today:
+            # T+1: 检查仓位日期 + 同期买入记录(防累积仓位绕过)
+            has_today_buy = any(t.get("side")=="buy" and t.get("symbol")==sym and t.get("date")==today
+                              for t in self._trades_archive[-50:])
+            if buy_date == today or has_today_buy:
                 return {
                     "success": False,
-                    "error": f"T+1锁定：今日买入的股票今日不可卖出 ({sym})",
+                    "error": f"T+1锁定：今日有买入记录, 不可卖出 ({sym})",
                 }
 
             if price is None or price <= 0:
@@ -883,6 +886,30 @@ class PaperAccount:
             "win_rate": round(wr, 1) if wr is not None else 0, "sharpe": sharpe,
             "max_drawdown": max_dd, "calmar": calmar,
             "positions": positions,
+            # P0修复: 每次状态查询写入当日权益 (前端日盈亏数据源)
+            try:
+                eq_file = r"D:\quant_framework\equity_log.json"
+                eq_data = {"log": []}
+                if os.path.exists(eq_file):
+                    with open(eq_file, "r", encoding="utf-8") as _f:
+                        eq_data = json.load(_f)
+                today_str = datetime.now().strftime("%Y-%m-%d")
+                eq_log = eq_data.get("log", [])
+                current_eq = round(self.get_total_equity(quotes), 2)
+                # 覆盖今日记录 (不累积重复日期)
+                found = False
+                for i, e in enumerate(eq_log):
+                    if e[0] == today_str:
+                        eq_log[i] = [today_str, current_eq]
+                        found = True; break
+                if not found:
+                    eq_log.append([today_str, current_eq])
+                eq_data["log"] = eq_log[-90:]
+                eq_data["updated"] = datetime.now().isoformat()
+                with open(eq_file, "w", encoding="utf-8") as _f:
+                    json.dump(eq_data, _f, ensure_ascii=False)
+            except Exception: pass
+
             "trade_log": self._trades_archive[-30:],
             "auto_enabled": self.auto_enabled,
             "position_count": len(positions),
@@ -931,7 +958,7 @@ class PaperAccount:
 
         # ── 构建上下文 ──
         context = {
-            "daily_trade_count": getattr(self, '_daily_buy_count', 0),  # 买入上限只计买入，卖出不受限
+            "daily_trade_count": self._daily_trade_count,  # 买入+卖出总数
             "daily_loss_total": total_daily_loss,  # 含未实现亏损
             "cash": self.cash,
             "config": cfg,
