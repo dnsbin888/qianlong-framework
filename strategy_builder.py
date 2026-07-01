@@ -149,6 +149,16 @@ def run_backtest(name: str, days: int = 90, sample: int = 300, walk_forward: boo
             if scores: daily.append(float(np.mean(scores)))
         return daily
 
+    # Phase 6c: 并行窗口评估
+    def _evaluate_windows_parallel(date_chunks, trigger_min_val, max_workers=3):
+        """使用进程池并行评估多个窗口"""
+        from concurrent.futures import ProcessPoolExecutor
+        # 打包参数: (窗口日期, 触发阈值)
+        tasks = [(chunk, trigger_min_val) for chunk in date_chunks]
+        with ProcessPoolExecutor(max_workers=min(len(tasks), max_workers)) as pool:
+            futures = [pool.submit(_evaluate_window, t[0], t[1]) for t in tasks]
+            return [f.result() for f in futures]
+
     trigger_min = strategy.get("trigger", {}).get("min_score", 60)
 
     if walk_forward:
@@ -160,16 +170,32 @@ def run_backtest(name: str, days: int = 90, sample: int = 300, walk_forward: boo
 
     if walk_forward:
         oos_returns = []
-        for w in range(3):
-            train_end = (w + 1) * w_size
-            test_start = train_end
-            test_end = min(test_start + w_size // 2, n)
-            if test_end <= test_start: continue
-            # 训练段 (不参与最终Sharpe, 仅验证)
-            _evaluate_window(all_dates[:train_end], trigger_min)
-            # 测试段 (样本外)
-            test_rets = _evaluate_window(all_dates[test_start:test_end], trigger_min)
-            oos_returns.extend(test_rets)
+        # Phase 6c: 并行执行3个窗口
+        try:
+            test_chunks = []
+            for w in range(3):
+                train_end = (w + 1) * w_size
+                test_start = train_end
+                test_end = min(test_start + w_size // 2, n)
+                if test_end <= test_start: continue
+                # 训练段 (先串行预热, 确保数据加载)
+                _evaluate_window(all_dates[:train_end], trigger_min)
+                test_chunks.append(all_dates[test_start:test_end])
+            if len(test_chunks) >= 2:
+                results = _evaluate_windows_parallel(test_chunks, trigger_min)
+                for r in results: oos_returns.extend(r)
+            else:
+                for chunk in test_chunks:
+                    oos_returns.extend(_evaluate_window(chunk, trigger_min))
+        except Exception as _pe:
+            print(f"[StrategyBuilder] 并行回退到串行: {_pe}")
+            for w in range(3):
+                train_end = (w + 1) * w_size
+                test_start = train_end
+                test_end = min(test_start + w_size // 2, n)
+                if test_end <= test_start: continue
+                _evaluate_window(all_dates[:train_end], trigger_min)
+                oos_returns.extend(_evaluate_window(all_dates[test_start:test_end], trigger_min))
 
         if len(oos_returns) < 10:
             walk_forward = False  # 降级到全区间
