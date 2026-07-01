@@ -170,25 +170,24 @@ try:
 except ImportError:
     print("[Trader] EventBus 不可用, 配置同步仅文件模式")
 
-# P0-B: 策略构建器参数覆盖 (最高优先级)
+# P7-1: 多策略参数独立 — 不再覆盖, 按策略名存储
+STRATEGY_PARAMS = {}  # {strategy_name: {stop_loss, take_profit, hold_days, min_score}}
 try:
     import os as _os6
     sp = r"D:\quant_framework\user_customizations\user_strategies.json"
     if _os6.path.exists(sp):
         strategies = json.load(open(sp, "r", encoding="utf-8")).get("strategies", [])
-        active = [s for s in strategies if s.get("status") == "real" and s.get("type") == "builder"]
-        if active:
-            s = active[0]
-            tp = s.get("take_profit", [0.05, 0.07, 0.10])
-            CONFIG["tp1_stop_loss"] = s.get("stop_loss", CONFIG["tp1_stop_loss"])
-            CONFIG["tp2_stop_loss"] = s.get("stop_loss", CONFIG["tp2_stop_loss"])
-            CONFIG["tp3_stop_loss"] = s.get("stop_loss", CONFIG["tp3_stop_loss"])
-            CONFIG["tp1_profit_pct"] = tp[0] if len(tp)>0 else CONFIG["tp1_profit_pct"]
-            CONFIG["tp2_profit_pct"] = tp[1] if len(tp)>1 else CONFIG["tp2_profit_pct"]
-            CONFIG["tp3_profit_pct"] = tp[2] if len(tp)>2 else CONFIG["tp3_profit_pct"]
-            CONFIG["max_hold_days"] = s.get("hold_days", CONFIG["max_hold_days"])
-            CONFIG["signal_min_strength"] = s.get("trigger", {}).get("min_score", CONFIG.get("signal_min_strength", 3))
-            print(f"[Trader] 策略参数已应用: {s['name']} stop={CONFIG['tp1_stop_loss']} tp={tp}")
+        for s in strategies:
+            if s.get("status") in ("real", "sim", "sim_running") and s.get("type") == "builder":
+                tp = s.get("take_profit", [0.05, 0.07, 0.10])
+                STRATEGY_PARAMS[s["name"]] = {
+                    "stop_loss": s.get("stop_loss", -0.03),
+                    "take_profit": tp,
+                    "hold_days": s.get("hold_days", 3),
+                    "min_score": s.get("trigger", {}).get("min_score", 60),
+                }
+        if STRATEGY_PARAMS:
+            print(f"[Trader] 加载 {len(STRATEGY_PARAMS)} 个策略参数: {list(STRATEGY_PARAMS.keys())}")
 except Exception as _e:
     print(f"[Trader] 策略参数加载失败: {_e}")
 
@@ -1418,7 +1417,7 @@ def start_auto_sync():
         except Exception as _e:
             print(f"[Trader] 日亏损计算失败: {_e}")
             state.risk["daily_loss"] = 0
-        # Plan I: 每日权益记录
+        # P7-2: 实盘权益记录 — 用配置值+当日已实现盈亏
         try:
             eq_file = r"D:\quant_framework\live_equity_log.json"
             eq_log = {}
@@ -1426,13 +1425,12 @@ def start_auto_sync():
                 eq_log = json.load(open(eq_file, "r", encoding="utf-8"))
             today = now.strftime("%Y-%m-%d")
             if today not in {e[0] for e in eq_log.get("log", [])}:
-                total_eq = CONFIG.get("live_cash", 0)
-                try:
-                    for p in state.positions:
-                        total_eq += float(p.get("market_value", 0) or 0)
-                except: pass
+                # 基准权益 = 配置值 (非QMT全账户)
+                total_eq = CONFIG.get("live_total_asset", 0)
+                if not total_eq or total_eq <= 0:
+                    total_eq = CONFIG.get("live_cash", 0)
                 if total_eq > 0:
-                    eq_log.setdefault("log", []).append([today, total_eq])
+                    eq_log.setdefault("log", []).append([today, round(float(total_eq), 2)])
                     eq_log["updated"] = now.isoformat()
                     json.dump(eq_log, open(eq_file, "w", encoding="utf-8"), ensure_ascii=False)
         except Exception: pass

@@ -21,25 +21,29 @@ CONF = {
     "fallback2": r"D:\quant_web\stock_data.pkl",
     "output": r"D:\quant_framework\full_market_ic_report.json",
     "sample": 500,
-    "days": 60,
+    "days": 90,
+    "ic_days": 90,  # P7-5: IC专用加载天数 (Web用60天, IC用90天)
     "windows": [1, 3, 5, 7, 10, 12, 15, 20],
     "min_days": 20,  # 修复: 60天窗口只有33个交易日, 原60导致全部跳过
 }
 
 
-def load_data() -> dict[str, pd.DataFrame]:
-    # P0-2: 统一入口 (parquet > gzip > pickle)
+def load_data(keep_days: int = None) -> dict[str, pd.DataFrame]:
+    # P7-5: IC脚本独立加载更多数据 (Web 60天, IC 90天)
+    if keep_days is None:
+        keep_days = getattr(CONF, 'ic_days', 90)
     sys.path.insert(0, r"D:\quant_web")
-    from data_loader import load_stock_data_from_cache
-    sd = load_stock_data_from_cache()
-    if not sd:
-        for p in [CONF["stock_data"], CONF["fallback"], CONF["fallback2"]]:
-            if os.path.exists(p):
-                print(f"[V1-5] 加载 {p}")
-    # 过滤: 只保留A股 (排除指数 sh000/sz399 等)
+    from data_loader import load_stock_data_cache
+    p = CONF["stock_data"]
+    if not os.path.exists(p):
+        p = CONF.get("fallback", "") or CONF.get("fallback2", "")
+    if os.path.exists(p):
+        sd = load_stock_data_cache(p, keep_days=keep_days)
+    else:
+        sd = None
     if sd:
         sd = {k: v for k, v in sd.items() if not k.startswith(('sh000','sz399','bj'))}
-        print(f"[V1-5] 过滤指数后: {len(sd)}只A股")
+        print(f"[V1-5] 过滤指数后: {len(sd)}只A股 ({keep_days}天)")
     return sd
 
 

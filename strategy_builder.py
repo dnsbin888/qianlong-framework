@@ -162,11 +162,14 @@ def run_backtest(name: str, days: int = 90, sample: int = 300, walk_forward: boo
     trigger_min = strategy.get("trigger", {}).get("min_score", 60)
 
     if walk_forward:
-        # Walk-Forward: 切3个窗口, 每窗口前2/3训练→后1/3测试
+        # P8-2: Purged Walk-Forward (Prado标准: 训练-测试间embargo)
         n = len(all_dates)
         w_size = n // 3
+        purge = max(5, w_size // 20) if n >= 90 else 0  # 数据足够才purge
         if w_size < 30:
             walk_forward = False  # 降级
+        if purge > 0:
+            print(f"[StrategyBuilder] Purged WF: {n}d → 3窗×{w_size}d, purge={purge}d")
 
     if walk_forward:
         oos_returns = []
@@ -174,12 +177,12 @@ def run_backtest(name: str, days: int = 90, sample: int = 300, walk_forward: boo
         try:
             test_chunks = []
             for w in range(3):
-                train_end = (w + 1) * w_size
-                test_start = train_end
+                train_end = (w + 1) * w_size - purge
+                test_start = train_end + purge
                 test_end = min(test_start + w_size // 2, n)
                 if test_end <= test_start: continue
                 # 训练段 (先串行预热, 确保数据加载)
-                _evaluate_window(all_dates[:train_end], trigger_min)
+                _evaluate_window(all_dates[:max(1,train_end)], trigger_min)
                 test_chunks.append(all_dates[test_start:test_end])
             if len(test_chunks) >= 2:
                 results = _evaluate_windows_parallel(test_chunks, trigger_min)
@@ -190,11 +193,11 @@ def run_backtest(name: str, days: int = 90, sample: int = 300, walk_forward: boo
         except Exception as _pe:
             print(f"[StrategyBuilder] 并行回退到串行: {_pe}")
             for w in range(3):
-                train_end = (w + 1) * w_size
-                test_start = train_end
+                train_end = (w + 1) * w_size - purge
+                test_start = train_end + purge
                 test_end = min(test_start + w_size // 2, n)
                 if test_end <= test_start: continue
-                _evaluate_window(all_dates[:train_end], trigger_min)
+                _evaluate_window(all_dates[:max(1,train_end)], trigger_min)
                 oos_returns.extend(_evaluate_window(all_dates[test_start:test_end], trigger_min))
 
         if len(oos_returns) < 10:
