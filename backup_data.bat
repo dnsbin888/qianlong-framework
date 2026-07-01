@@ -10,6 +10,7 @@ copy D:\quant_framework\equity_log.json %B%\ >nul
 copy D:\quant_framework\live_equity_log.json %B%\ >nul
 copy D:\quant_framework\live_positions_track.json %B%\ >nul
 copy D:\quant_framework\live_trader_config.json %B%\ >nul
+copy D:\quant_framework\trade_config_master.json %B%\ >nul
 copy D:\quant_framework\blacklist.json %B%\ >nul
 copy D:\quant_framework\factor_registry.json %B%\ >nul
 copy D:\quant_framework\config\default.yaml %B%\ >nul

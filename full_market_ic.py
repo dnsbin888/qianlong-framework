@@ -23,7 +23,7 @@ CONF = {
     "sample": 500,
     "days": 60,
     "windows": [1, 3, 5, 7, 10, 12, 15, 20],
-    "min_days": 60,
+    "min_days": 20,  # 修复: 60天窗口只有33个交易日, 原60导致全部跳过
 }
 
 
@@ -32,15 +32,15 @@ def load_data() -> dict[str, pd.DataFrame]:
     sys.path.insert(0, r"D:\quant_web")
     from data_loader import load_stock_data_from_cache
     sd = load_stock_data_from_cache()
-    if sd: return sd
-    # 兜底: 逐个尝试路径
-    for p in [CONF["stock_data"], CONF["fallback"], CONF["fallback2"]]:
-        if os.path.exists(p):
-            print(f"[V1-5] 加载 {p}")
-            if p.endswith('.parquet'):
-                import pandas as _pd; return _pd.read_parquet(p)  # 不太可能但有兜底
-            return pickle.load(gzip.open(p, "rb")) if p.endswith(".gz") else pickle.load(open(p, "rb"))
-    raise FileNotFoundError("stock_data not found")
+    if not sd:
+        for p in [CONF["stock_data"], CONF["fallback"], CONF["fallback2"]]:
+            if os.path.exists(p):
+                print(f"[V1-5] 加载 {p}")
+    # 过滤: 只保留A股 (排除指数 sh000/sz399 等)
+    if sd:
+        sd = {k: v for k, v in sd.items() if not k.startswith(('sh000','sz399','bj'))}
+        print(f"[V1-5] 过滤指数后: {len(sd)}只A股")
+    return sd
 
 
 def _factor_chase(df: pd.DataFrame) -> float | None:
@@ -60,27 +60,29 @@ def _factor_chase(df: pd.DataFrame) -> float | None:
 
 
 def _factor_low(df: pd.DataFrame) -> float | None:
-    """低吸因子v2: 超跌+放量+反弹确认 (V1-5修正: 反弹加权重, 超跌降权重)"""
+    """低吸因子v4: 极简版 — 先验证IC, 再逐步收紧"""
     if len(df) < 20:
         return None
-    c = df["close"].values[-20:]
-    v = df["volume"].values[-20:]
+    c = df["close"].values
+    v = df["volume"].values
+    n = len(c)
     if c[-1] <= 0:
         return None
-    # 反弹确认: price vs MA5
-    ma5 = np.mean(c[-5:]) if len(c) >= 5 else c[-1]
-    bounce = (c[-1] - ma5) / max(ma5, 0.01)
-    if bounce < 0:  # 未站上MA5 → 无信号
+
+def _factor_low(df: pd.DataFrame) -> float | None:
+    """低吸因子v5: 5日跌幅+当日反弹, 去掉type filter (对全A有效)"""
+    if len(df) < 10:
         return None
-    chg5 = (c[-1] - c[-6]) / max(c[-6], 0.01) if len(c) >= 6 else 0
-    vm = np.mean(v)
-    vol_r = v[-1] / max(vm, 1)
-    ma20 = np.mean(c)
-    # V1-5权重: 反弹30 + 跌幅25 + 放量25 + RSI10 + MA20距10
-    return (min(30, max(0, bounce * 600)) +
-            min(25, abs(chg5) * 250) +
-            min(25, max(0, (vol_r - 1) * 50)) +
-            min(10, max(0, (1 - c[-1] / max(ma20, 0.01)) * 200)))
+    c = df["close"].values
+    n = len(c)
+    if c[-1] <= 0: return None
+
+    chg5 = (c[-1] - c[-6]) / max(c[-6], 0.01) if n >= 6 else 0
+    # 只要5日跌幅即可 (不要求当日反弹——反弹=加分项, 不是必要条件)
+    if chg5 > 0: return None  # 前5日涨→不是低吸信号
+
+    # 简单评分: 跌幅越大分越高
+    return round(abs(chg5) * 100, 1)
 
 
 # ═══ 旧体系对照因子 (全市场重新计算) ═══

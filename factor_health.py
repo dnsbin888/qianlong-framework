@@ -38,8 +38,12 @@ def compute_health(factor: dict, ic_report: dict = None) -> dict:
     # 1. IC分 (40%)
     ic5 = factor.get("ic_5d", 0) or 0
     ic_score = min(100, max(0, abs(ic5) * 1000))  # IC=0.05 → 50分, IC=0.10 → 100分
-    if ic5 < 0:
-        ic_score *= 0.5  # 负IC惩罚
+    direction = factor.get("direction", "long")
+    if direction == "short":
+        # Short因子: 负IC是好信号，不惩罚
+        ic_score *= 1.0
+    elif ic5 < 0:
+        ic_score *= 0.5  # Long因子负IC → 惩罚
 
     # 2. 分层回测分 (30%) — 从 IC 多窗口数据计算
     # 代理: IC 在长窗口保持或增强 → 分层效果好; 衰减 → 分层效果差
