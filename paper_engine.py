@@ -473,7 +473,15 @@ class PaperAccount:
 
         if fallback and fallback > 0:
             return fallback
-        # 所有价格源失效，用上次有效价格兜底（避免PnL在成本价和市价间跳动）
+        # P0修复: 从行情缓存取收盘价兜底，防买入阻断
+        try:
+            from realtime_quotes import _quote_cache
+            if _quote_cache and _quote_cache.get("data"):
+                for k in [code, "sh"+code, "sz"+code]:
+                    p = _quote_cache["data"].get(k, {}).get("close", 0)
+                    if p and p > 0: return float(p)
+        except Exception: pass
+        # 所有价格源失效，用上次有效价格兜底
         if symbol in self.positions:
             pos = self.positions[symbol]
             last_price = pos.get("last_price", 0)

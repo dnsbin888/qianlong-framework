@@ -1,0 +1,3 @@
+[console_scripts]
+quant-backtest = quant_framework.cli:run_backtest
+quant-run = quant_framework.cli:run_live

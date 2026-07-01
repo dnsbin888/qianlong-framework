@@ -1,0 +1,11 @@
+============================================================
+  Quick Backtest — tdx2_final (Formula 1)
+============================================================
+
+[1] Loading data...
+  Using 300 stocks
+  Loaded 292 stocks, 581 trading days
+
+[2] Running backtest...
+  0/581 | trades=0 | cash=100w
+  50/581 | trades=10 | cash=105w
