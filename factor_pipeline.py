@@ -463,25 +463,25 @@ def generate_from_ai(desc: str, model: str = "deepseek") -> str | None:
         print(f"  手动模式: python factor_pipeline.py --ai manual")
         return None
 
-    prompt = f"""你是一个A股量化因子专家。请根据以下描述，生成一个Python函数来计算因子值。
+    prompt = f"""你是一个A股量化因子专家。请生成一个Python函数计算连续评分(0-100)。
 
 描述: {desc}
 
-要求:
-1. 函数签名: def factor_xxx(df):
-2. df 是 pandas DataFrame，包含列: open, high, low, close, volume
-3. 返回单个浮点数（因子值），或 None（计算失败时）
-4. 使用 numpy 和 pandas
-5. 只返回代码，不要解释
+关键要求:
+1. 函数签名: def factor_xxx(df): return float 0-100 或 None
+2. df列: open, high, low, close, volume
+3. 必须返回连续值(0-100)，不要二元过滤(0/1)。尽量让大多数股票有非None值
+4. 使用numpy，不用pandas的rolling
+5. 只返回代码，不解释
 
 示例:
-def factor_gap_recovery(df):
+def factor_vol_price(df):
     import numpy as np
-    c = df["close"].values
-    if len(c) < 10: return None
-    gap = c[-6] / c[-10] - 1
-    recover = c[-1] / c[-6] - 1
-    return float(recover) if gap < -0.03 and recover > 0 else float(gap)
+    c=df["close"].values;v=df["volume"].values
+    if len(c)<10:return None
+    vol_r=v[-1]/np.mean(v[-10:])
+    ret=(c[-1]-c[-2])/max(c[-2],0.01)
+    return min(100,max(0,vol_r*30+ret*500+50))
 
 请生成因子代码:"""
 
@@ -515,7 +515,7 @@ def factor_gap_recovery(df):
         return None
 
 
-def run_ai_pipeline(desc: str, model: str = "deepseek", sample: int = 500, days: int = 60, auto: bool = False) -> dict:
+def run_ai_pipeline(desc: str, model: str = "deepseek", sample: int = 500, days: int = 20, auto: bool = False) -> dict:
     """AI 驱动的因子发现管线。
 
     1. AI/人工生成因子代码
@@ -559,17 +559,23 @@ def run_ai_pipeline(desc: str, model: str = "deepseek", sample: int = 500, days:
 
     import numpy as np
     from scipy.stats import spearmanr
-    syms = list(stock_data.keys())[:min(sample, len(stock_data))]
+    # 随机采样 (非字母序前N只), 避开低流动性标的
+    import random as _rnd2; _rnd2.seed(42)
+    _all = list(stock_data.keys())
+    _rnd2.shuffle(_all)
+    syms = _all[:min(sample, len(_all))]
     ic_vals = []
+    none_count = 0; err_count = 0
     for sym in syms:
         df = stock_data.get(sym)
         if df is None or len(df) < days: continue
         try:
             fv = factor_fn(df)
-            if fv is None: continue
+            if fv is None: none_count += 1; continue
             ret = df["close"].iloc[-1] / df["close"].iloc[-6] - 1
             ic_vals.append((float(fv), float(ret)))
-        except: continue
+        except: err_count += 1; continue
+    print(f"[AI-Pipeline] 样本: {len(ic_vals)}有效, {none_count}None, {err_count}异常")
     if len(ic_vals) < 30:
         return {"success": False, "error": "有效样本不足30"}
 
@@ -639,7 +645,7 @@ if __name__ == "__main__":
     import argparse
     p = argparse.ArgumentParser(description="因子自动发现管线 (Phase 7: AI驱动)")
     p.add_argument("--sample", type=int, default=500, help="采样股票数")
-    p.add_argument("--days", type=int, default=60, help="回看天数")
+    p.add_argument("--days", type=int, default=20, help="回看天数")
     p.add_argument("--auto", action="store_true", help="自动注册 (跳过人工确认)")
     p.add_argument("--ai", type=str, default=None, choices=["deepseek", "gpt", "manual"], help="AI模型生成因子")
     p.add_argument("--desc", type=str, default=None, help="AI因子描述 (中文即可)")
