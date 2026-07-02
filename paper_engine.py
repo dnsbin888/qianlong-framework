@@ -429,9 +429,17 @@ class PaperAccount:
 
     # ═══════════════════ 价格查询 ═══════════════════
 
-    def _resolve_price(self, symbol, fallback=None, fast=False):
+    def _resolve_price(self, symbol, fallback=None, fast=False, side=None):
         """统一价格获取: 实时行情→westock→价格缓存→因子缓存→fallback→成本价。
-        fast=True: 跳过westock，仅用实时行情+缓存（用于页面展示，毫秒级响应）。"""
+        fast=True: 跳过westock。 side='buy': 加滑点+0.1%, side='sell': 减滑点-0.1%"""
+        price = self._resolve_price_raw(symbol, fallback, fast)
+        if price and price > 0 and side:
+            slippage = 0.001 if side == 'buy' else -0.001
+            price = round(price * (1 + slippage), 2)
+        return price
+
+    def _resolve_price_raw(self, symbol, fallback=None, fast=False):
+        """原始价格获取(无滑点)"""
         code = symbol.replace("sh", "").replace("sz", "").replace("SH", "").replace("SZ", "")
         try:
             from realtime_quotes import _quote_cache
@@ -606,7 +614,7 @@ class PaperAccount:
                 print(f"[PaperTrade] 跳过非A股品种: {sym} (code={clean_code})")
                 return {"success": False, "error": f"非A股品种: {sym}"}
             if price is None or price <= 0:
-                price = self._resolve_price(sym)
+                price = self._resolve_price(sym, side="buy")
             if price is None or price <= 0:
                 return {"success": False, "error": f"无法获取{sym}实时价格，请手动输入"}
             cost = price * qty
@@ -674,7 +682,7 @@ class PaperAccount:
                 }
 
             if price is None or price <= 0:
-                price = self._resolve_price(sym, fallback=pos["avg_cost"])
+                price = self._resolve_price(sym, fallback=pos["avg_cost"], side="sell")
             revenue = price * qty
             self.cash += revenue
             # 卖出成本: 佣金0.03% + 印花税0.1%
@@ -1036,7 +1044,7 @@ class PaperAccount:
                     continue
 
                 # 用实时价执行，不依赖规则检查时的缓存价
-                exec_price = self._resolve_price(ra.symbol or sym, fallback=ra.price)
+                exec_price = self._resolve_price(ra.symbol or sym, fallback=ra.price, side="sell")
                 if exec_price and exec_price > 0 and exec_price != 10.0:
                     exec_price = exec_price
                 else:
