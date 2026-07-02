@@ -887,6 +887,7 @@ class PaperAccount:
             "cash": round(self.cash, 2),
             "cash_interest": cash_interest,
             "market_value": round(self.get_market_value(quotes), 2),
+            "day_start_equity": getattr(self, '_day_start_equity', None),
             "total_equity": round(self.get_total_equity(quotes), 2),
             "total_pnl": round(total_pnl, 2),
             "total_pnl_with_interest": total_pnl_with_interest,  # E55
@@ -931,6 +932,7 @@ class PaperAccount:
         today = datetime.now().strftime("%Y%m%d")
         if self._daily_date != today:
             self._daily_date = today
+            self._day_start_equity = self.get_total_equity()  # 日切重置基准
             self._daily_trade_count = 0
             self._daily_buy_count = 0
             self._daily_loss_total = 0.0

@@ -18,10 +18,9 @@ FRAMEWORK = r"D:\quant_framework"
 WEB = r"D:\quant_web"
 BACKUP = os.path.join(FRAMEWORK, "backups")
 
+# 静态保护: 配置文件 (锁住不改)
 PROTECTED = [
     os.path.join(FRAMEWORK, f) for f in [
-        "paper_account.json", "trade_log.csv", "equity_log.json",
-        "live_equity_log.json", "live_positions_track.json",
         "live_trader_config.json", "blacklist.json", "factor_registry.json",
         "user_customizations\\user_factors.json",
         "user_customizations\\user_strategies.json",
@@ -29,6 +28,8 @@ PROTECTED = [
         "config\\default.yaml", "trade_config_master.json",
     ]
 ] + [os.path.join(WEB, "stock_names_full.csv")]
+# 运行时文件: 永不锁 (Flask/paper_engine需要写入)
+# paper_account.json / trade_log.csv / equity_log.json / live_equity_log.json / live_positions_track.json
 
 def run(cmd):
     r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
