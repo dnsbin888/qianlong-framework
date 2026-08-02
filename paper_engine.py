@@ -531,14 +531,16 @@ class PaperAccount:
 
     def place_order(self, symbol: str, side: str, price: float, qty: int,
                     trade_type: str = "auto", reason: str = "",
-                    signal_source: str = "auto", signal_id: str = "") -> dict:
+                    signal_source: str = "auto", signal_id: str = "",
+                    evidence_id: str = "") -> dict:
         with self._trade_lock:
             return self._place_order_locked(symbol, side, price, qty,
-                                            trade_type, reason, signal_source, signal_id)
+                                            trade_type, reason, signal_source, signal_id, evidence_id)
 
     def _place_order_locked(self, symbol: str, side: str, price: float, qty: int,
                             trade_type: str, reason: str,
-                            signal_source: str, signal_id: str) -> dict:
+                            signal_source: str, signal_id: str,
+                            evidence_id: str = "") -> dict:
         if side not in ("buy", "sell"):
             return {"success": False, "error": "side须是buy/sell"}
 
@@ -665,6 +667,8 @@ class PaperAccount:
             "pnl": round(pnl, 2) if side == "sell" else None,
             "cost_price": self._broker._positions[symbol].avg_cost if side == "sell" and symbol in self._broker._positions else price,
             "signal_source": signal_source,
+            "signal_id": signal_id,
+            "evidence_id": evidence_id or None,  # Decision→Execution 绑定
             "date": datetime.now().strftime("%Y-%m-%d"),
             "time": datetime.now().strftime("%H:%M:%S"),
             "type": trade_type,
