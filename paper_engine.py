@@ -669,6 +669,8 @@ class PaperAccount:
             "signal_source": signal_source,
             "signal_id": signal_id,
             "evidence_id": evidence_id or None,  # Decision→Execution 绑定
+            "strategy_id": self._meta.get(symbol, {}).get("strategy_id", ""),  # 策略归属
+            "strategy_name": self._meta.get(symbol, {}).get("strategy_name", ""),
             "date": datetime.now().strftime("%Y-%m-%d"),
             "time": datetime.now().strftime("%H:%M:%S"),
             "type": trade_type,
