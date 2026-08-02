@@ -34,6 +34,7 @@ from quant_framework.execution.rules.engine import RuleAction
 STATE_FILE      = r"D:\quant_framework\paper_account.json"
 TRADE_LOG_FILE  = r"D:\quant_framework\paper_trades.jsonl"  # 追加模式, 永不覆盖
 SNAPSHOT_DIR    = r"D:\quant_framework\backups\paper_snapshots"
+CLOUD_SYNC      = r"D:\BaiduSyncdisk\潜龙\paper_account.json"  # 百度云自动镜像
 MASTER_CONFIG   = r"D:\quant_framework\trade_config_master.json"
 SIGNAL_TABLE    = r"D:\quant_web\data\signal_table.json"
 PLAN_PATH       = r"D:\quant_web\data\auto_trade_plan.json"
@@ -296,31 +297,39 @@ class PaperAccount:
     def _load(self):
         clean_pos, clean_trades, auto = self._clean_state_file()
 
-        # ③ 防损坏: JSON损坏→自动从.bak恢复 (带版本检查: 绝不回退到旧版本)
+        # ③ 防损坏: JSON损坏→自动恢复 (本地.bak → 云备份 → 版本目录, 绝不回退旧版本)
         if not clean_pos and not clean_trades:
-            bak = STATE_FILE + ".bak"
-            if os.path.exists(bak):
+            recovery_sources = [
+                ("本地.bak", STATE_FILE + ".bak"),
+                ("百度云", CLOUD_SYNC),
+            ]
+            # 也检查版本目录
+            ver_dir = os.path.join(os.path.dirname(STATE_FILE), "paper_versions")
+            if os.path.exists(ver_dir):
+                vers = sorted([f for f in os.listdir(ver_dir) if f.startswith("paper_account.v")], reverse=True)
+                if vers:
+                    recovery_sources.append(("版本目录", os.path.join(ver_dir, vers[0])))
+
+            recovered = False
+            for src_name, src_path in recovery_sources:
+                if recovered or not os.path.exists(src_path):
+                    continue
                 try:
-                    with open(bak, "r", encoding="utf-8") as f:
+                    with open(src_path, "r", encoding="utf-8") as f:
                         d = json.load(f)
                     bak_version = d.get("_version", 0)
-                    # 如果.bak版本低于主文件版本 → 拒绝恢复(主文件可能更新)
-                    main_version = 0
-                    if os.path.exists(STATE_FILE):
-                        try:
-                            with open(STATE_FILE, "r", encoding="utf-8") as _mf:
-                                main_version = json.load(_mf).get("_version", 0)
-                        except: pass
-                    if main_version > bak_version:
-                        print(f"[Paper] ⚠️ 主文件(v{main_version})比.bak(v{bak_version})更新, 拒绝回退")
-                    else:
+                    if bak_version > 0:
                         clean_pos = d.get("positions", {})
                         clean_trades = d.get("trade_log", [])
                         auto = d.get("auto_enabled", True)
-                        print(f"[Paper] ⚠️ 主文件损坏, 从.bak恢复 v{bak_version} "
+                        print(f"[Paper] ⚠️ 主文件损坏, 从{src_name}恢复 v{bak_version} "
                               f"pos={len(clean_pos)} trades={len(clean_trades)}")
+                        recovered = True
                 except Exception:
-                    print("[Paper] ⚠️ .bak也损坏, 从零开始")
+                    continue
+
+            if not recovered:
+                print("[Paper] ⚠️ 所有恢复源均失败, 从零开始")
 
         # ④ 追加模式: 从JSONL加载额外交易记录
         if os.path.exists(TRADE_LOG_FILE):
@@ -423,7 +432,14 @@ class PaperAccount:
                 for old in all_vers[:-5]:
                     os.remove(os.path.join(backup_dir, old))
             except: pass
-            # ⑤ 追加交易记录到JSONL (永不覆盖)
+            # ⑤ 镜像到百度云 (异地容灾, 自动同步)
+            try:
+                cloud_dir = os.path.dirname(CLOUD_SYNC)
+                if os.path.exists(cloud_dir):
+                    os.makedirs(cloud_dir, exist_ok=True)
+                    shutil.copy2(STATE_FILE, CLOUD_SYNC)
+            except: pass
+            # ⑥ 追加交易记录到JSONL (永不覆盖)
             try:
                 _latest = data.get("trade_log", [])[-1] if data.get("trade_log") else None
                 if _latest:
