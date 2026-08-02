@@ -109,13 +109,26 @@ def validate():
     print(f"  {len(features)} features from Feature Registry V1.0")
     print("=" * 60)
 
-    # ── 尝试从 QMT 获取实时数据 ──
+    # ── Step 1: Environment Gate ──
+    env_status = "BLOCKED"
     qmt_available = False
     try:
         from xtquant import xtdata
         qmt_available = True
+        # Try connection
+        tick = xtdata.get_full_tick(['000001.SZ'])
+        if tick and '000001.SZ' in tick and tick['000001.SZ'].get('lastPrice', 0) > 0:
+            env_status = "OK"
+            print(f"  环境: QMT=✅ L1=✅ → OK")
+        else:
+            print(f"  环境: QMT=✅ L1=❌ → BLOCKED (无行情数据)")
     except ImportError:
-        print("  QMT: xtquant not available")
+        print(f"  环境: QMT=❌ → BLOCKED (xtquant未安装)")
+    except Exception as e:
+        print(f"  环境: QMT=❌ → BLOCKED ({e})")
+    print()
+
+    report["environment"] = {"status": env_status, "qmt_available": qmt_available}
 
     for fid, fdef in features.items():
         print(f"\n  [{fid}] {fdef['display_name']} — {fdef['phenomenon']}")
@@ -173,8 +186,11 @@ def validate():
         gates["G4"] = check_stability(values)
         gates["G5"] = check_semantic(fdef, values)
 
-        all_pass = all(g["pass"] for g in gates.values())
-        status = "ACTIVE" if all_pass else "VALIDATING"
+        if env_status != "OK":
+            status = "BLOCKED"
+        else:
+            all_pass = all(g["pass"] for g in gates.values())
+            status = "ACTIVE" if all_pass else "VALIDATING"
 
         for gname, g in gates.items():
             icon = "✅" if g["pass"] else "❌"
@@ -192,9 +208,14 @@ def validate():
         print(f"    → {status}")
 
     # Summary
-    active = sum(1 for r in report["results"].values() if r["all_pass"])
+    active = sum(1 for r in report["results"].values() if r["status"] == "ACTIVE")
+    validating = sum(1 for r in report["results"].values() if r["status"] == "VALIDATING")
+    blocked = sum(1 for r in report["results"].values() if r["status"] == "BLOCKED")
     print(f"\n{'='*60}")
-    print(f"  ACTIVE: {active}/{len(features)}  (G1-G5 ALL PASS)")
+    print(f"  Environment: {env_status}")
+    print(f"  ACTIVE: {active}  |  VALIDATING: {validating}  |  BLOCKED: {blocked}")
+    if env_status != "OK":
+        print(f"  ⚠️ 环境不可用 — 所有Feature标记为BLOCKED (非FAIL)")
     print(f"  Report: {OUTPUT}")
     print(f"{'='*60}")
 
