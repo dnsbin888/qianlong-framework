@@ -1,0 +1,20 @@
+{
+  "bull": {
+    "lgbm": 0.35,
+    "xgb": 0.45,
+    "ridge": 0.2,
+    "note": "牛市XGB动量因子占优"
+  },
+  "sideways": {
+    "lgbm": 0.35,
+    "xgb": 0.25,
+    "ridge": 0.4,
+    "note": "震荡市Ridge线性稳定"
+  },
+  "bear": {
+    "lgbm": 0.45,
+    "xgb": 0.15,
+    "ridge": 0.4,
+    "note": "熊市LGBM多因子稳健+Ridge抗跌"
+  }
+}

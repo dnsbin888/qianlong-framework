@@ -1,0 +1,69 @@
+{
+  "cash": 976762.0,
+  "positions": {
+    "sh600089": {
+      "qty": 1100,
+      "avg_cost": 19.11,
+      "last_price": 19.12,
+      "name": "特变电工",
+      "buy_date": "2026-07-18",
+      "strategy_id": "auto",
+      "stop_loss": 0,
+      "soft_stop_loss": 0,
+      "_verified": true
+    },
+    "sh600406": {
+      "qty": 100,
+      "avg_cost": 22.13,
+      "last_price": 22.13,
+      "name": "国电南瑞",
+      "buy_date": "2026-07-17",
+      "strategy_id": "",
+      "stop_loss": 0,
+      "soft_stop_loss": 0,
+      "_verified": true
+    }
+  },
+  "trade_log": [
+    {
+      "symbol": "sh600406",
+      "name": "国电南瑞",
+      "side": "buy",
+      "price": 22.13,
+      "qty": 100,
+      "cost": 2213.0,
+      "amount": 2213.0,
+      "fee": 5.0,
+      "pnl": null,
+      "cost_price": 22.13,
+      "signal_source": "auto",
+      "date": "2026-07-17",
+      "time": "23:05:42",
+      "type": "manual",
+      "reason": "测试弱转强"
+    },
+    {
+      "symbol": "sh600089",
+      "name": "特变电工",
+      "side": "buy",
+      "price": 19.12,
+      "qty": 1000,
+      "cost": 19120.0,
+      "amount": 19120.0,
+      "fee": 5.0,
+      "pnl": null,
+      "cost_price": 19.12,
+      "signal_source": "qmt",
+      "date": "2026-07-18",
+      "time": "06:48:22",
+      "type": "auto",
+      "reason": "QMT·弱转强·竞价确认"
+    }
+  ],
+  "auto_enabled": true,
+  "daily_date": "20260718",
+  "daily_trade_count": 1,
+  "daily_buy_count": 1,
+  "daily_loss_total": 0.0,
+  "day_start_equity": null
+}

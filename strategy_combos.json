@@ -1,0 +1,75 @@
+{
+  "_description": "策略选菜器 — 一键切换交易组合",
+  "current": "潜龙全能",
+  "combos": {
+    "潜龙全能": {
+      "icon": "🐉",
+      "signals": [
+        "盘中突破",
+        "竞价抢筹"
+      ],
+      "risk": "均衡",
+      "max_pos_pct": 12,
+      "max_daily_trades": 5,
+      "description": "ML信号为主，全场景自适应"
+    },
+    "猎豹": {
+      "icon": "🔥",
+      "signals": [
+        "盘中突破",
+        "打板追封",
+        "板后接力",
+        "尾盘急拉",
+        "撬板战法"
+      ],
+      "risk": "超激进",
+      "max_pos_pct": 3,
+      "max_daily_trades": 5,
+      "description": "纯形态信号，不依赖ML评分"
+    },
+    "游隼": {
+      "icon": "🦅",
+      "signals": [
+        "盘中突破",
+        "打板追封",
+        "板后接力"
+      ],
+      "risk": "龙头",
+      "max_pos_pct": 5,
+      "max_daily_trades": 4,
+      "description": "龙头回调+打板接力"
+    },
+    "银狐": {
+      "icon": "🦊",
+      "signals": [
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "risk": "震荡",
+      "max_pos_pct": 6,
+      "max_daily_trades": 3,
+      "description": "反转+尾盘，震荡市专用"
+    },
+    "金牛": {
+      "icon": "🐢",
+      "signals": [
+        "盘中突破"
+      ],
+      "risk": "稳健",
+      "max_pos_pct": 10,
+      "max_daily_trades": 3,
+      "description": "ML趋势+转债，稳健复利"
+    },
+    "弱转强": {
+      "icon": "🔄",
+      "signals": [
+        "竞价抢筹",
+        "盘中突破"
+      ],
+      "risk": "反转",
+      "max_pos_pct": 3,
+      "max_daily_trades": 5,
+      "description": "游资弱转强 — 盘前扫全市场，次日竞价/突破确认"
+    }
+  }
+}

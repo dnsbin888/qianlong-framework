@@ -1,0 +1,51 @@
+=== Memory Dump 2026-07-03 11:10:07.068394 ===
+RSS: 2387MB
+Threads: 207
+
+  MainThread: alive=True daemon=False
+  Thread-1 (listen): alive=True daemon=True
+  Thread-2 (process): alive=True daemon=True
+  THS-PopupKiller: alive=True daemon=True
+  Thread-3 (_sync_loop): alive=True daemon=True
+  EventBus: alive=True daemon=True
+  EventBus-Timer: alive=True daemon=True
+  Thread-4 (_loop): alive=True daemon=True
+  Thread-5 (_loop): alive=True daemon=True
+  Thread-6 (_loop): alive=True daemon=True
+  TradingLoop: alive=True daemon=True
+  EventLoop: alive=True daemon=True
+  Thread-8 (_run_loop): alive=True daemon=True
+  Scheduler: alive=True daemon=True
+  Thread-14 (_loop): alive=True daemon=True
+  waitress-0: alive=True daemon=True
+  waitress-1: alive=True daemon=True
+  waitress-2: alive=True daemon=True
+  waitress-3: alive=True daemon=True
+  waitress-4: alive=True daemon=True
+  waitress-5: alive=True daemon=True
+  waitress-6: alive=True daemon=True
+  waitress-7: alive=True daemon=True
+  waitress-8: alive=True daemon=True
+  waitress-9: alive=True daemon=True
+  waitress-10: alive=True daemon=True
+  waitress-11: alive=True daemon=True
+  waitress-12: alive=True daemon=True
+  waitress-13: alive=True daemon=True
+  waitress-14: alive=True daemon=True
+  waitress-15: alive=True daemon=True
+  waitress-16: alive=True daemon=True
+  waitress-17: alive=True daemon=True
+  waitress-18: alive=True daemon=True
+  waitress-19: alive=True daemon=True
+  waitress-20: alive=True daemon=True
+  waitress-21: alive=True daemon=True
+  waitress-22: alive=True daemon=True
+  waitress-23: alive=True daemon=True
+  waitress-24: alive=True daemon=True
+  waitress-25: alive=True daemon=True
+  waitress-26: alive=True daemon=True
+  waitress-27: alive=True daemon=True
+  waitress-28: alive=True daemon=True
+  waitress-29: alive=True daemon=True
+  waitress-30: alive=True daemon=True
+  waitress-31: alive=True daemon=True

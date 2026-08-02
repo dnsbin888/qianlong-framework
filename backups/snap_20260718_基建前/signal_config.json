@@ -1,0 +1,29 @@
+{
+  "description": "信号源开关 — true=启用, false=停用",
+  "qmt_builtin": {
+    "竞价抢筹": true,
+    "盘中突破": true,
+    "尾盘急拉": true,
+    "打板追封": true,
+    "打板-首封": true,
+    "打板-回封": true,
+    "打板-强封": true,
+    "打板-多板": true
+  },
+  "tdx_formulas": {
+    "_note": "公式名对应 tdx_formulas.py 中的函数名, true=该公式信号参与交易 (Python重写版, 仅通知)",
+    "双信号共振打板分歧低吸": false,
+    "MACD牛线突破": false
+  },
+  "tdx_pools": {
+    "_note": "TDX原生公式→自动交易。type=blk(自动选股→板块) 或 pool(股票池→.log)",
+    "QLJCXG": {
+      "enabled": true,
+      "type": "blk",
+      "label": "妖股先锋X∩波段擒妖",
+      "auto_trade": true,
+      "min_ml_score": 60,
+      "note": "双公式交叉选股(AND), 日线盘后运行→QLJCXG.blk, 次日QMT自动下单"
+    }
+  }
+}

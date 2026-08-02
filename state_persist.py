@@ -10,7 +10,7 @@ def load():
         try:
             return json.load(open(STATE_FILE, "r"))
         except: pass
-    return {"paper_auto_enabled": True, "live_auto_enabled": True, "circuit_breaker": False}
+    return {"paper_auto_enabled": True, "live_auto_enabled": False, "circuit_breaker": False}
 
 
 def save(key, value):

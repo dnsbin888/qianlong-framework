@@ -14,6 +14,9 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+# 自动退役开关: 因系统数据不稳定, 2026-07-12起暂停自动退役
+AUTO_RETIRE_ENABLED = False
+
 REGISTRY_PATH = r"D:\quant_framework\factor_registry.json"
 IC_REPORT_PATH = r"D:\quant_framework\full_market_ic_report.json"
 HEALTH_LOG_PATH = r"D:\quant_framework\factor_health_log.jsonl"
@@ -49,7 +52,7 @@ def compute_health(factor: dict, ic_report: dict = None) -> dict:
                 actions.append("权重减半")
 
     danger_days = _count_consecutive_danger(name, level)
-    if level == "danger" and danger_days >= 10:
+    if AUTO_RETIRE_ENABLED and level == "danger" and danger_days >= 10:
         level, actions = "retiring", ["自动退役", "通知老板"]
 
     return {
@@ -161,7 +164,7 @@ def _apply_action(name: str, action: str):
             ts = datetime.now().strftime('%m-%d %H:%M')
             if action == "权重减半": fac["weight_multiplier"] = 0.5; fac["_health_action"] = f"权重减半 ({ts})"
             elif action == "权重归零": fac["weight_multiplier"] = 0.0; fac["_health_action"] = f"权重归零 ({ts})"
-            elif action == "自动退役": fac["status"] = "retired"; fac["retired_reason"] = f"Auto retire ({datetime.now():%Y-%m-%d})"; fac.pop("weight_multiplier", None)
+            elif action == "自动退役" and AUTO_RETIRE_ENABLED: fac["status"] = "retired"; fac["retired_reason"] = f"Auto retire ({datetime.now():%Y-%m-%d})"; fac.pop("weight_multiplier", None)
             elif action == "停止实盘": fac["_trading_paused"] = True
         reg["updated"] = datetime.now().strftime("%Y-%m-%d %H:%M")
         json.dump(reg, open(REGISTRY_PATH, "w"), ensure_ascii=False, indent=2)

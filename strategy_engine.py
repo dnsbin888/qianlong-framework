@@ -111,6 +111,112 @@ def generate_for_paper(stock_data: dict, top_k: int = 15) -> list[dict]:
     return _fallback_signals(stock_data, top_k)
 
 
+def generate_lgbm_for_paper(stock_data: dict, top_k: int = 15) -> list[dict]:
+    """纸引擎用: LightGBM 模型信号 (ML 驱动)。
+
+    当 LGBM 模型已训练时优先使用；模型未就绪时自动降级到老信号源。
+    """
+    try:
+        from lgbm_strategy import is_model_ready, generate_lgbm_signals
+        if is_model_ready():
+            signals = generate_lgbm_signals(stock_data, top_k=top_k)
+            if signals:
+                print(f"[StrategyEngine] LGBM信号: {len(signals)}只")
+                return signals
+            print("[StrategyEngine] LGBM模型就绪但无信号，降级老源...")
+        else:
+            print("[StrategyEngine] LGBM模型未训练，降级老源...")
+    except Exception as e:
+        print(f"[StrategyEngine] LGBM信号失败: {e}，降级老源...")
+
+    # 降级: 老因子源
+    return generate_for_paper(stock_data, top_k)
+
+
+def generate_xgb_for_paper(stock_data: dict, top_k: int = 15) -> list[dict]:
+    """纸引擎用: XGBoost 模型信号 (ML 驱动, 8因子OHLCV代理特征)。
+
+    当 XGBoost 模型已训练时使用；模型未就绪时自动降级到 LGBM → 老源。
+    """
+    try:
+        from xgb_factor_weight import is_ready, generate_xgb_signals
+        if is_ready():
+            signals = generate_xgb_signals(stock_data, top_k=top_k)
+            if signals:
+                print(f"[StrategyEngine] XGBoost信号: {len(signals)}只")
+                return signals
+            print("[StrategyEngine] XGBoost模型就绪但无信号，降级LGBM...")
+        else:
+            print("[StrategyEngine] XGBoost模型未训练，降级LGBM...")
+    except Exception as e:
+        print(f"[StrategyEngine] XGBoost信号失败: {e}，降级LGBM...")
+
+    # 降级: LGBM → 老因子源
+    return generate_lgbm_for_paper(stock_data, top_k)
+
+
+def generate_ml_v2(stock_data: dict, top_k: int = 15, paper_status: dict = None) -> list[dict]:
+    """V2 增强信号链: 三模型投票 → B2-B6 决策适配
+
+    三模型 (LGBM+XGBoost+CatBoost) 投票 → HRP仓位 → ATR滑点 → 行业限制 → 市场自适应
+    """
+    # Step 1: 三模型投票
+    try:
+        from triple_vote import generate_consensus_signals
+        signals = generate_consensus_signals(stock_data, top_k=top_k)
+        if not signals:
+            return generate_ml_for_paper(stock_data, top_k)
+    except Exception as e:
+        print(f"[StrategyEngine] 三模型投票失败: {e}, 降级")
+        return generate_ml_for_paper(stock_data, top_k)
+
+    # Step 2: B2-B6 决策适配
+    try:
+        from decision_adapter import process_signals
+        ps = paper_status or {"total_equity": 1_000_000, "positions": []}
+        orders = process_signals(signals, stock_data, ps)
+        if orders:
+            print(f"[StrategyEngine] ML-V2: {len(orders)}订单 (三模型+B2-B6)")
+            return orders
+    except Exception as e:
+        print(f"[StrategyEngine] 决策适配失败: {e}")
+
+    return signals  # 降级: 返回未适配的信号
+
+
+def generate_ml_for_paper(stock_data: dict, top_k: int = 15) -> list[dict]:
+    """纸引擎用: 双 ML 模型信号链 (LGBM → XGBoost → 老因子源)。
+
+    优先 LGBM (16因子非线性回归)，其次 XGBoost (8因子分类)，
+    都不可用时降级到传统加权求和。
+    """
+    # 第一优先: LGBM
+    try:
+        from lgbm_strategy import is_model_ready as lgbm_ready, generate_lgbm_signals
+        if lgbm_ready():
+            signals = generate_lgbm_signals(stock_data, top_k=top_k)
+            if signals:
+                print(f"[StrategyEngine] ML-LGBM: {len(signals)}信号")
+                return signals
+    except Exception as e:
+        print(f"[StrategyEngine] LGBM跳过: {e}")
+
+    # 第二优先: XGBoost
+    try:
+        from xgb_factor_weight import is_ready as xgb_ready, generate_xgb_signals
+        if xgb_ready():
+            signals = generate_xgb_signals(stock_data, top_k=top_k)
+            if signals:
+                print(f"[StrategyEngine] ML-XGBoost: {len(signals)}信号")
+                return signals
+    except Exception as e:
+        print(f"[StrategyEngine] XGBoost跳过: {e}")
+
+    # 兜底: 老因子源
+    print("[StrategyEngine] ML模型均未就绪，使用老因子源")
+    return generate_for_paper(stock_data, top_k)
+
+
 def generate_for_live(stock_data: dict, top_k: int = 15) -> list[dict]:
     """实盘用: 取 status=real 的策略生成信号。无信号降级"""
     strategy = _load_active_strategy("real")

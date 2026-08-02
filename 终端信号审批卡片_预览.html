@@ -1,0 +1,74 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><title>终端信号审批预览</title>
+<style>
+body{background:#0d0e10;color:#b4b6b8;font-family:sans-serif;padding:20px}
+.card{background:#141619;border:1px solid #1d1f24;border-radius:4px;padding:12px;margin:8px 0;max-width:600px}
+.card .row1{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.card .sym{font-weight:700;color:#e3e3e3;font-size:15px}
+.card .name{color:#888;font-size:12px;margin-left:4px}
+.card .badge{padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600}
+.badge-lv5{background:rgba(255,64,81,.15);color:#FF4051}
+.badge-lv4{background:rgba(255,64,81,.1);color:#FF4051}
+.badge-lv3{background:rgba(241,161,0,.1);color:#F1A100}
+.card .row2{display:flex;gap:14px;font-size:12px;margin:4px 0}
+.card .row2 .v{color:#e3e3e3;font-weight:600}
+.card .row3{display:flex;gap:8px;margin-top:8px}
+.btn{flex:1;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;text-align:center;border:none}
+.btn-approve{background:#00b96b;color:#fff}
+.btn-approve:hover{background:#009a5a}
+.btn-reject{background:transparent;color:#888;border:1px solid #444}
+.btn-reject:hover{background:rgba(255,255,255,.04)}
+.btn-info{background:transparent;color:#409eff;border:1px solid rgba(64,158,255,.3);font-size:10px;flex:0.6}
+.arrow{color:#888;font-size:18px;text-align:center}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px}
+.compare .col h3{color:#888;font-size:12px;margin-bottom:8px}
+</style></head><body>
+
+<div class="compare">
+<div class="col">
+<h3>❌ 现状：终端页信号列表（没有审批按钮）</h3>
+<div class="card">
+  <div class="row1">
+    <span><span class="sym">sh600246</span><span class="name">万通发展</span></span>
+    <span class="badge badge-lv5">Lv5 强买</span>
+  </div>
+  <div class="row2">
+    <span>现价 <span class="v">19.61</span></span>
+    <span>涨跌 <span class="v" style="color:#FF4051">+0.6%</span></span>
+    <span>仓位 <span class="v">3.8%</span></span>
+    <span>共识 <span class="v">🟢🟢🔴</span></span>
+  </div>
+  <div class="row2" style="color:#666;font-size:10px">房地产 · 量比1.0 · 止损18.63 · 持仓3天</div>
+  <div style="color:#888;font-size:10px;margin-top:6px">👉 要审批得跳到 /ml-signals 页</div>
+</div>
+</div>
+
+<div class="col">
+<h3>✅ 改进：终端页信号卡片加内联审批按钮</h3>
+<div class="card" style="border-color:#00b96b;border-width:1px">
+  <div class="row1">
+    <span><span class="sym">sh600246</span><span class="name">万通发展</span></span>
+    <span class="badge badge-lv5">Lv5 强买</span>
+  </div>
+  <div class="row2">
+    <span>现价 <span class="v">19.61</span></span>
+    <span>涨跌 <span class="v" style="color:#FF4051">+0.6%</span></span>
+    <span>仓位 <span class="v">3.8%</span></span>
+    <span>共识 <span class="v">🟢🟢🔴</span></span>
+  </div>
+  <div class="row2" style="color:#666;font-size:10px">房地产 · 量比1.0 · 止损18.63 · 持仓3天</div>
+  <div class="row3">
+    <button class="btn btn-approve" onclick="this.textContent='✅ 已成交'">💰 批准买入 1800股</button>
+    <button class="btn btn-reject">✕ 跳过</button>
+    <button class="btn btn-info">📋 详情</button>
+  </div>
+</div>
+</div>
+</div>
+
+<div style="margin-top:16px;color:#888;font-size:11px;max-width:600px;line-height:1.6">
+💡 <b>操作流程</b>：在终端页看信号 → 直接点批准 → 模拟盘立即成交。<br>
+不再需要跳到其它页面。审批结果即时显示（按钮变绿"已成交"）。<br>
+风险提示：每笔审批前弹确认框，避免误操作。
+</div>
+
+</body></html>

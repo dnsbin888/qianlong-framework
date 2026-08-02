@@ -19,7 +19,7 @@ from datetime import datetime
 
 logger = logging.getLogger("quant_framework.strategy_recommender")
 
-MARKET_STATE_PATH = r"D:\quant_framework\market_state.json"
+MARKET_STATE_PATH = r"D:\quant_web\data\market_state.json"  # E349: 统一路径
 REGISTRY_PATH = r"D:\quant_framework\factor_registry.json"
 APPROVALS_PATH = r"D:\quant_framework\strategy_approvals.json"
 

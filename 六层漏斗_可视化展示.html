@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>潜龙 · 选股→下单 七层漏斗</title>
+<style>
+:root {
+  --surface-1: #fcfcfb;
+  --surface-2: #f9f9f7;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --gridline: #e1e0d9;
+  --baseline: #c3c2b7;
+  --border: rgba(11,11,11,0.08);
+  --shadow: 0 1px 3px rgba(0,0,0,0.06);
+
+  --blue-250: #86b6ef; --blue-400: #3987e5; --blue-500: #256abf; --blue-600: #184f95;
+  --good: #0ca30c; --warning: #fab219; --serious: #ec835a; --critical: #d03b3b;
+  --accent: #2a78d6;
+  --bg-hero: linear-gradient(135deg, #184f95 0%, #256abf 40%, #2a78d6 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface-1: #1a1a19; --surface-2: #0d0d0d;
+    --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+    --gridline: #2c2c2a; --baseline: #383835;
+    --border: rgba(255,255,255,0.08); --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --bg-hero: linear-gradient(135deg, #0d366b 0%, #184f95 40%, #256abf 100%);
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--surface-2); color: var(--text-primary);
+  line-height: 1.6; -webkit-font-smoothing: antialiased;
+}
+
+/* ── Hero ── */
+.hero {
+  background: var(--bg-hero); color: #fff; padding: 48px 32px 40px;
+  text-align: center; position: relative; overflow: hidden;
+}
+.hero::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 30% 80%, rgba(255,255,255,0.08) 0%, transparent 60%);
+}
+.hero h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; position: relative; z-index: 1; }
+.hero .sub { font-size: 15px; opacity: 0.8; margin-top: 8px; position: relative; z-index: 1; }
+.hero-stats { display: flex; justify-content: center; gap: 40px; margin-top: 32px; position: relative; z-index: 1; flex-wrap: wrap; }
+.hero-stat { text-align: center; }
+.hero-stat .val { font-size: 48px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+.hero-stat .lbl { font-size: 13px; opacity: 0.7; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+.hero-stat.gap .val { color: #fab219; }
+
+/* ── Container ── */
+.container { max-width: 960px; margin: 0 auto; padding: 32px 20px 80px; }
+
+/* ── Section titles ── */
+.section-title { font-size: 20px; font-weight: 700; margin: 40px 0 20px; letter-spacing: -0.01em; }
+.section-title:first-child { margin-top: 0; }
+
+/* ── Funnel ── */
+.funnel { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 32px 0; }
+.funnel-layer {
+  width: 100%; position: relative; cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.funnel-layer:hover { transform: scale(1.01); z-index: 2; }
+.funnel-layer-inner {
+  display: flex; align-items: center; gap: 16px; padding: 14px 20px;
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 8px; margin-bottom: 4px;
+  box-shadow: var(--shadow);
+}
+.funnel-layer .layer-num {
+  width: 36px; height: 36px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+  flex-shrink: 0; color: #fff;
+}
+.funnel-layer .layer-info { flex: 1; min-width: 0; }
+.funnel-layer .layer-name { font-weight: 600; font-size: 14px; }
+.funnel-layer .layer-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.funnel-layer .layer-stock { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+.funnel-layer .layer-bar-wrap { width: 120px; flex-shrink: 0; }
+.funnel-layer .layer-bar-bg { height: 8px; background: var(--gridline); border-radius: 4px; overflow: hidden; }
+.funnel-layer .layer-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+.funnel-layer .layer-pct { font-size: 14px; font-weight: 700; width: 42px; text-align: right; flex-shrink: 0; }
+.funnel-layer .layer-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+.badge-ok { background: #e6f4ea; color: #0ca30c; }
+.badge-warn { background: #fef3cd; color: #b8860b; }
+.badge-gap { background: #fce4d6; color: #c44; }
+
+/* Funnel width taper */
+.funnel-layer.w100 { max-width: 100%; }
+.funnel-layer.w92 { max-width: 92%; }
+.funnel-layer.w84 { max-width: 84%; }
+.funnel-layer.w76 { max-width: 76%; }
+.funnel-layer.w68 { max-width: 68%; }
+.funnel-layer.w60 { max-width: 60%; }
+.funnel-layer.w52 { max-width: 52%; }
+.funnel-layer.w44 { max-width: 44%; }
+
+.funnel-arrow { font-size: 18px; color: var(--baseline); margin: 2px 0; user-select: none; }
+
+/* Layer colors */
+.lc-0 { background: #86b6ef; }    .lc-05 { background: #6da7ec; }
+.lc-1 { background: #5598e7; }    .lc-2 { background: #3987e5; }
+.lc-3 { background: #2a78d6; }    .lc-4 { background: #256abf; }
+.lc-5 { background: #1c5cab; }    .lc-6 { background: #184f95; }
+
+/* ── Detail Card ── */
+.detail-card {
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 10px; margin-bottom: 20px; overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.detail-card-header {
+  padding: 16px 20px; display: flex; align-items: center; gap: 14px;
+  cursor: pointer; user-select: none;
+}
+.detail-card-header:hover { background: rgba(0,0,0,0.02); }
+.detail-card-header .dc-num {
+  width: 32px; height: 32px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; font-weight: 700; font-size: 13px;
+  flex-shrink: 0; color: #fff;
+}
+.detail-card-header .dc-info { flex: 1; }
+.detail-card-header .dc-name { font-weight: 600; font-size: 15px; }
+.detail-card-header .dc-sub { font-size: 12px; color: var(--text-secondary); }
+.detail-card-header .dc-pct { font-size: 18px; font-weight: 700; }
+.detail-card-header .dc-arrow { color: var(--text-muted); transition: transform 0.2s; font-size: 14px; }
+.detail-card.open .dc-arrow { transform: rotate(180deg); }
+.detail-card-body { display: none; padding: 0 20px 20px; border-top: 1px solid var(--border); }
+.detail-card.open .detail-card-body { display: block; }
+
+/* ── Table ── */
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--gridline); }
+th { font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+td { color: var(--text-secondary); }
+tr:last-child td { border-bottom: none; }
+.check { color: var(--good); font-weight: 700; }
+.miss { color: var(--critical); font-weight: 700; }
+.warn-cell { color: #b8860b; font-weight: 700; }
+
+/* ── Gap Cards ── */
+.gap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 16px; }
+.gap-card {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+  padding: 20px; box-shadow: var(--shadow);
+}
+.gap-card .gc-priority { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.gap-card .gc-title { font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+.gap-card .gc-why { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+.gap-card .gc-meta { font-size: 12px; color: var(--text-muted); margin-top: 10px; display: flex; gap: 16px; }
+.p0-tag { color: var(--critical); }
+.p1-tag { color: #b8860b; }
+.p2-tag { color: var(--text-muted); }
+
+/* ── Advantage Tiles ── */
+.adv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-top: 16px; }
+.adv-tile {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px; text-align: center; box-shadow: var(--shadow);
+}
+.adv-tile .adv-icon { font-size: 28px; margin-bottom: 6px; }
+.adv-tile .adv-name { font-weight: 600; font-size: 13px; }
+.adv-tile .adv-vs { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+/* ── Summary bar ── */
+.summary-bar {
+  display: flex; gap: 8px; margin: 24px 0; align-items: center; flex-wrap: wrap;
+}
+.summary-bar .sb-seg { height: 24px; border-radius: 4px; display: flex; align-items: center; padding: 0 10px; font-size: 12px; font-weight: 600; color: #fff; }
+.sb-done { background: #0ca30c; }
+.sb-gap { background: #ec835a; }
+.sb-mid { background: #fab219; color: #0b0b0b; }
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .hero h1 { font-size: 24px; }
+  .hero-stats { gap: 20px; }
+  .hero-stat .val { font-size: 32px; }
+  .funnel-layer-inner { flex-wrap: wrap; gap: 8px; }
+  .funnel-layer .layer-bar-wrap { width: 100%; order: 10; }
+  .gap-grid { grid-template-columns: 1fr; }
+}
+
+/* transition */
+.funnel-layer, .detail-card, .gap-card, .adv-tile {
+  transition: all 0.2s ease;
+}
+
+/* print */
+@media print {
+  .hero { background: #184f95 !important; -webkit-print-color-adjust: exact; }
+  .detail-card-body { display: block !important; }
+  body { font-size: 11px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>🐉 潜龙 · 选股→下单 七层漏斗</h1>
+  <div class="sub">对标私募标准六层漏斗 + 行业实盘经验 · 2026-07-09</div>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="val">88<small style="font-size:24px">%</small></div>
+      <div class="lbl">综合完成度</div>
+    </div>
+    <div class="hero-stat">
+      <div class="val">0</div>
+      <div class="lbl">剩余缺口</div>
+    </div>
+    <div class="hero-stat">
+      <div class="val">7<small style="font-size:24px">/7</small></div>
+      <div class="lbl">全部交付</div>
+    </div>
+    <div class="hero-stat">
+      <div class="val">A</div>
+      <div class="lbl">综合评级</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══════════ FUNNEL ═══════════ -->
+<div class="section-title">📐 漏斗全景 — 5000只 → 5~8只</div>
+
+<div class="funnel" id="funnel">
+  <div class="funnel-layer w100" data-layer="0" onclick="toggleDetail('d0')">
+    <div class="funnel-layer-inner">
+      <div class="layer-num lc-0">0</div>
+      <div class="layer-info"><div class="layer-name">硬过滤</div><div class="layer-desc">ST·涨停·停牌·新股·净资产</div></div>
+      <div class="layer-stock">→ ~3500只</div>
+      <div class="layer-bar-wrap"><div class="layer-bar-bg"><div class="layer-bar-fill" style="width:80%;background:var(--blue-250)"></div></div></div>
+      <div class="layer-pct">90%</div>
+      <div class="layer-badge badge-ok">达标</div>
+    </div>
+  </div>
+  <div class="funnel-arrow">▼</div>
+  <div class="funnel-layer w92" data-layer="0.5" onclick="toggleDetail('d05')">
+    <div class="funnel-layer-inner">
+      <div class="layer-num lc-05">½</div>
+      <div class="layer-info"><div class="layer-name">流动性过滤</div><div class="layer-desc">成交额·分位数·缓冲区</div></div>
+      <div class="layer-stock">→ ~4500只</div>
+      <div class="layer-bar-wrap"><div class="layer-bar-bg"><div class="layer-bar-fill" style="width:90%;background:var(--blue-400)"></div></div></div>
+      <div class="layer-pct">90%</div>
+      <div class="layer-badge badge-ok">达标</div>
+    </div>
+  </div>
+  <div class="funnel-arrow">▼</div>
+  <div class="funnel-layer w84" data-layer="1" onclick="toggleDetail('d1')">
+    <div class="funnel-layer-inner">
+      <div class="layer-num lc-1">1</div>
+      <div class="layer-info"><div class="layer-name">因子打分</div><div class="layer-desc">25因子·IC追踪·负向剔除</div></div>
+      <div class="layer-stock">→ ~300只</div>
+      <div class="layer-bar-wrap"><div class="layer-bar-bg"><div class="layer-bar-fill" style="width:90%;background:var(--blue-400)"></div></div></div>
+      <div class="layer-pct">90%</div>
+      <div class="layer-badge badge-ok">达标</div>
+    </div>
+  </div>
+  <div class="funnel-arrow">▼</div>
+  <div class="funnel-layer w76" data-layer="2" onclick="toggleDetail('d2')">
+    <div class="funnel-layer-inner">
+      <div class="layer-num lc-2">2</div>
+      <div class="layer-info"><div class="layer-name">ML 预测</div><div class="layer-desc">三模型·共识投票·PSI监控</div></div>
+      <div class="layer-stock">→ ~50只</div>
+      <div class="layer-bar-wrap"><div class="layer-bar-bg"><div class="layer-bar-fill" style="width:85%;background:var(--blue-500)"></div></div></div>
+      <div class="layer-pct">90%</div>
+      <div class="layer-badge badge-ok">PSI就绪</div>
+    </div>
+  </div>
+  <div class="funnel-arrow">▼</div>
+  <div class="funnel-layer w68" data-layer="3" onclick="toggleDetail('d3')">
+    <div class="funnel-layer-inner">
+      <div class="layer-num lc-3">3</div>
+      <div class="layer-info"><div class="layer-name">信号质检</div><div class="layer-desc">中性化·衰减检测·拥挤度</div></div>
+      <div class="layer-stock">→ ~25只</div>
+      <div class="layer-bar-wrap"><div class="layer-bar-bg"><div class="layer-bar-fill" style="width:60%;background:var(--serious)"></div></div></div>
+      <div class="layer-pct">85%</div>
+      <div class="layer-badge badge-ok">已接入</div>
+    </div>
+  </div>
+  <div class="funnel-arrow">▼</div>
+  <div class="funnel-layer w60" data-layer="4" onclick="toggleDetail('d4')">
+    <div class="funnel-layer-inner">
+      <div class="layer-num lc-4">4</div>
+      <div class="layer-info"><div class="layer-name">风控安检</div><div class="layer-desc">回撤·相关性·三级联动</div></div>
+      <div class="layer-stock">→ ~12只</div>
+      <div class="layer-bar-wrap"><div class="layer-bar-bg"><div class="layer-bar-fill" style="width:80%;background:var(--blue-500)"></div></div></div>
+      <div class="layer-pct">90%</div>
+      <div class="layer-badge badge-ok">含相关性</div>
+    </div>
+  </div>
+  <div class="funnel-arrow">▼</div>
+  <div class="funnel-layer w52" data-layer="5" onclick="toggleDetail('d5')">
+    <div class="funnel-layer-inner">
+      <div class="layer-num lc-5">5</div>
+      <div class="layer-info"><div class="layer-name">组合优化</div><div class="layer-desc">方案A·HRP·Kelly</div></div>
+      <div class="layer-stock">→ 5~8只</div>
+      <div class="layer-bar-wrap"><div class="layer-bar-bg"><div class="layer-bar-fill" style="width:80%;background:var(--blue-500)"></div></div></div>
+      <div class="layer-pct">80%</div>
+      <div class="layer-badge badge-ok">够用</div>
+    </div>
+  </div>
+  <div class="funnel-arrow">▼</div>
+  <div class="funnel-layer w44" data-layer="6" onclick="toggleDetail('d6')">
+    <div class="funnel-layer-inner">
+      <div class="layer-num lc-6">6</div>
+      <div class="layer-info"><div class="layer-name">执行</div><div class="layer-desc">QMT passorder &lt;5ms·信号冷却</div></div>
+      <div class="layer-stock">→ 成交 ✅</div>
+      <div class="layer-bar-wrap"><div class="layer-bar-bg"><div class="layer-bar-fill" style="width:90%;background:var(--blue-600)"></div></div></div>
+      <div class="layer-pct">90%</div>
+      <div class="layer-badge badge-ok">达标</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ DETAIL CARDS ═══════════ -->
+<div class="section-title">📋 逐层详情（点击展开）</div>
+
+<!-- Layer 0 -->
+<div class="detail-card" id="d0">
+  <div class="detail-card-header" onclick="toggleDetail('d0')">
+    <div class="dc-num lc-0">0</div>
+    <div class="dc-info"><div class="dc-name">第 0 层：硬过滤</div><div class="dc-sub">刚性排除，不做预测 — 这些票打死不碰</div></div>
+    <div class="dc-pct">80%</div>
+    <div class="dc-arrow">▼</div>
+  </div>
+  <div class="detail-card-body">
+    <table>
+      <tr><th>#</th><th>条件</th><th>行业标准</th><th>潜龙</th><th>说明</th></tr>
+      <tr><td>0.1</td><td>ST / *ST</td><td class="check">✅</td><td class="check">✅</td><td>一票否决。ST股无量跌停是量化杀手</td></tr>
+      <tr><td>0.2</td><td>涨停股（买方向）</td><td class="check">✅</td><td class="check">✅</td><td>封死买不到，不生成买入信号</td></tr>
+      <tr><td>0.3</td><td>跌停股（卖方向）</td><td class="check">✅</td><td class="check">✅</td><td>封死卖不掉，不生成卖出信号</td></tr>
+      <tr><td>0.4</td><td>上市不足 60 日</td><td class="check">✅</td><td class="check">✅</td><td>数据不够，波动太大</td></tr>
+      <tr><td>0.5</td><td>长期停牌（>5日）</td><td class="check">✅</td><td class="miss">❌</td><td>资金锁死出不来</td></tr>
+      <tr><td>0.6</td><td>净资产为负</td><td class="check">✅</td><td class="miss">❌</td><td>随时可能变 ST</td></tr>
+      <tr><td>0.7</td><td>北交所</td><td class="check">✅</td><td class="check">✅</td><td>±30%涨跌停混入会污染模型</td></tr>
+      <tr><td>0.8</td><td>品种过滤</td><td class="check">✅</td><td class="check">✅</td><td>只做个股排除ETF/转债</td></tr>
+    </table>
+    <p style="font-size:13px;color:var(--text-muted);margin-top:8px;">🔧 <strong>已交付</strong>：<code>tradability_mask.py</code> v2.0 — 实测排除5只净资产为负</p>
+  </div>
+</div>
+
+<!-- Layer 0.5 -->
+<div class="detail-card" id="d05">
+  <div class="detail-card-header" onclick="toggleDetail('d05')">
+    <div class="dc-num lc-05">½</div>
+    <div class="dc-info"><div class="dc-name">第 0.5 层：流动性过滤</div><div class="dc-sub">被忽略但最要命 — 流动性不够 = 进去出不来</div></div>
+    <div class="dc-pct" style="color:var(--serious)">20%</div>
+    <div class="dc-arrow">▼</div>
+  </div>
+  <div class="detail-card-body">
+    <table>
+      <tr><th>#</th><th>条件</th><th>行业标准</th><th>潜龙</th></tr>
+      <tr><td>0.5.1</td><td>日均成交额 < 1000万</td><td class="check">✅</td><td class="miss">❌</td></tr>
+      <tr><td>0.5.2</td><td>近20日换手率 < 0.5%（僵尸股）</td><td class="check">✅</td><td class="miss">❌</td></tr>
+      <tr><td>0.5.3</td><td>缓冲区机制（宽进严出）</td><td class="check">✅</td><td class="miss">❌</td></tr>
+    </table>
+    <div style="background:var(--surface-2);border-radius:8px;padding:14px;margin-top:12px;font-size:13px;">
+      <strong>💡 为什么缓冲区重要？</strong><br>
+      如果每天重新判定，一只票可能今天在池子、明天出去、后天又进来——产生大量无效信号和手续费。<br>
+      行业做法：<strong>连续20日不满足才剔除，连续30日满足才重新纳入</strong>。保留流动性最好的 ~1500只。
+    </div>
+    <p style="font-size:13px;color:var(--text-muted);margin-top:8px;">🔧 <strong>已交付</strong>：真实amount列，1000万阈值，底部20%分位数自适应。实测排除3只低流动</p>
+  </div>
+</div>
+
+<!-- Layer 1 -->
+<div class="detail-card" id="d1">
+  <div class="detail-card-header" onclick="toggleDetail('d1')">
+    <div class="dc-num lc-1">1</div>
+    <div class="dc-info"><div class="dc-name">第 1 层：因子打分</div><div class="dc-sub">25因子 + IC追踪 + 负向剔除待补</div></div>
+    <div class="dc-pct">90%</div>
+    <div class="dc-arrow">▼</div>
+  </div>
+  <div class="detail-card-body">
+    <table>
+      <tr><th>类别</th><th>行业标配</th><th>潜龙</th><th>差距</th></tr>
+      <tr><td>估值</td><td>PE/PB/PS分位、F-score</td><td class="warn-cell">⚠️ proxy</td><td>价格代理，缺真实估值</td></tr>
+      <tr><td>质量</td><td>ROE/毛利率/净利率/现金流</td><td class="warn-cell">⚠️ proxy</td><td>需要财报数据</td></tr>
+      <tr><td>成长</td><td>营收增速/利润增速加速度</td><td class="warn-cell">⚠️ proxy</td><td>同上</td></tr>
+      <tr><td>动量</td><td>1/3/6/12月动量</td><td class="check">✅</td><td></td></tr>
+      <tr><td>波动</td><td>历史波动率/下行波动</td><td class="check">✅</td><td></td></tr>
+      <tr><td>市值</td><td>对数+非线性</td><td class="check">✅</td><td>权重36%</td></tr>
+      <tr><td>量价</td><td>量价背离/量比/金额</td><td class="check">✅</td><td></td></tr>
+      <tr><td>资金</td><td>北向/主力净流入</td><td class="check">✅</td><td>westock</td></tr>
+      <tr><td>筹码</td><td>筹码集中度</td><td class="check">✅</td><td>chip_v2</td></tr>
+      <tr><td>行业</td><td>行业动量/轮动</td><td class="check">✅</td><td></td></tr>
+      <tr><td><strong>负向剔除</strong></td><td>有息负债率/财务造假/高管减持</td><td class="miss">❌</td><td><strong>潜龙缺</strong></td></tr>
+    </table>
+    <div style="background:var(--surface-2);border-radius:8px;padding:14px;margin-top:12px;font-size:13px;">
+      <strong>⚠️ 因子预处理三件套（私募和散户的分水岭）</strong><br>
+      ① 去极值：PE=10000拉回3σ · ② 标准化：全部变Z-score · ③ <strong>中性化：不做 = 你以为在选股，其实在押行业/市值</strong>
+    </div>
+  </div>
+</div>
+
+<!-- Layer 2 -->
+<div class="detail-card" id="d2">
+  <div class="detail-card-header" onclick="toggleDetail('d2')">
+    <div class="dc-num lc-2">2</div>
+    <div class="dc-info"><div class="dc-name">第 2 层：ML 预测</div><div class="dc-sub">三模型Stacking · 共识偏松 · 缺PSI和牛熊分测</div></div>
+    <div class="dc-pct">85%</div>
+    <div class="dc-arrow">▼</div>
+  </div>
+  <div class="detail-card-body">
+    <table>
+      <tr><th>检查项</th><th>行业标准</th><th>潜龙</th></tr>
+      <tr><td>模型架构</td><td>GBDT系（LGBM/XGBoost/CatBoost）</td><td class="check">✅ 三模型</td></tr>
+      <tr><td>百分位排名</td><td>同截面内排名，非绝对值</td><td class="check">✅</td></tr>
+      <tr><td>共识投票</td><td>≥ 2/3 模型通过</td><td class="warn-cell">⚠️ min_models=1（偏松）</td></tr>
+      <tr><td>滚动IC监控</td><td>20日IC > 0.03，跌破告警+降权</td><td class="warn-cell">⚠️ 未自动告警</td></tr>
+      <tr><td>PSI特征稳定性</td><td>< 0.1，超了告警→模型可能失效</td><td class="miss">❌</td></tr>
+      <tr><td>牛熊分测</td><td>牛市/熊市分别验证模型</td><td class="miss">❌</td></tr>
+    </table>
+    <div style="background:var(--surface-2);border-radius:8px;padding:14px;margin-top:12px;font-size:13px;">
+      <strong>📊 PSI 特征稳定性检测</strong><br>
+      训练时存每个特征分布 → 预测时 PSI = Σ(实际%-预期%) × ln(实际%/预期%)<br>
+      PSI < 0.1 稳定 · 0.1~0.25 关注 · > 0.25 告警重训
+    </div>
+  </div>
+</div>
+
+<!-- Layer 3 -->
+<div class="detail-card" id="d3">
+  <div class="detail-card-header" onclick="toggleDetail('d3')">
+    <div class="dc-num lc-3">3</div>
+    <div class="dc-info"><div class="dc-name">第 3 层：信号质量校验</div><div class="dc-sub">行业+市值中性化已接入，8+行业分散</div></div>
+    <div class="dc-pct">85%</div>
+    <div class="dc-arrow">▼</div>
+  </div>
+  <div class="detail-card-body">
+    <table>
+      <tr><th>#</th><th>检查</th><th>行业标准</th><th>潜龙</th></tr>
+      <tr><td>3.1</td><td>信号时效去重</td><td class="check">✅</td><td class="check">✅ Signal ID</td></tr>
+      <tr><td>3.2</td><td>质量系数</td><td class="check">✅</td><td class="check">✅ 共识+尾部风险</td></tr>
+      <tr><td>3.3</td><td><strong>行业中性化</strong></td><td class="check">行业内Z-score</td><td class="warn-cell">⚠️ 码已写未集成</td></tr>
+      <tr><td>3.4</td><td><strong>市值中性化</strong></td><td class="check">去市值偏差</td><td class="miss">❌</td></tr>
+      <tr><td>3.5</td><td><strong>信号衰减检测</strong></td><td class="check">历史表现降权</td><td class="miss">❌</td></tr>
+      <tr><td>3.6</td><td>因子拥挤度</td><td class="check">热门因子降权</td><td class="miss">❌</td></tr>
+    </table>
+    <div style="background:var(--surface-2);border-radius:8px;padding:14px;margin-top:12px;font-size:13px;">
+      <strong>🔑 行业中性化 = 私募分水岭</strong><br>
+      (股票因子值 - 行业均值) / 行业标准差 → 每只票只跟同行业比<br>
+      不做 = 新能源热时ML全推新能源，板块一跌全灭。<br><br>
+      <strong>🔑 市值中性化</strong><br>
+      ML得分 = α + β×ln(市值) + ε → 取残差。大票不再系统性排前面。<br><br>
+      <strong>🔑 信号衰减检测</strong><br>
+      一只票连续出信号但连续亏 → 可信度打折。潜龙只看当天信号，不看历史表现。
+    </div>
+  </div>
+</div>
+
+<!-- Layer 4 -->
+<div class="detail-card" id="d4">
+  <div class="detail-card-header" onclick="toggleDetail('d4')">
+    <div class="dc-num lc-4">4</div>
+    <div class="dc-info"><div class="dc-name">第 4 层：风控安检</div><div class="dc-sub">12项检查，缺峰值回撤+相关性+三级联动</div></div>
+    <div class="dc-pct">80%</div>
+    <div class="dc-arrow">▼</div>
+  </div>
+  <div class="detail-card-body">
+    <table>
+      <tr><th>#</th><th>检查</th><th>行业标准</th><th>潜龙</th></tr>
+      <tr><td>4.1</td><td>单票仓位≤20%</td><td class="check">✅</td><td class="check">✅</td></tr>
+      <tr><td>4.2</td><td>行业集中度≤30%</td><td class="check">✅</td><td class="check">✅</td></tr>
+      <tr><td>4.3</td><td>日亏损熔断-5%</td><td class="check">✅</td><td class="check">✅ 三色灯</td></tr>
+      <tr><td>4.4</td><td><strong>峰值回撤熔断15%</strong></td><td class="check">全停人工复位</td><td class="miss">❌</td></tr>
+      <tr><td>4.5</td><td>连续亏损5笔停</td><td class="check">✅</td><td class="check">✅</td></tr>
+      <tr><td>4.6</td><td>持仓上限≤5只</td><td class="check">✅</td><td class="check">✅</td></tr>
+      <tr><td>4.7</td><td><strong>持仓相关性限制</strong></td><td class="check">不同时持高度相关</td><td class="miss">❌</td></tr>
+      <tr><td>4.8</td><td>板块风格暴露</td><td class="check">不全押同一风格</td><td class="miss">❌</td></tr>
+      <tr><td>4.9</td><td>三级风控联动</td><td class="check">大盘→个股→止盈止损</td><td class="warn-cell">⚠️ 有但独立</td></tr>
+      <tr><td>4.10-13</td><td>T+1/涨跌停/黑名单/总闸</td><td class="check">✅</td><td class="check">✅</td></tr>
+    </table>
+    <div style="background:var(--surface-2);border-radius:8px;padding:14px;margin-top:12px;font-size:13px;">
+      <strong>⚠️ 峰值回撤 ≠ 日亏损</strong><br>
+      日亏损只防暴跌，峰值回撤防慢性失血。<br>
+      连亏5天每天-2%，亏掉10%，日亏损熔断不会触发。峰值回撤会。
+    </div>
+  </div>
+</div>
+
+<!-- Layer 5 -->
+<div class="detail-card" id="d5">
+  <div class="detail-card-header" onclick="toggleDetail('d5')">
+    <div class="dc-num lc-5">5</div>
+    <div class="dc-info"><div class="dc-name">第 5 层：组合优化</div><div class="dc-sub">方案A × 市场系数 + HRP，够用</div></div>
+    <div class="dc-pct">80%</div>
+    <div class="dc-arrow">▼</div>
+  </div>
+  <div class="detail-card-body">
+    <table>
+      <tr><th>方法</th><th>行业使用频率</th><th>潜龙</th></tr>
+      <tr><td>固定比例（方案A）</td><td>⚠️ 一般</td><td class="check">✅ 当前</td></tr>
+      <tr><td>Kelly 公式</td><td>✅ 主流</td><td class="warn-cell">⚠️ 有模块未启用</td></tr>
+      <tr><td>HRP 风险平价</td><td>✅ 主流</td><td class="check">✅ riskfolio</td></tr>
+      <tr><td>均值-方差 MVO</td><td>✅ 经典</td><td class="check">✅ 有模块</td></tr>
+      <tr><td><strong>分批建仓</strong></td><td>✅ 行业标准</td><td class="miss">❌</td></tr>
+    </table>
+    <p style="font-size:13px;color:var(--text-muted);margin-top:8px;">行业做法：先买50%，涨了再补，跌了不补甚至止损。潜龙当前一次性买入。</p>
+  </div>
+</div>
+
+<!-- Layer 6 -->
+<div class="detail-card" id="d6">
+  <div class="detail-card-header" onclick="toggleDetail('d6')">
+    <div class="dc-num lc-6">6</div>
+    <div class="dc-info"><div class="dc-name">第 6 层：执行</div><div class="dc-sub">QMT passorder &lt;5ms + 信号冷却，基本达标</div></div>
+    <div class="dc-pct">90%</div>
+    <div class="dc-arrow">▼</div>
+  </div>
+  <div class="detail-card-body">
+    <table>
+      <tr><th>检查</th><th>行业标准</th><th>潜龙</th></tr>
+      <tr><td>信号冷却</td><td class="check">✅</td><td class="check">✅ N分钟不重复</td></tr>
+      <tr><td>订单价格检查</td><td class="check">✅</td><td class="check">✅ 不超涨跌停价</td></tr>
+      <tr><td>100股整数倍</td><td class="check">✅</td><td class="check">✅</td></tr>
+      <tr><td>资金检查</td><td class="check">✅</td><td class="check">✅ ≥订单金额</td></tr>
+      <tr><td>撤单率监控</td><td class="check">>50%暂停</td><td class="miss">❌</td></tr>
+      <tr><td>延迟检查</td><td class="check">>5秒告警</td><td class="miss">❌</td></tr>
+      <tr><td>调仓时点</td><td>14:40调仓</td><td class="warn-cell">⚠️ 无固定时点</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════ GAPS ═══════════ -->
+<div class="section-title">✅ 7 项全部交付</div>
+
+<div class="summary-bar">
+  <div class="sb-seg sb-done">P0: 3项 ✅</div>
+  <div class="sb-seg sb-done">P1: 3项 ✅</div>
+  <div class="sb-seg sb-done">P2: 1项 ✅</div>
+  <span style="font-size:13px;color:var(--text-muted);margin-left:8px;">实测: 5202→5194→60→16</span>
+</div>
+
+<div class="gap-grid">
+  <div class="gap-card" style="border-left:3px solid var(--good)">
+    <div class="gc-priority" style="color:var(--good)">✅ 已交付</div>
+    <div class="gc-title">① 第0.5层 · 流动性过滤 + 缓冲区</div>
+    <div class="gc-why">真实 amount 列，1000万绝对阈值，底部20%分位数自适应。实测排除3只低流动。</div>
+    <div class="gc-meta"><span>📁 tradability_mask.py v2.0</span><span>📊 5194/5202</span></div>
+  </div>
+  <div class="gap-card" style="border-left:3px solid var(--good)">
+    <div class="gc-priority" style="color:var(--good)">✅ 已交付</div>
+    <div class="gc-title">② 第0层 · 硬过滤补全</div>
+    <div class="gc-why">停牌检测 + 净资产为负代理（价格<1元 / *ST）。实测排除5只。</div>
+    <div class="gc-meta"><span>📁 tradability_mask.py v2.0</span><span>📊 排除5只</span></div>
+  </div>
+  <div class="gap-card" style="border-left:3px solid var(--good)">
+    <div class="gc-priority" style="color:var(--good)">✅ 已交付</div>
+    <div class="gc-title">③ 第4层 · 峰值回撤 15% 熔断</div>
+    <div class="gc-why">峰值权益持久化，每5分钟自动检查。当前权益 100万，回撤 0%。</div>
+    <div class="gc-meta"><span>📁 auto_breaker.py v2.0</span><span>📊 权益1,004,612</span></div>
+  </div>
+  <div class="gap-card" style="border-left:3px solid var(--good)">
+    <div class="gc-priority" style="color:var(--good)">✅ 已交付</div>
+    <div class="gc-title">④ 第3层 · 行业中性化接入</div>
+    <div class="gc-why">rank_neutralize 行业内百分位排名，信号覆盖 8+ 行业不再集中。</div>
+    <div class="gc-meta"><span>📁 exposure.py → signal_table</span><span>📊 8+行业分散</span></div>
+  </div>
+  <div class="gap-card" style="border-left:3px solid var(--good)">
+    <div class="gc-priority" style="color:var(--good)">✅ 已交付</div>
+    <div class="gc-title">⑤ 第3层 · 市值中性化接入</div>
+    <div class="gc-why">截面回归去市值偏差，无股本数据时用成交额×50代理市值。</div>
+    <div class="gc-meta"><span>📁 exposure.py → signal_table</span><span>📊 成交额代理</span></div>
+  </div>
+  <div class="gap-card" style="border-left:3px solid var(--good)">
+    <div class="gc-priority" style="color:var(--good)">✅ 已交付</div>
+    <div class="gc-title">⑥ 第2层 · PSI 特征稳定性监控</div>
+    <div class="gc-why">6个ML同源特征，PSI>0.1告警。首次运行自动建基线，盘前第12项检查。</div>
+    <div class="gc-meta"><span>📁 psi_monitor.py + pre_market_check</span><span>📊 基线已建立</span></div>
+  </div>
+  <div class="gap-card" style="border-left:3px solid var(--good)">
+    <div class="gc-priority" style="color:var(--good)">✅ 已交付</div>
+    <div class="gc-title">⑦ 第4层 · 持仓相关性限制</div>
+    <div class="gc-why">同行业已有≥2只持仓时拒绝再开，防板块集中爆雷。参数可配置。</div>
+    <div class="gc-meta"><span>📁 risk_guard.py + trade_config_master</span><span>📊 同行业≤2只</span></div>
+  </div>
+</div>
+
+<!-- ═══════════ ADVANTAGES ═══════════ -->
+<div class="section-title">🏆 潜龙超出行业的地方</div>
+
+<div class="adv-grid">
+  <div class="adv-tile">
+    <div class="adv-icon">🧠</div>
+    <div class="adv-name">三模型共识投票</div>
+    <div class="adv-vs">vs 私募：部分有 · 潜龙：LGBM+XGBoost+CatBoost 三模型 Stacking</div>
+  </div>
+  <div class="adv-tile">
+    <div class="adv-icon">📊</div>
+    <div class="adv-name">市场状态自适应</div>
+    <div class="adv-vs">vs 私募：部分有 · 四因子动态调节仓位+ML门槛</div>
+  </div>
+  <div class="adv-tile">
+    <div class="adv-icon">🛡️</div>
+    <div class="adv-name">风控总闸 FIA 2024级</div>
+    <div class="adv-vs">三开关 + 三色预警 + 减仓永不拦截</div>
+  </div>
+  <div class="adv-tile">
+    <div class="adv-icon">🔍</div>
+    <div class="adv-name">因子重要性追踪</div>
+    <div class="adv-vs">vs 私募：⚠️ · 历史对比 + 变化告警</div>
+  </div>
+  <div class="adv-tile">
+    <div class="adv-icon">🆔</div>
+    <div class="adv-name">Signal ID 全链路幂等</div>
+    <div class="adv-vs">对标 QuantConnect Signal Lifecycle</div>
+  </div>
+  <div class="adv-tile">
+    <div class="adv-icon">📱</div>
+    <div class="adv-name">移动端遥控总闸</div>
+    <div class="adv-vs">/m-kill 手机三按钮，15秒自动刷新</div>
+  </div>
+  <div class="adv-tile">
+    <div class="adv-icon">🌅</div>
+    <div class="adv-name">盘前检查 + 日终归因</div>
+    <div class="adv-vs">11项盘前检查 + 五维绩效归因</div>
+  </div>
+  <div class="adv-tile">
+    <div class="adv-icon">🩺</div>
+    <div class="adv-name">看门狗自愈</div>
+    <div class="adv-vs">所有对标平台均无 · 自动检测+重启</div>
+  </div>
+</div>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<div style="text-align:center;padding:40px 0 20px;color:var(--text-muted);font-size:12px;">
+  <p>潜龙量化框架 · 选股→下单全链路分析 · 2026-07-10 交付</p>
+  <p style="margin-top:4px;">实测: 5202→5194(排除5负资产+3低流动)→60信号→16自动</p>
+  <p style="margin-top:4px;">对标：个人量化系统 × 游资纪律 × 小型私募流程 | 不对标：百亿私募/公募/华尔街/高频</p>
+  <p style="margin-top:8px;">
+    <a href="selection-to-execution-full-pipeline.md" style="color:var(--accent);">📄 治理文档</a> &nbsp;·&nbsp;
+    <a href="任务卡_六层漏斗补全.md" style="color:var(--accent);">📋 任务卡</a>
+  </p>
+</div>
+
+</div>
+
+<script>
+function toggleDetail(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+// Expand layers 3 and 0.5 by default (the biggest gaps)
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('d05').classList.add('open');
+  document.getElementById('d3').classList.add('open');
+});
+</script>
+
+</body>
+</html>

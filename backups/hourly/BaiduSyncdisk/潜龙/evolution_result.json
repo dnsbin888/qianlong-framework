@@ -1,0 +1,82 @@
+{
+  "best_params": {
+    "stop_loss": -0.017,
+    "take_profit": 0.07,
+    "hold_days": 6,
+    "sharpe": 3.28
+  },
+  "best_fitness": 3.282333979161555,
+  "history": [
+    {
+      "trial": 1,
+      "sharpe": -0.63,
+      "stop_loss": -0.039,
+      "take_profit": 0.04,
+      "hold_days": 4
+    },
+    {
+      "trial": 2,
+      "sharpe": 2.23,
+      "stop_loss": -0.018,
+      "take_profit": 0.03,
+      "hold_days": 6
+    },
+    {
+      "trial": 3,
+      "sharpe": 0.87,
+      "stop_loss": -0.017,
+      "take_profit": 0.05,
+      "hold_days": 3
+    },
+    {
+      "trial": 4,
+      "sharpe": 1.66,
+      "stop_loss": -0.02,
+      "take_profit": 0.05,
+      "hold_days": 5
+    },
+    {
+      "trial": 5,
+      "sharpe": 0.19,
+      "stop_loss": -0.028,
+      "take_profit": 0.07,
+      "hold_days": 3
+    },
+    {
+      "trial": 6,
+      "sharpe": -0.72,
+      "stop_loss": -0.044,
+      "take_profit": 0.06,
+      "hold_days": 3
+    },
+    {
+      "trial": 7,
+      "sharpe": 2.2,
+      "stop_loss": -0.034,
+      "take_profit": 0.05,
+      "hold_days": 6
+    },
+    {
+      "trial": 8,
+      "sharpe": -1.14,
+      "stop_loss": -0.036,
+      "take_profit": 0.03,
+      "hold_days": 4
+    },
+    {
+      "trial": 9,
+      "sharpe": 2.07,
+      "stop_loss": -0.029,
+      "take_profit": 0.04,
+      "hold_days": 6
+    },
+    {
+      "trial": 10,
+      "sharpe": 0.42,
+      "stop_loss": -0.023,
+      "take_profit": 0.03,
+      "hold_days": 5
+    }
+  ],
+  "strategy": "第一次建组合因子测试"
+}

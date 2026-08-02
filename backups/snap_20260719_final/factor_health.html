@@ -1,0 +1,1015 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><title>因子中心 — 潜龙</title>
+<link rel="stylesheet" href="/static/css/style.css?v=3">
+<script src="/static/js/plotly.min.js"></script>
+<style>
+body{background:#0d0e10;color:#e0e0e0;font-family:system-ui,sans-serif;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+main{padding:10px 16px;max-width:1400px;width:100%;margin:0 auto;flex:1;overflow-y:auto;min-height:0}
+h1{color:#409eff;margin:0 0 2px 0;font-size:18px}
+.sub{color:#888;font-size:11px;margin-bottom:8px}
+.tabs{display:flex;gap:0;margin-bottom:10px;border-bottom:2px solid #303050}
+.tab{padding:6px 14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:#888;font-size:13px}
+.tab:hover{color:#e0e0e0}.tab.active{color:#409eff;border-bottom-color:#409eff;font-weight:bold}
+.cards{display:flex;gap:6px;margin:6px 0;flex-wrap:wrap}
+.card{flex:1;min-width:80px;background:#16213e;border-radius:5px;padding:8px;text-align:center}
+.card .n{font-size:20px;font-weight:bold}.card .l{font-size:10px;color:#888;margin-top:1px}
+.green{color:#67c23a}.yellow{color:#e6a23c}.red{color:#f56c6c}.gray{color:#888}
+table{width:100%;border-collapse:collapse;margin:4px 0;table-layout:auto}
+.panel{overflow-x:auto}
+th{background:#16213e;padding:5px 6px;text-align:left;font-size:11px;border-bottom:2px solid #303050}
+td{padding:5px 6px;border-bottom:1px solid #202040;font-size:11px}
+.bar{height:5px;border-radius:2px;display:inline-block}
+.btn{padding:3px 8px;border-radius:3px;cursor:pointer;border:1px solid #303050;background:transparent;color:#ccc;font-size:11px;margin:1px}
+.btn:hover{background:rgba(64,158,255,.1)}.btn-danger:hover{background:rgba(245,108,108,.15);color:#f56c6c;border-color:#f56c6c}
+.btn-green:hover{background:rgba(103,194,58,.15);color:#67c23a;border-color:#67c23a}
+.panel{display:none}.panel.active{display:block}
+.frm{background:#16213e;border-radius:6px;padding:14px;margin:10px 0;max-width:500px}
+.frm input,.frm textarea{width:100%;padding:5px 8px;margin:3px 0;background:#1a1a2e;border:1px solid #303050;color:#e0e0e0;border-radius:3px;font-size:12px;box-sizing:border-box}
+.frm textarea{min-height:60px;resize:vertical}
+.retired{opacity:0.4}
+.links{font-size:12px;margin:8px 0}.links a{color:#888;text-decoration:none;margin-right:12px}.links a:hover{color:#409eff}
+</style></head><body>
+<header class="topbar"><div class="topbar-left"><span class="logo-text">🐉 潜龙</span><nav class="topbar-nav" id="topNav"></nav><span style="color:#F1A100;font-size:13px;margin-left:8px">| 因子中心</span></div><div class="topbar-right"><span class="clock" id="clock">--:--:--</span></div></header>
+<main>
+
+<h1>📊 因子中心</h1>
+<div class="sub">健康监控 + 自定义因子 + 策略/公式管理 | FactorRegistry 驱动</div>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" onclick="switchTab('health')">🫀 健康监控</div>
+  <div class="tab" onclick="switchTab('strategies')">🎯 策略</div>
+  <div class="tab" onclick="switchTab('formulas')">📈 公式</div>
+  <div class="tab" onclick="switchTab('ictable')">📋 IC对比</div>
+  <div class="tab" onclick="switchTab('market')">📊 市场分析</div>
+  <div class="tab" onclick="switchTab('ai')">AI因子</div>
+</div>
+
+<!-- ═══ 健康监控 Tab ═══ -->
+<div class="panel active" id="panel-health">
+  <div class="cards" id="summary"></div>
+  <div class="cards" id="perfCards" style="display:none"></div>
+  <div style="margin:8px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <button class="btn btn-green" onclick="runCheck()" title="用已有IC数据重新给所有因子打分，更新权重乘数">🫀 健康检查</button>
+    <button class="btn btn-green" onclick="runIC()" title="从原始行情数据重新计算每个因子的IC值(1/3/5/10/20日窗口)，生成历史快照，完成后自动刷新健康检查">🧪 运行IC验证</button>
+    <button class="btn btn-green" onclick="autoCombo()" title="AI自动组合 — 选|IC|>0.05因子+去重+IC加权+自动回测" style="background:rgba(168,85,247,.1);color:#a855f7;border-color:#a855f7">🤖 AI组合</button>
+    <button class="btn btn-green" onclick="openFactorForm()" title="注册新的自定义因子到因子库">+ 添加因子</button>
+    <input id="healthSearch" placeholder="🔍 搜索因子..." style="padding:3px 8px;background:#1a1a2e;border:1px solid #303050;color:#e0e0e0;border-radius:3px;font-size:12px;width:160px" oninput="filterHealth()">
+    <label style="font-size:12px;color:#888;cursor:pointer"><input type="checkbox" id="showRetired" checked onchange="filterHealth()"> 显示退役</label>
+    <span style="color:#888;font-size:12px" id="lastCheck"></span>
+  </div>
+  <table><thead><tr><th>因子</th><th>健康</th><th>IC(5d)</th><th>趋势</th><th>状态</th><th>操作</th></tr></thead><tbody id="tbody-health"></tbody></table>
+  <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
+    <div id="icTrendChart" style="flex:1;min-width:400px;height:300px;background:#141619;border-radius:6px;border:1px solid #2a2c30"></div>
+    <div id="corrHeatmap" style="flex:1;min-width:400px;height:300px;background:#141619;border-radius:6px;border:1px solid #2a2c30"></div>
+  </div>
+  <div style="font-size:11px;color:#666;margin-top:8px">🟢>70正常 🟡40-70减半 🔴<40归零 ⚫退役 | 全部因子 | 搜索筛选 | 退役可隐藏 | <a href="/factor-ic-v15" style="color:#409eff">📊 因子IC看板 →</a></div>
+
+  <!-- 因子表单 (迁自 /user-customizations) -->
+  <div class="frm" id="factorForm" style="display:none;max-width:700px;margin-top:10px">
+    <div style="font-weight:bold;color:#409eff;margin-bottom:12px" id="factorFormTitle">添加自定义因子</div>
+    <input id="fName" placeholder="名称(英文, 如 my_rsi)" style="width:100%">
+    <input id="fDisplay" placeholder="显示名(中文, 如 我的RSI)" style="width:100%">
+    <input id="fDesc" placeholder="描述 (如 自定义14日RSI计算)" style="width:100%">
+    <div style="display:flex;gap:4px;align-items:center">
+      <input id="fFormula" placeholder="Python函数路径 (如 factor_pipeline.my_factor)" style="flex:1">
+      <button class="btn" onclick="loadSourceCode()" style="font-size:10px;white-space:nowrap">📂 加载源码</button>
+    </div>
+    <textarea id="fParams" placeholder='参数(JSON格式, 可选) 如 {"period":14,"smooth":true}' style="min-height:50px"></textarea>
+    <input id="fCategory" placeholder="分类 (技术/资金/筹码/自定义)" value="自定义" style="width:100%">
+    <textarea id="fCode" placeholder="# Python源码 (自动保存到 D:\\quant_framework\\_因子名.py)&#10;import numpy as np&#10;&#10;def my_factor(df):&#10;    c = df[\"close\"].values&#10;    if len(c) < 20: return None&#10;    return float(c[-1] / c[-20] - 1)" style="min-height:200px;font-family:monospace;font-size:11px"></textarea>
+    <div style="margin-top:10px;display:flex;gap:6px">
+      <button class="btn btn-green" onclick="saveFactorFull()">💾 保存元数据</button>
+      <button class="btn btn-green" onclick="saveSourceOnly()">📝 保存源码</button>
+      <button class="btn" onclick="document.getElementById('factorForm').style.display='none'">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 策略构建器 Tab ═══ -->
+<div class="panel" id="panel-strategies">
+  <div style="font-size:12px;color:#888;margin-bottom:8px">🎯 策略仪表盘: 排行榜 + 对比 + Walk-Forward回测 + 审批。对标Quantopian。</div>
+
+  <!-- 排行榜 -->
+  <div class="cards" id="leaderboard" style="margin-bottom:10px"></div>
+
+  <!-- 对比图 -->
+  <div class="card" id="compareChart" style="display:none;padding:10px;margin-bottom:10px">
+    <h3 style="margin:0 0 6px 0;font-size:14px">📈 策略绩效对比</h3>
+    <div id="comparePlot" style="height:300px"></div>
+  </div>
+
+  <!-- 工具栏 -->
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+    <button class="btn btn-green" onclick="showBuilder()">+ 新建策略</button>
+    <button class="btn btn-green" onclick="backtestAll()" title="一键回测所有未回测策略">⚡ 批量回测</button>
+    <button class="btn" onclick="toggleEvoPanel()" title="进化系统参数优化建议" style="color:#a855f7;border-color:#a855f7">🧬 进化建议</button>
+    <span id="evoStatus" style="font-size:11px;color:#888"></span>
+    <select id="stratFilter" onchange="loadData('strategies')" style="padding:3px 6px;background:#1a1a2e;border:1px solid #303050;color:#e0e0e0;border-radius:3px;font-size:11px">
+      <option value="all">全部状态</option><option value="draft">📝 草稿</option><option value="review">⏳ 审核中</option><option value="backtested">✅ 已回测</option><option value="sim_running">🚀 运行中</option><option value="real">🏦 实盘</option><option value="paused">⏸️ 暂停</option>
+    </select>
+    <select id="stratSort" onchange="loadData('strategies')" style="padding:3px 6px;background:#1a1a2e;border:1px solid #303050;color:#e0e0e0;border-radius:3px;font-size:11px">
+      <option value="sharpe">按Sharpe</option><option value="win_rate">按胜率</option><option value="name">按名称</option>
+    </select>
+    <span style="font-size:11px;color:#888" id="stratCount"></span>
+  </div>
+
+  <div class="frm" id="builderForm" style="display:none">
+    <div style="font-weight:bold;color:#409eff;margin-bottom:10px">新建策略</div>
+    <input id="bsName" placeholder="策略名称" style="width:100%">
+    <div style="margin:8px 0;font-size:12px;color:#e6a23c">因子组合 (最少1个):</div>
+    <div id="builderFactors"></div>
+    <button class="btn" onclick="addFactorRow()" style="margin:4px 0">+ 添加因子</button>
+    <div style="margin-top:8px">
+      <span style="font-size:12px">触发方式: 加权总分 ≥ </span>
+      <input id="bsTrigger" value="60" style="width:60px;text-align:center"> 分
+    </div>
+    <div style="margin-top:4px">
+      <span style="font-size:12px">止损 </span><input id="bsStop" value="-3" style="width:50px;text-align:center">%
+      <span style="font-size:12px;margin-left:8px">止盈 </span><input id="bsTP" value="5,7,12" style="width:80px;text-align:center">%
+      <span style="font-size:12px;margin-left:8px">持仓 </span><input id="bsHold" value="5" style="width:40px;text-align:center">天
+    </div>
+    <div style="margin-top:4px">
+      <span style="font-size:12px">目标: </span>
+      <select id="bsTarget"><option value="draft">草稿</option><option value="sim">模拟盘</option></select>
+    </div>
+    <div style="margin-top:10px">
+      <button class="btn btn-green" onclick="createStrategy()">💾 保存</button>
+      <button class="btn" onclick="document.getElementById('builderForm').style.display='none'">取消</button>
+    </div>
+  </div>
+
+  <div class="frm" id="evoPanel" style="display:none;border-color:#a855f7">
+    <div style="font-weight:bold;color:#a855f7;margin-bottom:8px">🧬 进化参数建议 <span id="evoWarn" style="font-size:10px"></span></div>
+    <div id="evoContent" style="font-size:12px">加载中...</div>
+  </div>
+  <table><thead><tr><th>策略</th><th>因子组合</th><th>回测</th><th>状态</th><th>操作</th></tr></thead><tbody id="tbody-strategies"></tbody></table>
+</div>
+
+<!-- ═══ 公式 Tab ═══ -->
+<!-- ═══ IC对比 Tab ═══ -->
+<div class="panel" id="panel-ictable">
+  <div style="margin-bottom:8px;color:#888;font-size:11px">多因子周期IC对比 (Spearman截面, 120天x500只)</div>
+  <div style="overflow-x:auto;margin-bottom:12px">
+    <table id="icCompareTable"><tbody><tr><td>加载中...</td></tr></tbody></table>
+  </div>
+  <div style="font-size:12px;color:#e3e3e3;margin-bottom:6px">🤖 LightGBM 因子重要性</div>
+  <div style="overflow-x:auto">
+    <table id="lgbmTable"><tbody><tr><td>加载中...</td></tr></tbody></table>
+  </div>
+  <div style="font-size:12px;color:#e3e3e3;margin:12px 0 6px">🚀 XGBoost 因子重要性</div>
+  <div style="overflow-x:auto">
+    <table id="xgbTable"><tbody><tr><td>加载中...</td></tr></tbody></table>
+  </div>
+</div>
+
+<!-- ═══ 市场分析 Tab ═══ -->
+<div class="panel" id="panel-market">
+  <!-- 情绪仪表 -->
+  <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap" id="marketCards">
+    <div class="card" style="flex:1;min-width:80px"><div class="l">上涨/下跌</div><div class="n"><span class="green" id="mktUp">--</span>/<span class="red" id="mktDown">--</span></div><div class="l" id="mktRatio">--</div></div>
+    <div class="card" style="flex:1;min-width:80px"><div class="l">涨停/跌停</div><div class="n"><span style="color:#FF4051" id="mktLimitUp">--</span>/<span style="color:#00b96b" id="mktLimitDown">--</span></div><div class="l">封板率 <span id="mktSeal">--</span></div></div>
+    <div class="card" style="flex:1;min-width:80px"><div class="l">市场强度</div><div class="n" id="mktStrength" style="font-size:16px">--</div><div class="bar" style="width:100%;height:4px;background:#2a2c30;margin-top:4px"><div id="mktStrengthBar" style="height:100%;width:50%;background:#888;border-radius:2px"></div></div></div>
+    <div class="card" style="flex:1;min-width:80px"><div class="l">成交额</div><div class="n" style="color:#409eff;font-size:14px" id="mktVolume">--</div><div class="l">亿</div></div>
+  </div>
+  <!-- 板块轮动热力图 -->
+  <div style="font-size:12px;color:#e3e3e3;margin:10px 0 4px">🔥 板块轮动 <span style="font-size:10px;color:#888">(按涨跌幅排序)</span></div>
+  <div id="sectorGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;font-size:10px">加载中...</div>
+  <div style="font-size:10px;color:#888;margin-top:8px">行情: 实时缓存 · 行业: 申万映射 · 刷新: 30s</div>
+</div>
+
+<!-- ═══ AI因子 Tab ═══ -->
+<div class="panel" id="panel-ai">
+  <div class="frm" style="max-width:600px">
+    <div style="font-weight:bold;color:#409eff;margin-bottom:10px">🧠 AI因子生成</div>
+    <label style="font-size:12px;color:#888">模型</label>
+    <select id="aiModel" style="width:100%;background:#1a1a2e;border:1px solid #303050;color:#e0e0e0;border-radius:3px;padding:5px 8px;font-size:12px;margin-bottom:6px">
+      <option value="deepseek">DeepSeek-V3 (推荐, 低成本)</option>
+      <option value="gpt">GPT-4 (备用)</option>
+      <option value="manual">纯手工 (不调API)</option>
+    </select>
+    <label style="font-size:12px;color:#888">API Key</label>
+    <input id="aiKey" type="password" placeholder="sk-xxx..." style="width:100%;background:#1a1a2e;border:1px solid #303050;color:#e0e0e0;border-radius:3px;padding:5px 8px;font-size:12px;margin-bottom:6px">
+    <label style="font-size:12px;color:#888">因子描述 (中文即可)</label>
+    <textarea id="aiDesc" placeholder="例如: A股放量突破盘整区间因子，成交量明显放大且价格创20日新高" style="width:100%;min-height:60px;background:#1a1a2e;border:1px solid #303050;color:#e0e0e0;border-radius:3px;padding:5px 8px;font-size:12px;resize:vertical;margin-bottom:6px"></textarea>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="btn btn-green" onclick="generateAI()">🤖 生成因子</button>
+      <span id="aiStatus" style="font-size:11px;color:#888"></span>
+    </div>
+    <div id="aiResult" style="margin-top:8px;font-size:12px;display:none"></div>
+  </div>
+  <div style="font-size:11px;color:#555;margin-top:6px;max-width:600px">
+    💡 提示: 描述越具体，生成因子质量越高。AI自动验证IC，达标自动注册到因子库。
+  </div>
+  <div style="margin-top:12px;max-width:600px">
+    <div style="font-weight:bold;color:#e3e3e3;margin-bottom:6px">📋 历史AI因子</div>
+    <table class="rv-tbl" style="width:100%;font-size:11px"><thead><tr><th>名称</th><th>描述</th><th>IC</th><th>ICIR</th><th>状态</th><th>操作</th></tr></thead><tbody id="aiHistory"><tr><td colspan="6" style="color:#555;text-align:center">加载中...</td></tr></tbody></table>
+  </div>
+</div>
+
+<div class="panel" id="panel-formulas">
+  <button class="btn btn-green" onclick="showAddFormula()">+ 添加公式</button>
+  <input type="file" id="tdxFileInput" onchange="loadTDXFile()" accept="*" style="display:none">
+  <button class="btn btn-green" onclick="document.getElementById('tdxFileInput').click()">📁 选取文件</button>
+  <input id="tdxScanPath" placeholder="TDX公式目录 (可选)" style="padding:3px 8px;background:#1a1a2e;border:1px solid #303050;color:#e0e0e0;border-radius:3px;font-size:11px;width:200px">
+  <button class="btn btn-green" onclick="scanTDXFormulas()">📂 扫描目录</button>
+  <span id="scanStatus" style="font-size:11px;color:#888"></span>
+  <div class="frm" id="addFormulaForm" style="display:none">
+    <div style="font-weight:bold;margin-bottom:8px">添加通达信公式</div>
+    <select id="af2Select" onchange="onSelectFormula()" style="width:100%;background:#1a1a2e;border:1px solid #303050;color:#e0e0e0;border-radius:3px;padding:5px 8px;font-size:12px;margin-bottom:6px">
+      <option value="">-- 从扫描结果选择 --</option>
+    </select>
+    <input id="af2Name" placeholder="公式名称 (my_macd)">
+    <input id="af2Path" placeholder="文件完整路径 (D:\new_tdx\T0002\export\my.fml)">
+    <input id="af2Desc" placeholder="描述 (可选)">
+    <textarea id="af2Source" placeholder="公式源码 (自动加载)" style="min-height:150px;font-family:Consolas,monospace;font-size:11px;background:#0a0c10;color:#b4b6b8"></textarea>
+    <div id="af2Result" style="display:none;margin-top:6px;font-size:12px;color:#67c23a;max-height:200px;overflow-y:auto"></div>
+    <div style="margin-top:8px"><button class="btn btn-green" onclick="addFormula()">💾 注册公式</button> <button class="btn btn-green" onclick="parseTDXFormula()">🔍 解析验证</button> <button class="btn" onclick="document.getElementById('addFormulaForm').style.display='none'">取消</button></div>
+  </div>
+  <table><thead><tr><th>名称</th><th>路径</th><th>状态</th><th>操作</th></tr></thead><tbody id="tbody-formulas"></tbody></table>
+</div>
+
+<script>
+// ═══ Tab ═══
+async function generateAI(){
+  var key=document.getElementById('aiKey').value.trim();
+  var desc=document.getElementById('aiDesc').value.trim();
+  if(!key||!desc){ alert('请填写API Key和因子描述'); return; }
+  // 记忆API Key到本地
+  try{localStorage.setItem('aiFactorKey',key);}catch(e){}
+  var st=document.getElementById('aiStatus'); st.textContent='⏳ 生成中...';
+  var res=document.getElementById('aiResult'); res.style.display='none';
+  try{
+    var model=document.getElementById('aiModel').value;
+    var r=await(await fetch('/api/factor/ai-generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:desc,model:model})})).json();
+    if(r.code===200){ st.textContent='✅ 成功!'; res.style.display='block'; var pre=document.createElement('pre'); pre.style.cssText='background:#0a0c10;padding:8px;border-radius:4px;font-size:11px;color:#b4b6b8;max-height:200px;overflow:auto'; pre.textContent=JSON.stringify(r.data,null,2);
+      res.innerHTML='<div style="color:#00b96b"><b>'+r.message+'<\/b><\/div>'; res.appendChild(pre); }else{ st.textContent='❌ '+r.error; }
+  }catch(e){ st.textContent='❌ '+e.message; }
+}
+async function loadAIHistory(){
+  try{
+    var r=await(await fetch('/api/factor/all')).json();
+    var factors=r.factors||[];
+    var aiFactors=factors.filter(function(f){return f.name.indexOf('ai_')===0||f.category==='AI发现';});
+    var h='';
+    if(!aiFactors.length){ h='<tr><td colspan="6" style="color:#555;text-align:center;padding:8px">暂无AI因子</td></tr>'; }
+    else{ aiFactors.forEach(function(f){ h+='<tr><td style="color:#e3e3e3;font-weight:600">'+f.name+'</td><td style="color:#888;font-size:10px">'+(f.note||f.display||'')+'</td><td style="color:'+(Math.abs(f.ic_5d||0)>0.05?'#00b96b':'#F1A100')+'">'+(f.ic_5d||0).toFixed(4)+'</td><td>'+(f.icir||0).toFixed(3)+'</td><td style="color:'+(f.status==='active'?'#00b96b':'#F1A100')+'">'+(f.status||'--')+'</td><td>'+('pending'===f.status?'<button class="btn btn-green" style="font-size:10px;padding:2px 6px" onclick="approveAI(\''+f.name+'\')">激活</button>':'--')+'</td></tr>'; }); }
+    document.getElementById('aiHistory').innerHTML=h;
+  }catch(e){}
+}
+async function approveAI(name){
+  if(!confirm('确认激活AI因子 '+name+'？激活后参与选股排序。')) return;
+  var r=await(await fetch('/api/factor/health-action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({factor:name,action:'activate'})})).json();
+  alert(r.code===200?'OK 已激活':('FAIL: '+(r.error||'')));
+  if(r.code===200){ loadAIHistory(); }
+}
+function switchTab(t){
+  console.log('switchTab',t);
+  try{
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
+    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+    var btns=document.querySelectorAll('.tab');
+    var map={health:0,strategies:1,formulas:2,ictable:3,market:4,ai:5};
+    if(btns[map[t]]) btns[map[t]].classList.add('active');
+    var panelEl=document.getElementById('panel-'+t);
+    if(panelEl) panelEl.classList.add('active');
+    if(t==='health') loadHealth();
+    if(t==='strategies') loadData('strategies');
+    if(t==='ictable') loadICTable();
+    if(t==='market') loadMarketTab();
+    if(t==='formulas') loadFormulas();
+    if(t==='ai'){ loadAIHistory().catch(function(){}); }
+    try{localStorage.setItem('factorTab',t);}catch(e){}
+  }catch(e){console.error(e);}
+}
+
+// ═══ 健康监控 ═══
+var _allHealthFactors=[], _icData={};
+
+function loadHealth(){
+  var tb=document.getElementById('tbody-health');
+  tb.innerHTML='<tr><td colspan="6">加载中...</td></tr>';
+  Promise.all([
+    fetch('/api/factor-health').then(function(r){return r.json();}),
+    fetch('/api/factor-registry').then(function(r){return r.json();}),
+    fetch('/api/factor-ic-v15').then(function(r){return r.json();})
+  ]).then(function(results){
+    var d=results[0], reg=results[1], ic=results[2];
+    if(ic.code===200) _icData=ic.factors||{};
+    if(d.code!==200){tb.innerHTML='<tr><td colspan="6">❌ '+d.error+'</td></tr>';return;}
+    var s=d.summary||{}; var healthFactors=d.factors||[];
+    var regActive=(reg.active||[]).concat(reg.retired||[]);
+
+    // 合并：健康检查有的 + Registry有但健康检查没有的（退役因子）
+    var merged=[];
+    var seen={};
+    healthFactors.forEach(function(f){merged.push(f);seen[f.name]=true;});
+    regActive.forEach(function(rf){
+      if(!seen[rf.name]){
+        merged.push({name:rf.name,display:rf.display||rf.name,health:0,status:rf.status||'retired',ic_score:rf.ic_5d?Math.round(Math.abs(rf.ic_5d)*1000):0,layer_score:0,decay_score:0,danger_days:0});
+      }
+    });
+    _allHealthFactors=merged;
+
+    // 加载活跃用户策略数
+    fetch('/api/strategy-builder/active').then(function(r){return r.json();}).then(function(ad){
+      var userCount=ad.count||0;
+      document.getElementById('summary').innerHTML=
+        '<div class="card"><div class="n green">'+s.healthy+'</div><div class="l">🟢 健康</div></div>'+
+        '<div class="card"><div class="n yellow">'+s.watch+'</div><div class="l">🟡 观察</div></div>'+
+        '<div class="card"><div class="n red">'+s.danger+'</div><div class="l">🔴 危险</div></div>'+
+        '<div class="card"><div class="n gray">'+(s.retiring||0)+'</div><div class="l">⚫ 退役</div></div>'+
+        '<div class="card"><div class="n">'+merged.length+'</div><div class="l">📊 总计</div></div>'+
+        (userCount>0?'<div class="card"><div class="n" style="color:#409eff">'+userCount+'</div><div class="l">🚀 用户策略</div></div>':'');
+    });
+    document.getElementById('lastCheck').textContent='上次: '+(d.checked_at||'?').substring(0,19);
+    filterHealth();
+    loadICTrends();
+    loadCorrHeatmap();
+  }).catch(function(){tb.innerHTML='<tr><td colspan="6">❌ 请先运行 full_market_ic.py + 重启Flask</td></tr>';});
+
+  // P3-3: 策略实时绩效
+  fetch('/api/strategy-performance').then(function(r){return r.json();}).then(function(pd){
+    if(pd.code!==200||!pd.strategies||!pd.strategies.length)return;
+    var pc=document.getElementById('perfCards');
+    pc.style.display='flex'; pc.style.flexWrap='wrap';
+    pc.innerHTML='<div style="width:100%;font-size:12px;color:#888;margin-bottom:2px">📊 策略实时绩效 ('+pd.updated+')</div>'+
+      pd.strategies.map(function(s){
+        return'<div class="card"><div class="n" style="font-size:20px;color:'+(s.sharpe>1?'#67c23a':s.sharpe>0?'#e6a23c':'#f56c6c')+'">'+s.risk+' '+s.sharpe.toFixed(1)+'</div><div class="l">'+s.name+'</div><div style="font-size:10px;color:#888">胜'+(s.win_rate*100).toFixed(0)+'%|'+s.total_trades+'笔'+(s.consecutive_losses>0?'|⚠️连亏'+s.consecutive_losses:'')+'</div></div>';
+      }).join('');
+  });
+}
+
+function filterHealth(){
+  var q=(document.getElementById('healthSearch').value||'').toLowerCase();
+  var showRet=document.getElementById('showRetired').checked;
+  var tb=document.getElementById('tbody-health');
+  var fs=_allHealthFactors.filter(function(f){
+    var match=q===''||(f.name||'').toLowerCase().indexOf(q)>=0||(f.display||'').toLowerCase().indexOf(q)>=0;
+    var ret=f.status==='retired'||f.status==='retiring';
+    if(!showRet&&ret)return false;
+    return match;
+  });
+  if(!fs.length){tb.innerHTML='<tr><td colspan="6" style="color:#888">无匹配</td></tr>';return;}
+  tb.innerHTML=fs.map(function(f){
+    var h=f.health||0, c=h>=70?'green':(h>=40?'#e6a23c':'#f56c6c');
+    var icon=f.status==='healthy'?'🟢':(f.status==='watch'?'🟡':(f.status==='danger'?'🔴':'⚫'));
+    var ret=f.status==='retired'||f.status==='retiring';
+    return'<tr class="'+(ret?'retired':'')+'"><td><b>'+(f.display||f.name)+'</b><br><span style="font-size:10px;color:#888">'+f.name+'</span></td>'+
+      '<td><span class="bar" style="width:'+h+'px;background:'+c+'"></span> '+h+'</td>'+
+      '<td style="font-weight:bold;color:'+(Math.abs(icValNum(f.name,'IC_5d'))>0.05?'#67c23a':'')+'">'+(icValNum(f.name,'IC_5d')!=null?(icValNum(f.name,'IC_5d')>0?'+':'')+icValNum(f.name,'IC_5d').toFixed(4):'--')+'</td>'+'<td>'+trendArrow(f.name)+'</td>'+
+      '<td>'+icon+' '+f.status+(f.danger_days>0?' ('+f.danger_days+'d)':'')+'</td>'+
+      '<td><a href="/factor-ic-v15?factor='+encodeURIComponent(f.name)+'" title="查看 '+f.display+' 完整档案" style="color:#409eff;text-decoration:none;font-size:11px">📋</a> '+
+        '<button class="btn" onclick="openFactorForm(\''+f.name+'\')" title="编辑 '+f.display+'" style="font-size:10px">✏️</button> '+
+        (ret?'<button class="btn btn-green" onclick="override(\''+f.name+'\',\'restore\')">恢复</button>':
+        '<button class="btn btn-danger" onclick="override(\''+f.name+'\',\'force_retire\')">退役</button> '+
+        '<button class="btn" onclick="override(\''+f.name+'\',\'extend_watch\')">延长观察</button>')+'</td></tr>';
+  }).join('');
+}
+
+function autoCombo(){
+  if(!confirm('AI自动组合?\n\n筛选|IC|>0.05的因子->相关性去重->IC加权->创建策略->自动回测\n约需30-60秒'))return;
+  var btn=event.target; btn.disabled=true; btn.textContent='组合中...';
+  fetch('/api/strategy/auto-combo',{method:'POST'}).then(function(r){return r.json()}).then(function(d){
+    btn.disabled=false; btn.textContent='AI组合';
+    if(d.success){
+      var msg='策略: '+d.name+'\n因子: '+d.factors.map(function(f){return f.name+'('+f.weight+'%)'}).join('+')+'\n回测: Sharpe='+(d.backtest.sharpe||0).toFixed(2)+' 胜率='+((d.backtest.win_rate||0)*100).toFixed(0)+'%';
+      alert(msg);
+      loadData('strategies');
+    }else{alert(d.error)}
+  });
+}
+
+function runCheck(){loadHealth();}
+
+function toggleEvoPanel(){
+  var panel=document.getElementById('evoPanel');
+  if(panel.style.display==='block'){panel.style.display='none';return;}
+  panel.style.display='block'; panel.scrollIntoView({behavior:'smooth'});
+  loadEvoSuggestions();
+}
+function loadEvoSuggestions(){
+  var content=document.getElementById('evoContent');
+  content.innerHTML='加载中...';
+  fetch('/api/evolution/suggestions').then(function(r){return r.json();}).then(function(d){
+    if(!d.suggestions||!d.suggestions.length){
+      content.innerHTML='<span style="color:#888">进化参数与现有策略参数一致，无需调整。</span>'+(d.note?'<br>'+d.note:'');
+      return;
+    }
+    var warnEl=document.getElementById('evoWarn');
+    warnEl.innerHTML=d.overfit_warning ?
+      '<b style="color:#f56c6c">⚠️ 过拟合风险!</b> fitness收敛过早('+d.generations+'代)' :
+      '<span style="color:#67c23a">✅ '+d.generations+'代完成, fitness='+(d.best_fitness||0).toFixed(4)+'</span>';
+    var h='<table style="font-size:11px;width:100%"><tr><th>策略</th><th>参数</th><th>当前</th><th>建议</th><th></th></tr>';
+    d.suggestions.forEach(function(s){
+      var keys=['stop_loss','take_profit','hold_days'], labels=['止损','止盈','持仓天'];
+      for(var i=0;i<keys.length;i++){
+        var k=keys[i], cv=s.current[k], sv=s.suggested[k];
+        var changed=Math.abs(cv-sv)>0.001;
+        h+='<tr>';
+        if(i===0) h+='<td rowspan="3"><b>'+s.name+'</b></td>';
+        h+='<td>'+labels[i]+'</td><td>'+cv+'</td><td style="color:'+(changed?'#a855f7':'#888')+'">'+sv+'</td>';
+        if(i===0) h+='<td rowspan="3"><button class="btn btn-green" onclick="applyEvo(\''+s.name+'\')" style="font-size:10px">✅ 应用</button></td>';
+        h+='</tr>';
+      }
+    });
+    content.innerHTML=h+'</table>';
+  });
+}
+function applyEvo(name){
+  if(!confirm('应用进化建议到 '+name+'？\n原参数将被覆盖。'))return;
+  fetch('/api/evolution/apply/'+name,{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    if(d.success){alert('已应用!');loadData('strategies');}else{alert(d.error);}
+  });
+}
+
+function backtestAll(){
+  if(!confirm('确认对全部未回测策略批量运行回测？预计需数分钟。'))return;
+  fetch('/api/strategy-builder/backtest-all',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    alert(d.message||'OK');
+    setTimeout(function(){loadData('strategies');}, 5000);
+  });
+}
+
+function loadICTrends(){
+  fetch('/api/factor-health/ic-trends').then(function(r){return r.json();}).then(function(d){
+    if(!d.dates||!d.dates.length)return;
+    var traces=[];
+    var colors=['#409eff','#67c23a','#e6a23c','#f56c6c','#a855f7','#06b6d4','#f97316','#84cc16'];
+    var i=0;
+    for(var name in d.series){
+      var vals=d.series[name];
+      if(vals.length<2)continue;
+      traces.push({x:d.dates,y:vals,type:'scatter',mode:'lines+markers',name:name,line:{color:colors[i%colors.length],width:2},marker:{size:4}});
+      i++;
+    }
+    Plotly.newPlot('icTrendChart',traces,{
+      template:'plotly_dark',paper_bgcolor:'#141619',plot_bgcolor:'#141619',
+      margin:{l:50,r:20,t:30,b:60},height:300,
+      title:{text:'IC(5d) 趋势',font:{color:'#e3e3e3',size:13}},
+      legend:{font:{size:10}},
+      xaxis:{title:'',tickfont:{size:9},tickangle:-45},
+      yaxis:{title:'IC',tickfont:{size:9},zeroline:true,zerolinecolor:'#444'}
+    },{responsive:true});
+  });
+}
+
+function loadCorrHeatmap(){
+  fetch('/api/factor-health/correlation').then(function(r){return r.json();}).then(function(d){
+    var names=d.factors||[];
+    var matrix=d.matrix||[];
+    if(!names.length||!matrix.length)return;
+    var z=[],x=[],y=[];
+    var pairMap={};
+    (d.redundant_pairs||[]).forEach(function(p){pairMap[p.factor_a+'||'+p.factor_b]=p.level;});
+    for(var i=0;i<matrix.length;i++){
+      var row=matrix[i];
+      z.push(row.correlations||[]);
+      x.push(row.factor);
+      y.push(row.factor);
+    }
+    // 标注冗余对
+    var annots=[];
+    for(var ri=0;ri<z.length;ri++){
+      for(var ci=0;ci<z[ri].length;ci++){
+        var key=x[ri]+'||'+y[ci];
+        if(pairMap[key]) annots.push({x:x[ri],y:y[ci],text:pairMap[key].charAt(0),showarrow:false,font:{color:'#f56c6c',size:9}});
+      }
+    }
+    Plotly.newPlot('corrHeatmap',[{z:z,x:x,y:y,type:'heatmap',colorscale:[[0,'#0d0e10'],[0.5,'#16213e'],[0.8,'#e6a23c'],[0.93,'#f56c6c'],[1,'#ff0000']],zmin:-1,zmax:1,text:z.map(function(r){return r.map(function(v){return v.toFixed(2);});}),texttemplate:'%{text}',hoverongaps:false}],{
+      template:'plotly_dark',paper_bgcolor:'#141619',plot_bgcolor:'#141619',
+      margin:{l:100,r:20,t:30,b:80},height:300,
+      title:{text:'因子相关性矩阵 (Spearman)',font:{color:'#e3e3e3',size:13}},
+      xaxis:{tickfont:{size:9},tickangle:-30},
+      yaxis:{tickfont:{size:9}},
+      annotations:annots
+    },{responsive:true});
+  });
+}
+
+function runIC(){
+  var btn=event.target; btn.disabled=true; btn.textContent='⏳ IC验证中...';
+  fetch('/api/factor/run-ic',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    alert(d.message||'OK'); btn.disabled=false; btn.textContent='🧪 运行IC验证';
+    // 10秒后自动刷新健康检查
+    setTimeout(function(){loadHealth();}, 10000);
+  });
+}
+function override(name,cmd){
+  var r=prompt(cmd==='force_retire'?'退役原因:':'原因:');
+  if(r===null)return;
+  fetch('/api/factor-health/'+name+'/override',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:cmd,reason:r})})
+    .then(function(x){return x.json();}).then(function(d){alert(d.message||'OK');loadHealth();});
+}
+
+// ═══ 因子表单 (迁自 /user-customizations) ═══
+var _editingFactor=null;
+function openFactorForm(name){
+  _editingFactor=name||null;
+  document.getElementById('factorFormTitle').textContent=name?'编辑因子: '+name:'添加自定义因子';
+  if(name){
+    // 加载现有数据
+    fetch('/api/factor-registry').then(function(r){return r.json();}).then(function(d){
+      var all=(d.active||[]).concat(d.retired||[]);
+      var f=all.find(function(x){return x.name===name;});
+      if(f){
+        document.getElementById('fName').value=f.name||''; document.getElementById('fName').disabled=true;
+        document.getElementById('fDisplay').value=f.display||'';
+        document.getElementById('fDesc').value=f.note||'';
+        document.getElementById('fFormula').value=f.compute||'';
+        document.getElementById('fParams').value='';
+        document.getElementById('fCategory').value=f.category||'自定义';
+        // 自动加载源码
+        fetch('/api/factor/source/'+f.name).then(function(r){return r.json();}).then(function(d){
+          if(d.code===200&&d.source)document.getElementById('fCode').value=d.source;
+        });
+      }
+    });
+  }else{
+    document.getElementById('fName').value=''; document.getElementById('fName').disabled=false;
+    document.getElementById('fDisplay').value=''; document.getElementById('fDesc').value='';
+    document.getElementById('fFormula').value=''; document.getElementById('fParams').value='';
+    document.getElementById('fCategory').value='自定义';
+  }
+  var form=document.getElementById('factorForm');
+  form.style.display='block';
+  form.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function loadSourceCode(){
+  var name=document.getElementById('fName').value.trim();
+  if(!name)return alert('请先填写因子名称');
+  fetch('/api/factor/source/'+name).then(function(r){return r.json();}).then(function(d){
+    if(d.code===200){document.getElementById('fCode').value=d.source;}
+    else{alert(d.error||'加载失败');}
+  });
+}
+function saveSourceOnly(){
+  var name=document.getElementById('fName').value.trim();
+  var code=document.getElementById('fCode').value.trim();
+  if(!name||!code)return alert('名称和源码不能为空');
+  fetch('/api/factor/source/'+name,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code})})
+    .then(function(r){return r.json();}).then(function(d){alert(d.message||(d.error||'失败'));});
+}
+function saveFactorFull(){
+  var name=document.getElementById('fName').value.trim();
+  var display=document.getElementById('fDisplay').value.trim();
+  var desc=document.getElementById('fDesc').value.trim();
+  var formula=document.getElementById('fFormula').value.trim();
+  var params=document.getElementById('fParams').value.trim();
+  var cat=document.getElementById('fCategory').value.trim()||'自定义';
+  if(!name||!display)return alert('名称和显示名不能为空');
+  if(params){try{JSON.parse(params);}catch(e){return alert('参数必须是有效JSON');}}
+  var data={name:name,display_name:display,description:desc,category:cat,compute:formula||('user_factors.'+name)};
+  fetch('/api/factor-registry/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+    .then(function(r){return r.json();}).then(function(r){if(r.success){alert(_editingFactor?'已更新':'已注册');document.getElementById('factorForm').style.display='none';loadHealth();}else{alert(r.error||'失败');}});
+}
+
+// ═══ 策略构建器 ═══
+var _registryFactors=[];
+function loadRegFactors(cb){
+  fetch('/api/factor-registry').then(r=>r.json()).then(d=>{
+    _registryFactors=(d.active||[]).concat(d.retired||[]);
+    _registryFactors.sort(function(a,b){return (b.ic_5d||0)-(a.ic_5d||0)});
+    if(cb)cb();
+  });
+}
+function showBuilder(){
+  document.getElementById('builderForm').style.display='block';
+  loadRegFactors(function(){
+    document.getElementById('builderFactors').innerHTML='';
+    addFactorRow();
+  });
+}
+function addFactorRow(){
+  var opts=_registryFactors.map(function(f){return'<option value="'+f.name+'">'+(f.display||f.name)+' (IC='+(f.ic_5d||0).toFixed(3)+')</option>';}).join('');
+  var div=document.createElement('div');
+  div.style.cssText='display:flex;gap:6px;margin:3px 0;align-items:center';
+  div.innerHTML='<select style="flex:2;padding:4px;background:#1a1a2e;border:1px solid #303050;color:#e0e0e0;border-radius:3px;font-size:12px">'+opts+'</select>'+
+    '<input value="50" style="flex:1;padding:4px;background:#1a1a2e;border:1px solid #303050;color:#e0e0e0;border-radius:3px;font-size:12px;text-align:center" placeholder="阈值">'+
+    '<input value="50" style="flex:1;padding:4px;background:#1a1a2e;border:1px solid #303050;color:#e0e0e0;border-radius:3px;font-size:12px;text-align:center" placeholder="权重%">'+
+    '<button class="btn btn-danger" onclick="this.parentElement.remove()" style="font-size:10px">✕</button>';
+  document.getElementById('builderFactors').appendChild(div);
+}
+function createStrategy(){
+  var name=document.getElementById('bsName').value.trim();
+  if(!name)return alert('请输入策略名称');
+  var factors=[];
+  document.getElementById('builderFactors').querySelectorAll('div').forEach(function(div){
+    var sels=div.querySelectorAll('select,input');
+    factors.push({name:sels[0].value,threshold:parseFloat(sels[1].value)||0,weight:parseFloat(sels[2].value)||50});
+  });
+  if(!factors.length)return alert('至少添加1个因子');
+  var tp=(document.getElementById('bsTP').value||'5,7,12').split(',').map(parseFloat);
+  var data={name:name,factors:factors,trigger:{type:'weighted_sum',min_score:parseFloat(document.getElementById('bsTrigger').value)||60},stop_loss:-(Math.abs(parseFloat(document.getElementById('bsStop').value))||3)/100,take_profit:[tp[0]/100,(tp[1]||7)/100,(tp[2]||12)/100],hold_days:parseInt(document.getElementById('bsHold').value)||5,target:document.getElementById('bsTarget').value};
+  fetch('/api/strategy-builder/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+    .then(function(r){return r.json();}).then(function(r){if(r.success){alert('策略已创建');document.getElementById('builderForm').style.display='none';loadData('strategies');}else{alert(r.message||r.error);}});
+}
+
+// ═══ 策略列表 ═══
+function loadData(type){
+  var tb=document.getElementById('tbody-'+type);
+  tb.innerHTML='<tr><td colspan="5">加载中...</td></tr>';
+  fetch('/api/user-'+type).then(function(r){return r.json();}).then(function(d){
+    var items=Array.isArray(d)?d:(d[type]||[]);
+    if(!items||!items.length){items=d.strategies||d[type+'s']||[];}
+    if(!items.length){tb.innerHTML='<tr><td colspan="5" style="color:#888">暂无数据</td></tr>';return;}
+    if(type==='strategies'){
+      fetch('/api/strategy-approval/list').then(function(r){return r.json();}).then(function(ad){
+        var approvals=ad.strategies||[]; var stateMap=ad.states||{};
+        var approvalMap={}; approvals.forEach(function(a){approvalMap[a.name]=a;});
+
+        // 合并审批状态
+        var merged=items.map(function(x){
+          var app=approvalMap[x.name]||{}; x._appState=app.state||x.status||'draft';
+          x._appLabel=stateMap[x._appState]||x._appState;
+          return x;
+        });
+
+        // 筛选
+        var filt=document.getElementById('stratFilter').value;
+        if(filt!=='all') merged=merged.filter(function(x){return x._appState===filt;});
+
+        // 排序
+        var sortBy=document.getElementById('stratSort').value;
+        merged.sort(function(a,b){
+          if(sortBy==='sharpe'){var sa=(a.backtest||{}).annualized_sharpe||0,sb=(b.backtest||{}).annualized_sharpe||0;return sb-sa;}
+          if(sortBy==='win_rate'){var wa=(a.backtest||{}).win_rate||0,wb=(b.backtest||{}).win_rate||0;return wb-wa;}
+          return (a.name||'').localeCompare(b.name||'');
+        });
+
+        document.getElementById('stratCount').textContent=merged.length+'个策略';
+
+        // 排行榜 (Top 3)
+        var ranked=merged.filter(function(x){return (x.backtest||{}).annualized_sharpe;}).sort(function(a,b){return(b.backtest||{}).annualized_sharpe-(a.backtest||{}).annualized_sharpe;});
+        var lb=document.getElementById('leaderboard');
+        lb.innerHTML=ranked.slice(0,5).map(function(x,i){
+          var bt=x.backtest||{}; var sh=bt.annualized_sharpe||0;
+          var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+          return'<div class="card" style="flex:1;min-width:120px"><div class="l">'+medal+' #'+(i+1)+'</div><div class="n" style="font-size:18px;color:'+(sh>1?'#67c23a':sh>0?'#e6a23c':'#f56c6c')+'">'+sh.toFixed(1)+'</div><div class="l">'+x.name+'</div><div style="font-size:9px;color:#888">胜'+(bt.win_rate*100).toFixed(0)+'% | '+bt.method+'</div></div>';
+        }).join('');
+
+        // 对比图 (Plotly)
+        if(ranked.length>=1){
+          document.getElementById('compareChart').style.display='block';
+          var barData=ranked.slice(0,8).map(function(x){
+            var bt=x.backtest||{};
+            return{x:[x.name],y:[bt.annualized_sharpe||0],type:'bar',name:x.name,text:[(bt.win_rate*100).toFixed(0)+'%胜率'],textposition:'auto'};
+          });
+          Plotly.newPlot('comparePlot',barData,{template:'plotly_dark',paper_bgcolor:'#141619',plot_bgcolor:'#141619',margin:{l:40,r:10,t:10,b:80},height:280,yaxis:{title:'Sharpe'}},{responsive:true});
+        }
+
+        // 表格
+        var labelColors={draft:'#888',review:'#e6a23c',approved_sim:'#409eff',sim_running:'#67c23a',sim_failed:'#f56c6c',review_real:'#e6a23c',real:'#67c23a',paused:'#888',retired:'#555'};
+        tb.innerHTML=merged.map(function(x){
+          var appState=x._appState, appLabel=x._appLabel;
+          var factors=(x.factors||[]).map(function(f){return f.name;}).join('+')||(x.buy_conditions||'--');
+          var bt=x.backtest; var btInfo=bt?'Sharpe:'+bt.annualized_sharpe+' 胜率:'+(bt.win_rate*100).toFixed(0)+'%'+' | '+bt.method:'未回测';
+          var actions='<button class="btn btn-green" onclick="backtestStrategy(\''+x.name+'\')">🔄回测</button> ';
+          if(appState==='backtested'||appState==='approved_sim') actions+='<button class="btn btn-green" onclick="deployStrategy(\''+x.name+'\')">🚀部署</button> ';
+          if(appState==='draft') actions+='<button class="btn btn-green" onclick="submitReview(\''+x.name+'\')">📤提交审核</button> ';
+          if(appState==='review') actions+='<button class="btn btn-green" onclick="approveSim(\''+x.name+'\')">✅通过</button> <button class="btn btn-danger" onclick="rejectReview(\''+x.name+'\')">退回</button> ';
+          if(appState==='review_real') actions+='<button class="btn btn-green" onclick="approveReal(\''+x.name+'\')">🏦批准实盘</button> ';
+          if(appState==='sim_running'||appState==='real') actions+='<button class="btn btn-danger" onclick="pauseStrategy(\''+x.name+'\')">⏸️暂停</button> ';
+          actions+='<button class="btn" onclick="evolveStrategy(\''+x.name+'\')" style="color:#a855f7;border-color:#a855f7;font-size:10px" title="快速进化搜索最优参数">🧬</button> ';
+          actions+='<button class="btn btn-danger" onclick="delItem(\'strategies\',\''+x.name+'\')">删除</button>';
+          return'<tr><td><b>'+x.name+'</b></td><td style="font-size:11px">'+factors+'</td><td style="font-size:11px">'+btInfo+'</td>'+
+            '<td><span style="color:'+(labelColors[appState]||'#888')+';font-weight:bold">'+appLabel+'</span></td>'+
+            '<td>'+actions+'</td></tr>';
+        }).join('');
+      });
+    }else{
+      tb.innerHTML=items.map(function(x){return'<tr><td><b>'+x.name+'</b></td><td style="font-size:11px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(x.file_path||'')+'">'+(x.file_path||'--')+'</td><td>'+(x.enabled!==false?'🟢':'⏸️')+'</td><td><button class="btn btn-danger" onclick="delItem(\'tdx-formulas\',\''+x.name+'\')">删除</button></td></tr>';}).join('');
+    }
+  });
+}
+function evolveStrategy(name){
+  // 先获取当前策略参数
+  fetch('/api/user-strategies').then(function(r){return r.json();}).then(function(d){
+    var items=Array.isArray(d)?d:(d.strategies||[]);
+    var s=items.find(function(x){return x.name===name;});
+    if(!s)return alert('策略未找到');
+    var cp={
+      stop_loss: s.stop_loss||-0.03,
+      take_profit: (s.take_profit||[0.05])[0],
+      hold_days: s.hold_days||3
+    };
+    // 默认范围：基于当前值±50%，加硬性边界
+    var defRanges={
+      slMin: Math.max(-0.08, cp.stop_loss*1.5).toFixed(3),
+      slMax: Math.min(-0.01, cp.stop_loss*0.5).toFixed(3),
+      tpMin: Math.max(0.03, cp.take_profit*0.5).toFixed(3),
+      tpMax: Math.min(0.20, cp.take_profit*1.5).toFixed(3),
+      hdMin: Math.max(1, cp.hold_days-3),
+      hdMax: Math.min(10, cp.hold_days+3)
+    };
+    var html='<b>进化参数范围 — '+name+'</b><br><br>';
+    html+='当前: 止损='+cp.stop_loss+' 止盈='+cp.take_profit+' 持仓='+cp.hold_days+'天<br><br>';
+    html+='止损: <input id="evoSLmin" value="'+defRanges.slMin+'" size="5"> ~ <input id="evoSLmax" value="'+defRanges.slMax+'" size="5"><br>';
+    html+='止盈: <input id="evoTPmin" value="'+defRanges.tpMin+'" size="5"> ~ <input id="evoTPmax" value="'+defRanges.tpMax+'" size="5"><br>';
+    html+='持仓天: <input id="evoHDmin" value="'+defRanges.hdMin+'" size="3"> ~ <input id="evoHDmax" value="'+defRanges.hdMax+'" size="3"><br>';
+    html+='<br><button class="btn btn-green" onclick="runEvo(\''+name+'\')">🚀 开始进化</button>';
+    var panel=document.getElementById('evoPanel');
+    panel.style.display='block';
+    document.getElementById('evoContent').innerHTML=html;
+    panel.scrollIntoView({behavior:'smooth'});
+  });
+}
+
+function runEvo(name){
+  var ranges={
+    stop_loss: [parseFloat(document.getElementById('evoSLmin').value), parseFloat(document.getElementById('evoSLmax').value)],
+    take_profit: [parseFloat(document.getElementById('evoTPmin').value), parseFloat(document.getElementById('evoTPmax').value)],
+    hold_days: [parseInt(document.getElementById('evoHDmin').value), parseInt(document.getElementById('evoHDmax').value)]
+  };
+  if(isNaN(ranges.stop_loss[0])||isNaN(ranges.stop_loss[1]))return alert('止损范围无效');
+  document.getElementById('evoContent').innerHTML='进化运行中... 1-2分钟。<br>完成后点🧬进化建议查看。';
+  fetch('/api/evolution/run/'+name,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ranges:ranges})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.success){document.getElementById('evoContent').innerHTML='✅ 进化完成! <a href="#" onclick="loadEvoSuggestions()">查看建议</a>';}
+      else{alert(d.error);}
+    });
+}
+
+function backtestStrategy(name){
+  var tb=document.getElementById('tbody-strategies');
+  tb.innerHTML='<tr><td colspan="5">回测中...</td></tr>';
+  fetch('/api/strategy-builder/backtest/'+name,{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+    if(d.success){alert('回测完成: Sharpe='+d.backtest.annualized_sharpe+' 胜率='+(d.backtest.win_rate*100).toFixed(0)+'%');}else{alert(d.message||'回测失败');}
+    loadData('strategies');
+  });
+}
+function deployStrategy(name){
+  if(!confirm('部署 '+name+' 到模拟盘？'))return;
+  fetch('/api/strategy-builder/deploy/'+name,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:'sim'})})
+    .then(function(r){return r.json();}).then(function(d){alert(d.message||'OK');loadData('strategies');});
+}
+function delItem(type,name){
+  if(!confirm('删除 '+name+' ?'))return;
+  var m={strategies:'user-strategies','tdx-formulas':'user-tdx-formulas'};
+  fetch('/api/'+(m[type]||'user-'+type)+'/'+name,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){if(d.success){if(type==='tdx-formulas')loadFormulas();else loadData('strategies');}else alert(d.error);});
+}
+
+// ═══ 公式管理 ═══
+function loadFormulas(){
+  var tb=document.getElementById('tbody-formulas'); tb.innerHTML='<tr><td colspan="4">加载中...</td></tr>';
+  fetch('/api/user-tdx-formulas').then(function(r){return r.json();}).then(function(d){
+    var items=Array.isArray(d)?d:(d.formulas||[]);
+    if(!items.length){tb.innerHTML='<tr><td colspan="4" style="color:#888">暂无数据</td></tr>';return;}
+    tb.innerHTML=items.map(function(x){
+      var n=x.name||'';
+      return'<tr><td><b style="cursor:pointer;color:#409eff" onclick="viewFormula(\''+n+'\')">'+n+'</b></td>'+
+        '<td style="font-size:10px;color:#888;max-width:250px;overflow:hidden;text-overflow:ellipsis" title="'+(x.file_path||'')+'">'+(x.file_path||'--')+'</td>'+
+        '<td>'+(x.enabled!==false?'🟢':'⏸️')+'</td>'+
+        '<td><button class="btn" onclick="viewFormula(\''+n+'\')" style="font-size:10px" title="查看公式源码">📋</button> '+
+        '<button class="btn" onclick="parseFormula(\''+n+'\')" style="font-size:10px" title="解析公式条件+扫全市场验证">🔍</button> '+
+        '<button class="btn btn-danger" onclick="delItem(\'tdx-formulas\',\''+n+'\')" style="font-size:10px" title="删除公式">🗑</button></td></tr>';
+    }).join('');
+  }).catch(function(){tb.innerHTML='<tr><td colspan="5" style="color:#888">加载失败</td></tr>';});
+}
+
+function viewFormula(name){
+  fetch('/api/user-tdx-formulas').then(function(r){return r.json();}).then(function(d){
+    var items=Array.isArray(d)?d:(d.formulas||[]);
+    var f=items.find(function(x){return(x.name||'')===name;});
+    if(!f)return alert('公式不存在');
+    document.getElementById('af2Name').value=f.name||'';
+    document.getElementById('af2Path').value=f.file_path||'';
+    document.getElementById('af2Desc').value=f.description||'';
+    document.getElementById('af2Source').value=f.source||'';
+    document.getElementById('addFormulaForm').style.display='block';
+    document.getElementById('addFormulaForm').scrollIntoView({behavior:'smooth'});
+  });
+}
+
+function parseFormula(name){
+  fetch('/api/user-tdx-formulas').then(function(r){return r.json();}).then(function(d){
+    var items=Array.isArray(d)?d:(d.formulas||[]);
+    var f=items.find(function(x){return(x.name||'')===name;});
+    if(!f||!f.source)return alert('公式源码为空');
+    document.getElementById('af2Source').value=f.source;
+    document.getElementById('af2Name').value=name;
+    parseTDXFormula();
+  });
+}
+var _tdxFormulas=[];
+
+function loadTDXFile(){
+  var file=document.getElementById('tdxFileInput').files[0];
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    document.getElementById('af2Name').value=file.name.replace(/\.[^.]+$/,'');
+    document.getElementById('af2Path').value=file.name;
+    document.getElementById('af2Source').value=e.target.result;
+    document.getElementById('addFormulaForm').style.display='block';
+    document.getElementById('addFormulaForm').scrollIntoView({behavior:'smooth'});
+  };
+  reader.readAsText(file,'gbk');
+}
+
+function scanTDXFormulas(){
+  var st=document.getElementById('scanStatus'); st.textContent='扫描中...';
+  var scanPath=document.getElementById('tdxScanPath').value.trim();
+  var url='/api/tdx-formulas/scan';
+  if(scanPath) url+='?path='+encodeURIComponent(scanPath);
+  fetch(url).then(function(r){return r.json();}).then(function(d){
+    _tdxFormulas=d.formulas||[];
+    st.textContent='找到 '+_tdxFormulas.length+' 个公式';
+    var sel=document.getElementById('af2Select');
+    sel.innerHTML='<option value="">-- 选择公式 --</option>'+
+      _tdxFormulas.map(function(f){
+        var kb=Math.round(f.size/1024);
+        return '<option value="'+f.name+'">'+f.name+' ('+kb+'KB)</option>';
+      }).join('');
+    if(_tdxFormulas.length>0){showAddFormula();}
+  });
+}
+
+function onSelectFormula(){
+  var name=document.getElementById('af2Select').value;
+  if(!name)return;
+  var f=_tdxFormulas.find(function(x){return x.name===name;});
+  if(f){
+    document.getElementById('af2Name').value=f.name;
+    document.getElementById('af2Path').value=f.file_path;
+    document.getElementById('af2Source').value=f.source||'(无源码)';
+  }
+}
+
+function parseTDXFormula(){
+  var src=document.getElementById('af2Source').value.trim();
+  if(!src)return alert('请先加载公式或粘贴源码');
+  var res=document.getElementById('af2Result');
+  res.style.display='block'; res.innerHTML='解析中...';
+  fetch('/api/formula/parse-tdx',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({formula:src})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.code!==200){res.innerHTML='<span style="color:#f56c6c">'+d.error+'</span>';return;}
+      var html='';
+      if(d.type==='tdx_pool'){
+        html='<b>📊 TDX股票池: '+d.pool_name+'</b><br>';
+        html+='股票数: <b style="color:#67c23a">'+d.count+'</b> 只<br>';
+        html+='<div style="max-height:120px;overflow-y:auto;margin-top:4px;font-size:11px">';
+        d.stocks&&d.stocks.forEach(function(s){
+          var color=s.income>0?'#f56c6c':s.income<0?'#67c23a':'#888';
+          var label=(s.name&&s.name!==s.symbol)?s.symbol+' '+s.name:s.symbol;
+          html+='<span title="成本¥'+s.in_price+' 盈亏'+s.income+'%">'+label+' <b style="color:'+color+'">'+(s.income>0?'+':'')+s.income+'%</b></span> | ';
+        });
+        html+='</div>';
+        if(d.pool_id) html+='<br>公式池ID: '+d.pool_id;
+      }else{
+        html='<b>解析结果</b><br>';
+        if(d.parsed){
+          html+='条件数: '+(d.parsed.conditions||[]).length+'<br>';
+          var vars=d.parsed.variables||[];
+          if(vars.length) html+='变量: '+vars.join(', ')+'<br>';
+          d.parsed.conditions&&d.parsed.conditions.forEach(function(c){html+='  • '+c.desc+'<br>';});
+        }
+        html+='匹配股票: <b>'+d.count+'</b> 只<br>';
+        if(d.pool_id) html+='公式池: '+d.pool_id;
+      }
+      res.innerHTML=html;
+    });
+}
+
+function showAddFormula(){document.getElementById('addFormulaForm').style.display='block';}
+function addFormula(){
+  var fp=document.getElementById('af2Path').value.trim();
+  var src=document.getElementById('af2Source').value.trim();
+  var d={name:document.getElementById('af2Name').value.trim(),file_path:fp,description:document.getElementById('af2Desc').value.trim(),source:src,enabled:true};
+  if(!d.name)return alert('名称不能为空');
+  fetch('/api/user-tdx-formulas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})
+    .then(function(r){return r.json();}).then(function(r){if(r.success){alert('已添加');document.getElementById('addFormulaForm').style.display='none';loadFormulas();}else{alert(r.error);}});
+}
+
+function icValNum(name,key){ var f=_icData[name]; if(!f||f[key]==null)return null; return f[key]; }
+function trendArrow(name){
+  var ic5=icValNum(name,'IC_5d'), ic20=icValNum(name,'IC_20d');
+  if(ic5==null||ic20==null)return '--';
+  var d=ic20-ic5;
+  if(d>0.02)return'↗ 增强';
+  if(d<-0.02)return'↘ 衰减';
+  return'→ 稳定';
+}
+
+// ═══ 审批操作 ═══
+function submitReview(n){fetch('/api/strategy-approval/'+n+'/submit',{method:'POST'}).then(function(r){return r.json();}).then(function(d){alert(d.message||'已提交');loadData('strategies');});}
+function approveSim(n){fetch('/api/strategy-approval/'+n+'/approve-sim',{method:'POST'}).then(function(r){return r.json();}).then(function(d){alert(d.message||'已通过');loadData('strategies');});}
+function rejectReview(n){var r=prompt('退回原因:');if(r===null)return;fetch('/api/strategy-approval/'+n+'/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reason:r})}).then(function(r){return r.json();}).then(function(d){alert(d.message||'已退回');loadData('strategies');});}
+function approveReal(n){if(!confirm('确认批准实盘部署？'))return;fetch('/api/strategy-approval/'+n+'/approve-real',{method:'POST'}).then(function(r){return r.json();}).then(function(d){alert(d.message||'已批准');loadData('strategies');});}
+function pauseStrategy(n){fetch('/api/strategy-approval/'+n+'/pause',{method:'POST'}).then(function(r){return r.json();}).then(function(d){alert(d.message||'已暂停');loadData('strategies');});}
+
+// 每30秒自动刷新绩效 (仅在健康Tab活跃时)
+setInterval(function(){
+  if(document.getElementById('panel-health').classList.contains('active')){
+    fetch('/api/strategy-performance').then(function(r){return r.json();}).then(function(pd){
+      if(pd.code!==200||!pd.strategies||!pd.strategies.length)return;
+      var pc=document.getElementById('perfCards');
+      pc.style.display='flex'; pc.style.flexWrap='wrap';
+      pc.innerHTML='<div style="width:100%;font-size:12px;color:#888;margin-bottom:2px">📊 策略实时绩效 ('+pd.updated+')</div>'+
+        pd.strategies.map(function(s){
+          return'<div class="card"><div class="n" style="font-size:20px;color:'+(s.sharpe>1?'#67c23a':s.sharpe>0?'#e6a23c':'#f56c6c')+'">'+s.risk+' '+s.sharpe.toFixed(1)+'</div><div class="l">'+s.name+'</div><div style="font-size:10px;color:#888">胜'+(s.win_rate*100).toFixed(0)+'%|'+s.total_trades+'笔'+(s.consecutive_losses>0?'|⚠️连亏'+s.consecutive_losses:'')+'</div></div>';
+        }).join('');
+    });
+  }
+},30000);
+
+// init: 恢复上次Tab + 预填AI Key
+var _lastTab='health';
+try{
+  _lastTab=localStorage.getItem('factorTab')||'health';
+  var savedKey=localStorage.getItem('aiFactorKey');
+  if(savedKey){var el=document.getElementById('aiKey');if(el)el.value=savedKey;}
+}catch(e){}
+function loadICTable(){
+  var tb=document.getElementById('icCompareTable');
+  tb.innerHTML='<tr><td>加载中...</td></tr>';
+  fetch('/api/factor/ic-table').then(r=>r.json()).then(d=>{
+    if(d.code!==200){tb.innerHTML='<tr><td>❌ 请先运行 full_market_ic.py</td></tr>';return;}
+    var periods=[1,3,5,7,10,15,20];
+    var h='<thead><tr><th>因子</th><th>方向</th>'+periods.map(function(p){return'<th>'+p+'d</th>'}).join('')+'<th>趋势</th></tr></thead><tbody>';
+    d.data.forEach(function(f){
+      h+='<tr><td><b>'+f.display+'</b></td><td style="color:'+(f.dir==='short'?'#00b96b':'#FF4051')+'">'+(f.dir==='short'?'🔻空':'🔺多')+'</td>';
+      periods.forEach(function(p){
+        var v=f['ic_'+p+'d'];
+        var c=v===null?'#555':Math.abs(v)>0.08?'#67c23a':Math.abs(v)>0.04?'#e3e3e3':'#888';
+        h+='<td style="color:'+c+';font-weight:'+(Math.abs(v||0)>0.08?'bold':'normal')+'">'+(v!==null?(v>=0?'+':'')+v.toFixed(3):'-')+'</td>';
+      });
+      var trend=(f.ic_20d||0)-(f.ic_5d||0);
+      var trendIcon=trend>0.02?'📈增强':trend<-0.02?'📉衰减':'➡稳定';
+      h+='<td style="font-size:10px;color:#888">'+trendIcon+'</td></tr>';
+    });
+    h+='</tbody>';tb.innerHTML=h;
+  });
+  // LGBM importance
+  var lt=document.getElementById('lgbmTable');
+  if(lt) fetch('/api/factor/lgbm-importance').then(r=>r.json()).then(d=>{
+    if(d.code!==200){lt.innerHTML='<tr><td>模型未训练</td></tr>';return;}
+    var h='<thead><tr><th>#</th><th>因子</th><th>重要性</th><th>强度</th></tr></thead><tbody>';
+    var max=d.data[0].importance;
+    d.data.forEach(function(f,i){
+      var pct=Math.round(f.importance/max*100);
+      h+='<tr><td>'+(i+1)+'</td><td>'+f.factor+'</td><td>'+f.importance+'</td><td><span class="bar" style="width:'+pct+'px;background:#a855f7"></span></td></tr>';
+    });
+    h+='</tbody>';lt.innerHTML=h;
+  });
+  // XGBoost importance
+  var xt=document.getElementById('xgbTable');
+  if(xt) fetch('/api/factor/xgb-importance').then(r=>r.json()).then(d=>{
+    if(d.code!==200||!d.data.length){xt.innerHTML='<tr><td>模型未训练</td></tr>';return;}
+    var h='<thead><tr><th>#</th><th>因子</th><th>重要性</th><th>强度</th></tr></thead><tbody>';
+    var max=d.data[0].importance;
+    d.data.forEach(function(f,i){
+      var pct=Math.round(f.importance/max*100);
+      h+='<tr><td>'+(i+1)+'</td><td>'+f.factor+'</td><td>'+f.importance+'</td><td><span class="bar" style="width:'+pct+'px;background:#00b96b"></span></td></tr>';
+    });
+    h+='</tbody>';xt.innerHTML=h;
+  });
+}
+
+function loadMarketTab(){
+  fetch('/api/screener/top_stocks?limit=200').then(r=>r.json()).then(d=>{
+    var stocks=d.data||d.stocks||[];
+    if(!stocks.length)return;
+    var up=0,down=0,limitUp=0,limitDown=0,totalVol=0;
+    var sectors={};
+    stocks.forEach(function(s){
+      var chg=s.change_pct||0;
+      if(chg>0)up++;else if(chg<0)down++;
+      if(chg>=9.5)limitUp++;else if(chg<=-9.5)limitDown++;
+      totalVol+=(s.volume||0);
+      var ind=s.industry||'其他';
+      if(!sectors[ind])sectors[ind]={sum:0,count:0,names:[]};
+      sectors[ind].sum+=chg;sectors[ind].count++;sectors[ind].names.push(s.symbol);
+    });
+    // 情绪卡
+    document.getElementById('mktUp').textContent=up;
+    document.getElementById('mktDown').textContent=down;
+    document.getElementById('mktRatio').textContent='涨跌比 '+(down>0?(up/down).toFixed(1):'--');
+    document.getElementById('mktLimitUp').textContent=limitUp;
+    document.getElementById('mktLimitDown').textContent=limitDown;
+    document.getElementById('mktSeal').textContent=limitUp>0?Math.round(limitUp/(limitUp+limitDown||1)*100)+'%':'--';
+    // 强度条
+    var strength=Math.round(up/(up+down||1)*100);
+    var sc=strength>60?'#FF4051':strength>40?'#F1A100':'#00b96b';
+    document.getElementById('mktStrength').textContent=strength+'分';
+    document.getElementById('mktStrength').style.color=sc;
+    document.getElementById('mktStrengthBar').style.width=strength+'%';
+    document.getElementById('mktStrengthBar').style.background=sc;
+    // 成交额
+    document.getElementById('mktVolume').textContent=(totalVol/1e8).toFixed(0);
+    // 板块轮动 grid
+    var heat=[];for(var k in sectors){heat.push({name:k,avg:parseFloat((sectors[k].sum/sectors[k].count).toFixed(1)),n:sectors[k].count})}
+    heat.sort(function(a,b){return b.avg-a.avg});
+    var g='';
+    heat.slice(0,20).forEach(function(s){
+      var bg=s.avg>2?'rgba(255,64,81,.1)':s.avg>0?'rgba(241,161,0,.08)':s.avg>-1?'rgba(128,128,128,.05)':'rgba(0,185,107,.08)';
+      var c=s.avg>2?'#FF4051':s.avg>0?'#F1A100':s.avg>-1?'#888':'#00b96b';
+      var icon=s.avg>3?'🔥':s.avg>1?'▲':s.avg>-1?'─':'▼';
+      g+='<div style="padding:6px 4px;background:'+bg+';border-radius:3px;text-align:center;border:1px solid '+c+'22"><div style="font-size:9px;color:#888">'+s.name+'</div><div style="font-size:13px;font-weight:700;color:'+c+'">'+icon+' '+(s.avg>0?'+':'')+s.avg+'%</div><div style="font-size:8px;color:#555">'+s.n+'只</div></div>';
+    });
+    document.getElementById('sectorGrid').innerHTML=g||'暂无数据';
+  });
+}
+
+switchTab(_lastTab);
+</script></main>
+<script src="/static/js/nav_bar.js?v=2"></script>
+</body></html>

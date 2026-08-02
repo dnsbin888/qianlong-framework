@@ -1,0 +1,40 @@
+{
+  "description": "信号源开关 + 策略级止盈止损注册表 (方案A:发起者锁定)",
+  "strategy_tp_sl": {
+    "_note": "D4: 各策略独立止盈/止损/持有天数。买入时锁定发起策略, 持仓期间不变。",
+    "打板·一封": {"tp": 0.03, "sl": -0.03, "hold_days": 3,  "note": "快进快出, 3天不板就走"},
+    "打板·二封": {"tp": 0.05, "sl": -0.05, "hold_days": 5,  "note": "回封确认后持5天"},
+    "弱转强":    {"tp": 0.07, "sl": -0.04, "hold_days": 7,  "note": "半仓试错→确认加仓→7天"},
+    "盘中突破":  {"tp": 0.05, "sl": -0.03, "hold_days": 5,  "note": "突破回踩不破持有"},
+    "竞价抢筹":  {"tp": 0.03, "sl": -0.03, "hold_days": 3,  "note": "竞价溢价T+1/2兑现"},
+    "板后接力":  {"tp": 0.08, "sl": -0.04, "hold_days": 10, "note": "龙二波, 持到转弱"},
+    "撬板战法":  {"tp": 0.10, "sl": -0.06, "hold_days": 14, "note": "撬板修复期长"},
+    "_default":  {"tp": 0.05, "sl": -0.04, "hold_days": 7,  "note": "未注册策略用此默认值"}
+  },
+  "qmt_builtin": {
+    "竞价抢筹": true,
+    "盘中突破": true,
+    "尾盘急拉": true,
+    "打板追封": true,
+    "打板-首封": true,
+    "打板-回封": true,
+    "打板-强封": true,
+    "打板-多板": true
+  },
+  "tdx_formulas": {
+    "_note": "公式名对应 tdx_formulas.py 中的函数名, true=该公式信号参与交易 (Python重写版, 仅通知)",
+    "双信号共振打板分歧低吸": false,
+    "MACD牛线突破": false
+  },
+  "tdx_pools": {
+    "_note": "TDX原生公式→自动交易。type=blk(自动选股→板块) 或 pool(股票池→.log)",
+    "QLJCXG": {
+      "enabled": true,
+      "type": "blk",
+      "label": "妖股先锋X∩波段擒妖",
+      "auto_trade": true,
+      "min_ml_score": 60,
+      "note": "双公式交叉选股(AND), 日线盘后运行→QLJCXG.blk, 次日QMT自动下单"
+    }
+  }
+}

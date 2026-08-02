@@ -1,0 +1,318 @@
+[App] 数据目录已初始化: D:\quant_data\
+[Config] 路径配置加载成功
+2026-06-27 19:24:02 [INFO ] logging_config: 日志系统已初始化
+
+[Trader] QMT XtQuant 交易通道可用
+[Trader] Loaded CONFIG overrides from d:\\quant_framework\\live_trader_config.json
+[Trader] EventBus 未启动, 配置同步仅文件模式
+2026-06-27 19:24:03 [WARNING] sqlite_persistence: SQLAlchemy 未安装 (不影响 sqlite_persistence 运行). 如需 ORM 功能请执行: pip install sqlalchemy>=2.0
+[TradeKB] 34 hotkeys registered
+[PopupKiller] 启动成功（扫描间隔 2.0s）
+[Trader] 弹窗杀手已启动（2秒扫描间隔）
+[Trader] Auto-sync + Auto-trade started (30s interval, link_trader enabled)
+2026-06-27 19:24:03 [INFO ] quant_framework.event_bus: [EventBus] 已启动
+[App] 事件总线已启动
+2026-06-27 19:24:03 [INFO ] quant_framework.scheduler: [Scheduler] 已启动 10 个任务
+[App] 统一调度器已就绪(灰度, 10个任务, 旧线程保底)
+[QMT-Bridge] xtdata.run() daemon 已启动
+Exception in thread QMT-xtdata-run:
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+[QMT-Bridge] 启动失败: 无法连接xtquant服务，请检查QMT-投研版或QMT-极简版是否开启 → 新浪轮询继续工作
+[App] QMT不可用, 仅新浪轮询
+    self.run()
+  File "C:\Program Files\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\xtquant\xtdata.py", line 1513, in run
+    client = get_client()
+   [DingTalk-Events] ✓ 已订阅 signal/order/risk 事件  
+ [App] 钉钉事件监听已就绪 (signal/order/risk → 钉钉)
+       ^^^^^^^^^^^^
+  File "C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\xtquant\xtdata.py", line 190, in get_client
+    __client = connect(ip, port, False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\xtquant\xtdata.py", line 137, in connect
+[SSE] 桥接已就绪 — EventBus → SSE 队列
+[App] SSE 实时推送已就绪 (EventBus → 浏览器)
+    raise Exception("无法连接xtquant服务，请检查QMT-投研版或QMT-极简版是否开启")
+Exception: 无法连接xtquant服务，请检查QMT-投研版或QMT-极简版是否开启
+[Realtime] 已加载缓存: 700只
+[Realtime] 初始股票池: 7570只A股, 取前1000只
+[Realtime] 后台缓存已启动 (3秒批量刷新)
+[TDXWatcher] Monitoring D:\通信达技术指标\六合一竞价擒龙（下载到电脑里解压）\六合一竞价擒龙（下载到电脑里解压）\T0002\tpool every 30s
+2026-06-27 19:24:07 [INFO ] quant_framework.broker.simulated: Simulated broker started with cash=1000000.00
+[App] 自动交易状态已恢复: auto=False
+2026-06-27 19:24:07 [INFO ] trading_loop: 统一交易循环已启动
+2026-06-27 19:24:07 [INFO ] trading_loop: 事件驱动交易循环已启动(灰度)
+[App] 统一交易循环已启动
+[App] SQLite每日备份 → UnifiedScheduler (无需独立线程)
+[App] IC自动更新 → UnifiedScheduler (周一08:00)
+[App] 策略自动熔断 → UnifiedScheduler (每5分钟)
+[App] 周检定时器 → UnifiedScheduler (周六09:00)
+[EventBus] 事件桥接已就绪(灰度)
+[Loop] 运行中 (#1) can_trade=False auto=False positions=0
+  0%|          | 0/58 [00:00<?, ?it/s][DataLoader] 截断至最近120天 (2026-02-22 ~ 2026-06-22)
+  2%|▏         | 1/58 [00:01<01:29,  1.57s/it]  3%|▎         | 2/58 [00:03<01:33,  1.67s/it][EventLoop] 灰度事件循环已启动
+2026-06-27 19:24:17 [INFO ] trading_loop: [EventLoop] 灰度事件循环已启动
+  5%|▌         | 3/58 [00:04<01:22,  1.50s/it]  7%|▋         | 4/58 [00:05<01:14,  1.38s/it][DataLoader] Parquet 缓存已加载: 8923 stocks × 120d, 191.8MB, 9.6s
+[Scheduler] Evolution scheduler started
+[App] Auto-evolve system loaded
+[App] Knowledge base API loaded
+[Startup] app.pid 已锁定 (PID=16244)
+[System] 上次关闭: shutdown: 2026-06-27 17:28:35.241737
+[HealthCheck] === 启动健康检查 ===
+  [✅] 日线数据: D:\quant_web\stock_data.parquet
+  [✅] 因子缓存: D:\quant_web\factor_cache.pkl
+  [✅] 价格缓存: D:\quant_web\..\quant_framework\price_cache.json
+  [✅] 股票名称: D:\quant_web\stock_names_full.csv
+  [✅] 交易配置: D:\quant_web\..\quant_framework\live_trader_config.json
+  [✅] 依赖: numpy
+  [✅] 依赖: pandas
+  [✅] 依赖: scipy
+  [✅] 依赖: flask
+  [✅] stock_data可读(parquet): 191.8MB (延迟加载,避免启动阻塞)
+[HealthCheck] 结果: 全部通过
+[PnL] 日频净值记录已启动 (每日15:30)
+============================================================
+  潜龙选股 Web 系统 v1.0
+  http://localhost:5002
+============================================================
+[Startup] Flask 服务已绑定 0.0.0.0:5002 (数据后台加载...)
+[Server] Waitress 启动 0.0.0.0:5002 (32 threads)
+2026-06-27 19:24:19 [INFO ] waitress: Serving on http://0.0.0.0:5002
+  9%|▊         | 5/58 [00:07<01:23,  1.58s/it][Cache] 已加载 200 条回测缓存
+[Startup] Watchdog PID file stale, cleaning up
+[Startup] Watchdog auto-started
+[Startup] Watchdog auto-started
+ 10%|█         | 6/58 [00:12<02:27,  2.83s/it]  + app.py
+  + auto_evolve.py
+  + data_collector.py
+  + watchdog.py
+  + dingtalk_alerts.py
+  + app.py
+  + paper_engine.py
+  + risk_guard.py
+  + auto_evolve.py
+  + realtime_quotes.py
+  + live_trader_config.json
+  + data_collector.py
+  + watchdog.py
+ 12%|█▏        | 7/58 [00:15<02:10,  2.57s/it]  + dingtalk_alerts.py
+[Init] Loading names...
+  + paper_engine.py
+  + risk_guard.py
+[Names] Loaded 5525 names from CSV
+[Names] Builtin: 394 names
+  + realtime_quotes.py
+  + live_trader_config.json
+ 14%|█▍        | 8/58 [00:17<01:59,  2.38s/it][Names] Full CSV loaded: 5525 names, total: 5633
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+2026-06-27 19:24:30 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 1/3)...
+[Realtime] westock兜底失败: cannot import name 'get_realtime_quotes' from 'westock_factors' (D:\quant_framework\westock_factors.py)
+[Trader] Reading from: d:\quant_framework\live_positions.csv exists=False size=0
+[SLOW] GET /api/live-trade/positions 3.4s
+ 16%|█▌        | 9/58 [00:18<01:48,  2.21s/it]  + templates/ (60 files)
+  + quant_agent/ (6 files)
+
+📦 备份完成: backup_20260627_192425.zip (394KB)
+  + templates/ (60 files)
+  + quant_agent/ (6 files)
+
+📦 备份完成: backup_20260627_192425.zip (394KB)
+  🗑️ 清理旧备份: backup_20260620_192044.zip
+  🗑️ 清理旧备份: backup_20260620_192152.zip
+2026-06-27 19:24:33 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+ 17%|█▋        | 10/58 [00:20<01:44,  2.17s/it][Startup] 备份失败: [WinError 2] 系统找不到指定的文件。: 'd:\\quant_web\\backup\\backup_20260620_192044.zip'
+[Startup] 日终报告 → UnifiedScheduler (15:05)
+[Startup] 盘前推送 → UnifiedScheduler (09:25)
+[Startup] 盘后因子更新 → UnifiedScheduler (15:30)
+[Startup] 日志清理 → UnifiedScheduler (03:00)
+2026-06-27 19:24:35 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 2/3)...
+ 19%|█▉        | 11/58 [00:23<01:41,  2.15s/it][Startup] 每日备份已就绪
+[Startup] Ready! Open http://localhost:5002
+[Memory] 内存监控已启动 (5分钟间隔)
+[Health] 启动自检中...
+[Health] ✅ 纸引擎就绪
+[Health] ✅ 因子缓存存在
+[Health] ⚠ THS持仓文件缺失/为空
+[Health] 自检完成: 2通过 1警告
+[Names] Ready: 5633 names
+ 21%|██        | 12/58 [00:25<01:41,  2.21s/it]2026-06-27 19:24:38 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+ 22%|██▏       | 13/58 [00:27<01:35,  2.13s/it]2026-06-27 19:24:40 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 3/3)...
+[LinkTrader] DLL loaded: D:\联动精灵\第三方交易接口\Win64\linkorder.dll
+ 24%|██▍       | 14/58 [00:29<01:29,  2.04s/it]Exception in thread Thread-18 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Program Files\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 1601, in _readerthread
+    buffer.append(fh.read())
+                  ^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xd0 in position 0: invalid continuation byte
+[LinkTrader] ⚠️ 联动精灵未运行, 请手动启动并登录
+[Industry] Ready: 5509 mappings
+[Names] Total: 5633 names
+Exception in thread Thread-20 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Program Files\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 1601, in _readerthread
+    buffer.append(fh.read())
+                  ^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xd0 in position 0: invalid continuation byte
+[LinkTrader] ⚠️ 同花顺交易端未运行, 请手动启动并登录
+
+ℹ️ [INFO] ✅ 潜龙系统已就绪
+行情:4只 | 因子:0条 | DLL:已加载
+策略:3个在线 | 时间:19:24
+
+2026-06-27 19:24:43 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+[QMTTrader] ❌ QMT 连接失败
+2026-06-27 19:24:43 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 1/3)...
+ 26%|██▌       | 15/58 [00:30<01:24,  1.97s/it] 28%|██▊       | 16/58 [00:32<01:21,  1.94s/it]2026-06-27 19:24:47 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+ 29%|██▉       | 17/58 [00:34<01:20,  1.96s/it][Startup] 后台任务就绪（数据按需加载）
+2026-06-27 19:24:49 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 2/3)...
+ 31%|███       | 18/58 [00:37<01:23,  2.09s/it]2026-06-27 19:24:52 [WARNING] factor_registry: FactorRegistry 加载失败: Expecting ',' delimiter: line 290 column 26 (char 7395)
+ 33%|███▎      | 19/58 [00:39<01:25,  2.19s/it]2026-06-27 19:24:53 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+2026-06-27 19:24:55 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 3/3)...
+ 34%|███▍      | 20/58 [00:42<01:35,  2.51s/it] 36%|███▌      | 21/58 [00:45<01:36,  2.60s/it][Init] Loading names...
+2026-06-27 19:24:59 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+[QMTTrader] ❌ QMT 连接失败
+Exception in thread Thread-22 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Program Files\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 1601, in _readerthread
+    buffer.append(fh.read())
+                  ^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xd0 in position 0: invalid continuation byte
+[LinkTrader] ⚠️ 联动精灵未运行, 请手动启动并登录
+ 38%|███▊      | 22/58 [00:48<01:33,  2.60s/it]Exception in thread Thread-24 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Program Files\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 1601, in _readerthread
+    buffer.append(fh.read())
+                  ^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xd0 in position 0: invalid continuation byte
+[LinkTrader] ⚠️ 同花顺交易端未运行, 请手动启动并登录
+[SLOW] GET /api/live-trade/status 33.5s
+ 40%|███▉      | 23/58 [00:50<01:27,  2.50s/it] 41%|████▏     | 24/58 [00:53<01:30,  2.65s/it] 43%|████▎     | 25/58 [00:56<01:29,  2.71s/it] 45%|████▍     | 26/58 [00:58<01:24,  2.65s/it] 47%|████▋     | 27/58 [01:01<01:16,  2.48s/it][Loop] 运行中 (#7) can_trade=False auto=False positions=0
+ 48%|████▊     | 28/58 [01:04<01:20,  2.68s/it] 50%|█████     | 29/58 [01:06<01:18,  2.72s/it] 52%|█████▏    | 30/58 [01:10<01:19,  2.82s/it][Init] Loading names...
+ 53%|█████▎    | 31/58 [01:12<01:16,  2.82s/it]
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+2026-06-27 19:25:27 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 1/3)...
+ 55%|█████▌    | 32/58 [01:15<01:08,  2.63s/it] 57%|█████▋    | 33/58 [01:17<01:05,  2.63s/it]2026-06-27 19:25:31 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+2026-06-27 19:25:33 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 2/3)...
+ 59%|█████▊    | 34/58 [01:21<01:09,  2.88s/it] 60%|██████    | 35/58 [01:23<01:05,  2.85s/it]2026-06-27 19:25:37 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+ 62%|██████▏   | 36/58 [01:26<01:00,  2.75s/it]2026-06-27 19:25:39 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 3/3)...
+ 64%|██████▍   | 37/58 [01:28<00:54,  2.57s/it]2026-06-27 19:25:43 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+[QMTTrader] ❌ QMT 连接失败
+2026-06-27 19:25:43 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 1/3)...
+ 66%|██████▌   | 38/58 [01:31<00:52,  2.64s/it]2026-06-27 19:25:46 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+ 67%|██████▋   | 39/58 [01:33<00:47,  2.49s/it]2026-06-27 19:25:48 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 2/3)...
+ 69%|██████▉   | 40/58 [01:36<00:46,  2.59s/it]2026-06-27 19:25:51 [WARNING] factor_registry: FactorRegistry 加载失败: Expecting ',' delimiter: line 290 column 26 (char 7395)
+2026-06-27 19:25:51 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+ 71%|███████   | 41/58 [01:38<00:43,  2.57s/it]2026-06-27 19:25:54 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 3/3)...
+ 72%|███████▏  | 42/58 [01:42<00:47,  2.99s/it]2026-06-27 19:25:57 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+[QMTTrader] ❌ QMT 连接失败
+Exception in thread Thread-26 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Program Files\Python312\Lib\threading.py", line 1012, in run
+ 74%|███████▍  | 43/58 [01:45<00:42,  2.83s/it]    self._target(*self._args, **self._kwargs)
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 1601, in _readerthread
+    buffer.append(fh.read())
+                  ^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xd0 in position 0: invalid continuation byte
+[LinkTrader] ⚠️ 联动精灵未运行, 请手动启动并登录
+Exception in thread Thread-28 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Program Files\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 1601, in _readerthread
+    buffer.append(fh.read())
+                  ^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xd0 in position 0: invalid continuation byte
+[LinkTrader] ⚠️ 同花顺交易端未运行, 请手动启动并登录
+[SLOW] GET /api/live-trade/status 32.7s
+ 76%|███████▌  | 44/58 [01:47<00:38,  2.76s/it] 78%|███████▊  | 45/58 [01:51<00:39,  3.02s/it] 79%|███████▉  | 46/58 [01:54<00:35,  2.92s/it] 81%|████████  | 47/58 [01:57<00:31,  2.90s/it] 83%|████████▎ | 48/58 [01:59<00:26,  2.69s/it] 84%|████████▍ | 49/58 [02:01<00:23,  2.60s/it][Loop] 运行中 (#13) can_trade=False auto=False positions=0
+ 86%|████████▌ | 50/58 [02:04<00:21,  2.75s/it][Init] Sector indices loaded: 110, source=📡 westock实时 (市场指数)
+ 88%|████████▊ | 51/58 [02:07<00:18,  2.65s/it][Init] Loading names...
+ 90%|████████▉ | 52/58 [02:10<00:16,  2.83s/it] 91%|█████████▏| 53/58 [02:12<00:12,  2.56s/it]
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+2026-06-27 19:26:28 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 1/3)...
+ 93%|█████████▎| 54/58 [02:15<00:10,  2.68s/it] 95%|█████████▍| 55/58 [02:17<00:07,  2.60s/it]2026-06-27 19:26:31 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+[PopupKiller] 获取 THS 锁超时, 跳过本轮扫描
+[Trader] ⚠️ read_ths_positions超时(5s)，返回跟踪文件兜底(缓存5min)
+[SLOW] GET /api/live-trade/positions 5.5s
+ 97%|█████████▋| 56/58 [02:20<00:05,  2.51s/it]2026-06-27 19:26:33 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 2/3)...
+ 98%|█████████▊| 57/58 [02:23<00:02,  2.76s/it]2026-06-27 19:26:36 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+100%|██████████| 58/58 [02:25<00:00,  2.58s/it]                                               2026-06-27 19:26:39 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 3/3)...
+[Trader] Reading from: d:\quant_framework\live_positions.csv exists=False size=0
+2026-06-27 19:26:42 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+[QMTTrader] ❌ QMT 连接失败
+2026-06-27 19:26:42 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 1/3)...
+[Init] Sector indices loaded: 110, source=📡 westock实时 (市场指数)
+2026-06-27 19:26:45 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+[Init] Loading names...
+2026-06-27 19:26:47 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 2/3)...
+2026-06-27 19:26:51 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+2026-06-27 19:26:52 [WARNING] factor_registry: FactorRegistry 加载失败: Expecting ',' delimiter: line 290 column 26 (char 7395)
+2026-06-27 19:26:53 [INFO ] qmt_broker.broker: 正在连接QMT (尝试 3/3)...
+2026-06-27 19:26:57 [ERROR] qmt_broker.broker: 连接QMT失败，错误码: -1
+[QMTTrader] ❌ QMT 连接失败
+Exception in thread Thread-35 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Program Files\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 1601, in _readerthread
+    buffer.append(fh.read())
+                  ^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xd0 in position 0: invalid continuation byte
+[LinkTrader] ⚠️ 联动精灵未运行, 请手动启动并登录
+Exception in thread Thread-37 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Program Files\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 1601, in _readerthread
+    buffer.append(fh.read())
+                  ^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xd0 in position 0: invalid continuation byte
+[LinkTrader] ⚠️ 同花顺交易端未运行, 请手动启动并登录
+[SLOW] GET /api/live-trade/status 34.5s
+[Init] Sector indices loaded: 110, source=📡 westock实时 (市场指数)
+[Loop] 运行中 (#19) can_trade=False auto=False positions=0
+[Init] Loading names...

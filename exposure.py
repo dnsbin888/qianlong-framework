@@ -92,10 +92,76 @@ def rank_neutralize(symbols: list[str], raw_scores: list[float]) -> list[float]:
 
     return neutral
 
+# --- 市值中性化 ---
+
+def _get_market_cap(sym: str, sd: dict = None) -> float:
+    """获取股票近似的总市值 (亿元)
+    优先用 total_shares*close, 其次 outstanding*close, 都没有则用 日均成交额*50 代理
+    (成交额≈市值×换手率2%, 所以市值≈成交额×50)
+    """
+    try:
+        if sd and sym in sd:
+            df = sd[sym]
+            close = float(df['close'].values[-1])
+            if 'total_shares' in df.columns:
+                shares = float(df['total_shares'].values[-1])
+                return close * shares / 1e8
+            elif 'outstanding' in df.columns:
+                shares = float(df['outstanding'].values[-1]) * 1.5
+                return close * shares / 1e8
+            else:
+                # 代理: 日均成交额 × 50 ≈ 总市值
+                vol = df['volume'].values[-20:]
+                avg_amt = float(np.nanmean(vol * close)) if len(vol) > 0 else 0
+                if avg_amt > 0:
+                    return avg_amt * 50 / 1e8  # 转为亿元
+    except Exception:
+        pass
+    return 0
+
+
+def market_cap_neutralize(symbols: list, raw_scores: list,
+                          sd: dict = None) -> list:
+    """市值中性化: 对 ML 得分做 ln(市值) 回归, 取残差
+
+    原理: ML得分 = α + β × ln(市值) + ε
+          中性化得分 = ε (残差)
+          大票不再系统性排前面, 小票好票也有机会
+    """
+    if len(symbols) < 10:
+        return raw_scores
+
+    caps = []
+    for sym in symbols:
+        mc = _get_market_cap(sym, sd)
+        caps.append(mc if mc > 0 else np.nan)
+
+    caps = np.array(caps)
+    scores = np.array(raw_scores, dtype=float)
+
+    valid = ~np.isnan(caps) & (caps > 0)
+    if valid.sum() < 10:
+        return raw_scores
+
+    log_cap = np.log(caps[valid])
+    y = scores[valid]
+
+    X = np.vstack([np.ones(len(log_cap)), log_cap]).T
+    try:
+        beta = np.linalg.lstsq(X, y, rcond=None)[0]
+        predicted = beta[0] + beta[1] * log_cap
+        residuals = y - predicted
+        result = scores.copy()
+        result[valid] = residuals + np.mean(y)
+        return result.tolist()
+    except Exception:
+        return raw_scores
+
+
 if __name__ == "__main__":
-    # 快速测试
     m = load_industry_map()
     print(f"行业映射: {len(m)} 只")
     sample = list(m.items())[:10]
     for code, ind in sample:
         print(f"  {code}: {ind}")
+    print("\n✅ exposure.py 就绪 (行业中性化 + 市值中性化)")

@@ -1,0 +1,46 @@
+2026-06-27 01:21:14 [INFO ] logging_config: 日志系统已初始化
+2026-06-27 01:21:17 [WARNING] sqlite_persistence: SQLAlchemy 未安装 (不影响 sqlite_persistence 运行). 如需 ORM 功能请执行: pip install sqlalchemy>=2.0
+2026-06-27 01:21:17 [INFO ] quant_framework.event_bus: [EventBus] 已启动
+2026-06-27 01:21:17 [INFO ] quant_framework.scheduler: [Scheduler] 已启动 10 个任务
+Exception in thread QMT-xtdata-run:
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Program Files\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\xtquant\xtdata.py", line 1513, in run
+    client = get_client()
+             ^^^^^^^^^^^^
+  File "C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\xtquant\xtdata.py", line 190, in get_client
+    __client = connect(ip, port, False)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\xtquant\xtdata.py", line 137, in connect
+    raise Exception("无法连接xtquant服务，请检查QMT-投研版或QMT-极简版是否开启")2026-06-27 01:21:21 [INFO ] quant_framework.broker.simulated: Simulated broker started with cash=1000000.00
+
+Exception: 无法连接xtquant服务，请检查QMT-投研版或QMT-极简版是否开启
+2026-06-27 01:21:21 [INFO ] trading_loop: 统一交易循环已启动
+2026-06-27 01:21:21 [INFO ] trading_loop: 事件驱动交易循环已启动(灰度)
+2026-06-27 01:21:31 [INFO ] trading_loop: [EventLoop] 灰度事件循环已启动
+2026-06-27 01:21:38 [INFO ] waitress: Serving on http://0.0.0.0:5002
+Exception in thread Thread-16 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Program Files\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 1601, in _readerthread
+    buffer.append(fh.read())
+                  ^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xd0 in position 0: invalid continuation byte
+Exception in thread Thread-18 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Program Files\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 1601, in _readerthread
+    buffer.append(fh.read())
+                  ^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xd0 in position 0: invalid continuation byte

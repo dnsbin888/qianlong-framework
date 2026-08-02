@@ -1,0 +1,57 @@
+{
+  "version": "3.1",
+  "updated": "2026-07-18",
+  "description": "潜龙交易规则主配置 — 老板终审版 (v3.2: 策略D打板双刀参数入master)",
+  "_constitution_lock": {
+    "enabled": true,
+    "owner": "老板",
+    "rule": "AI禁止修改本文件及任何.py/.js/.json中的策略参数值。修改参数必须老板在本文件设 enabled=false 解锁。违反=改动无条件回滚。",
+    "param_keys_protected": [
+      "stop_loss",
+      "take_profit",
+      "position_sizing",
+      "trading_cost",
+      "daily_risk",
+      "confidence_gate",
+      "auto_trade",
+      "signal_filter"
+    ],
+    "locked_at": "2026-07-16"
+  },
+  "constitution": {
+    "t1_rule": "A股T+1红线: 当日买入的股票当日不可卖出, 此规则优先级最高, 覆盖所有止损/止盈/风控规则",
+    "no_averaging_down": "宪法级: 绝不补仓摊平成本, 亏损头寸禁止加仓, 任何策略/通道不得违反",
+    "max_positions": "模拟5只, 实盘3只 (T+1限制需考虑次日可卖数量)",
+    "limit_up_real": "涨停封板持有到次日 (T+1: 今日卖出无法当日买回, 次日如仍封板可继续持有)",
+    "limit_order_real": "实盘涨跌停可挂单排队(交易所接受挂单), 模拟盘涨停不买/跌停不卖(封板无对手单)",
+    "note": "以上为宪法级规则, 任何策略/因子/AI不得违反"
+  },
+  "daban": {
+    "_note": "策略D·打板双刀 — 参数从master唯一真相源读取, 禁止硬编码",
+    "chase": {
+      "_note": "一封·追封 (广度刀) — 实时扫板, 小仓位×多次出击",
+      "max_pos_pct": 2.0,
+      "max_daily_trades": 3,
+      "min_vol_ratio": 1.5,
+      "min_seal_ratio": 0.01,
+      "min_imbalance": 0.6,
+      "latest_entry_time": "14:00",
+      "sentiment_scale": {"startup": 0.75, "ferment": 1.25, "climax": 1.0, "retreat": 0.0}
+    },
+    "reseal": {
+      "_note": "二封·回封 (深度刀) — 日线预选+次日确认, 重仓×精选出击",
+      "max_pos_pct": 6.0,
+      "max_daily_trades": 2,
+      "min_daily_score": 30,
+      "threshold": {"bull": 0.65, "sideways": 0.70, "bear": 0.80},
+      "sentiment_scale": {"startup": 0.5, "ferment": 1.0, "climax": 0.7, "retreat": 0.0},
+      "bear_min_sector_bd": 3
+    },
+    "shared": {
+      "_note": "双刀共享: 对齐铁律(不补仓+止损无条件+T+1)",
+      "cooldown_seconds": 60,
+      "no_averaging_down": true,
+      "same_stock_lock": true
+    }
+  }
+}

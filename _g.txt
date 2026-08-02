@@ -1,0 +1,105 @@
+无法解析 tdx_signal_watcher.factor_tdx_signal: module 'tdx_signal_watcher' has no attribute 'factor_tdx_signal'
+C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\sklearn\utils\validation.py:2827: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names
+  warnings.warn(
+[DataLoader] 截断至最近60天 (2026-05-10 ~ 2026-07-09)
+[DataLoader] Parquet 缓存已加载: 5201 stocks × 60d, 6.6MB, 2.4s
+[LHB] 今日龙虎榜: 0只净买入票
+候选池过滤: 685/5201 只通过
+  └ 日均成交额>1000万: 3732只
+  └ 流动性+缓冲区: 780只
+  └ 净资产为负: 4只
+[LGBM-Strategy] 批量评分完成: 421只股票, range=[0.9, 100.0]
+[LGBM-Strategy] 生成 30 个买入信号 (Top3: [('605589', 100), ('600330', 100), ('600246', 100)])
+[XGB] 批量评分: 682只, range=[30.5, 71.4]
+[XGB] 信号: 30只 (Top3: [('301013', 71.4), ('301526', 71.2), ('688519', 71.1)])
+[Ridge] 开始...
+无法解析 tdx_signal_watcher.factor_tdx_signal: module 'tdx_signal_watcher' has no attribute 'factor_tdx_signal'
+[Ridge] 预测完成: 299只
+d:\quant_framework\data_paths.py:1: SyntaxWarning: invalid escape sequence '\q'
+  """统一数据路径 — 代码与数据分离。
+2026-07-14 01:09:42 [INFO ] logging_config: 日志系统已初始化
+d:\quant_framework\stock_bridge.py:83: SyntaxWarning: invalid escape sequence '\q'
+  """
+2026-07-14 01:09:42 [INFO ] quant_framework.event_bus: [EventBus] 已启动
+2026-07-14 01:09:42 [INFO ] quant_framework.broker.simulated: Simulated broker started with cash=1000000.00
+2026-07-14 01:09:42 [INFO ] trading_loop: 统一交易循环已启动
+2026-07-14 01:09:42 [INFO ] trading_loop: 事件驱动交易循环已启动(灰度)
+Ridge: 299 只 → Top30入信号表
+弱转强: 0 候选
+超跌反弹: 并入, 反转信号覆盖15只
+打板候选池: 退潮期→空仓 (不生成候选)
+[Preload] 因子缓存注入: 3500 条
+[App] 数据目录已初始化: D:\quant_data\
+[Config] 路径配置加载成功
+[Trader] QMT XtQuant 交易通道可用
+[Trader] Master参数已加载: TP3_sell=1.0, 硬止损=-0.055, max_pos=3
+[Trader] KS ai_auto_enabled=False → auto_trade_enabled 已同步
+[Trader] Loaded CONFIG overrides from D:\quant_framework\live_trader_config.json
+[Trader] EventBus 未启动, 配置同步仅文件模式
+[Trader] 加载 4 个策略参数: ['第一次建组合因子测试', 'S_mqrsskpw', '九因子统一策略V1', 'WQ101+自研策略V1']
+[TradeKB] 34 hotkeys registered
+[PopupKiller] 启动成功（扫描间隔 2.0s）
+[Trader] 弹窗杀手已启动（2秒扫描间隔）
+[Trader] 持仓跟踪已加载: 2只
+[Trader] QMT无持仓数据(可能未连接)
+[Trader] Auto-sync + Auto-trade started (30s interval, link_trader enabled)
+[App] 事件总线已启动
+[Realtime] 已加载缓存: 581只
+[Realtime] 初始股票池: 5201只A股, 取前1000只
+[Realtime] 后台缓存已启动 (3秒批量刷新)
+[TDXWatcher] Monitoring D:\通信达技术指标\六合一竞价擒龙（下载到电脑里解压）\六合一竞价擒龙（下载到电脑里解压）\T0002\tpool every 30s
+[PaperInit] cfg min_daily_amount=20000000
+[Paper] __init__ 准备加载状态文件: d:\quant_framework\paper_account.json (存在=True)
+[Paper] 从CSV恢复 39 笔卖出记录
+[Paper] _load: cash=971354.9872400003 (from file=971354.9872400003), positions=1, trades=56, auto=False
+[Paper] __init__ 加载完成: cash=971354.9872400003, positions=1, auto=False
+[App] 自动交易状态已恢复: auto=False
+[App] 统一交易循环已启动
+[App] SQLite每日备份已注册 (09:30)
+[App] 交易数据每小时备份已注册(模拟+实盘)
+[App] IC自动更新已就绪 (每周一08:00)
+[App] 策略自动熔断已就绪 (每5分钟)
+[App] 周检定时器已就绪 (每周六09:00)
+[Module] 因子缓存: 3500 条
+***** xtdata连接成功 2026-07-14 01:43:09*****
+服务信息: {'tag': 'sp3', 'version': '1.0'}
+服务地址: 127.0.0.1:58610
+数据路径: D:\国金证券QMT交易端\bin.x64/../userdata_mini/datadir
+设置xtdata.enable_hello = False可隐藏此消息
+
+[TDXParser] 26池 20841只 (自动15池 + 手动11池)
+[DataLoader] 截断至最近60天 (2026-05-10 ~ 2026-07-09)
+[DataLoader] Parquet 缓存已加载: 5201 stocks × 60d, 6.6MB, 2.6s
+[Scheduler] Evolution scheduler started
+[App] Auto-evolve system loaded
+[App] Knowledge base API loaded
+ML cache: 60 entries
+95 rows → D:\quant_web\data\signal_table.json
+QMT config: 93 stocks + limits → D:\quant_web\data\qmt_trade_config.json
+  Auto-trade regime=bear ML>85 pos≤5% n2_auto=False
+  QMT候选池: ML=10 反转=5 打板=0 → 共15只
+Auto plan: 0 auto-enabled / 15 total → D:\quant_web\data\auto_trade_plan.json
+
+================================================================================
+  #  代码           名称       行业          现价     涨跌    量比   综合     共识 信号             仓位
+  ------------------------------------------------------------------------------
+   1 sh688120     华海清科     电子     ¥297.79  +0.9%  1.0x  100 🟢🟢     Lv5 强买       3.0%
+   2 sh603986     兆易创新     电子     ¥652.00  +8.1%  1.0x   89 🟢🟢     Lv5 强买       3.5%
+   3 sh605358     立昂微      电子     ¥60.52   +4.4%  0.7x   78 🟢🟢     Lv5 强买       3.5%
+   4 sh688146     中船特气     电子     ¥338.90  +2.4%  0.8x   73 🟢🟢     Lv5 强买       3.0%
+   5 sh688596     正帆科技     机械设备   ¥72.95   -3.6%  0.9x   54 🟢🟢     Lv5 强买       3.8%
+   6 sh688409     富创精密     电子     ¥263.08  -0.8%  0.8x   38 🟢🟢     Lv5 强买       2.4%
+   7 sh603078     江化微      电子     ¥48.15   +0.4%  1.0x   30 🟢🟢     Lv5 强买       2.8%
+   8 sh688549     中巨芯      电子     ¥32.83   -0.9%  0.7x   24 🟢🟢     Lv5 强买       2.4%
+   9 sh688766     普冉股份     电子     ¥774.01 +11.5%  0.9x   14 🟢🟢     Lv5 强买       2.8%
+  10 sh688432     有研硅      电子     ¥50.89  +13.6%  1.1x    5 🟢🟢     Lv5 强买       2.9%
+  11 sh605589     圣泉集团     基础化工   ¥54.00   +0.1%  0.6x  100 🔵      Lv4 买入       2.8%
+  12 sh600459     贵研铂业     有色金属   ¥21.18   -0.4%  0.6x  100 🔵      Lv4 买入       2.9%
+================================================================================
+
+[FactorImp] 15因子, 0告警 → D:\quant_web\data\factor_importance.json
+[System] 保存状态...
+[Shutdown] paper已保存
+[Shutdown] 持仓跟踪已保存
+[System] 状态已保存
+

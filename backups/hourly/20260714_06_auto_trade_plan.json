@@ -1,0 +1,370 @@
+{
+  "generated_at": "2026-07-14 01:09:45",
+  "mode": "L4",
+  "global_limits": {
+    "max_daily_trades": 5,
+    "max_daily_loss_pct": 5,
+    "circuit_breaker": false,
+    "qmt_fast_enabled": true,
+    "ai_auto_enabled": false,
+    "_regime": "bear",
+    "_sector_strength": {
+      "电子": 3.29,
+      "机械设备": -0.35,
+      "基础化工": 0.51,
+      "有色金属": -1.59,
+      "电力设备": 0.12,
+      "建筑材料": 3.4,
+      "通信": 0.42,
+      "非银金融": 0.66,
+      "汽车": 0.2,
+      "房地产": 0.96,
+      "建筑装饰": 3.79
+    },
+    "hard_stop_loss_pct": -0.055,
+    "soft_stop_loss_pct": -0.03,
+    "tp1": {
+      "profit_pct": 0.05,
+      "trail_pct": 0.01,
+      "sell_ratio": 0.33,
+      "stop_loss": -0.03,
+      "stop_action": "卖半仓",
+      "description": "移动止盈1: 涨≥5%触发, 回落1%→卖1/3, 跌-3%→卖半仓"
+    },
+    "tp2": {
+      "profit_pct": 0.07,
+      "trail_pct": 0.02,
+      "sell_ratio": 0.33,
+      "stop_loss": -0.05,
+      "stop_action": "清仓",
+      "description": "移动止盈2: 涨≥7%触发, 回落2%→再卖1/3, 跌-5%→清仓"
+    },
+    "tp3": {
+      "profit_pct": 0.1,
+      "trail_pct": 0.03,
+      "sell_ratio": 1.0,
+      "stop_loss": -0.07,
+      "stop_action": "清仓",
+      "description": "移动止盈3: 涨≥10%触发, 回落3%→全清, 跌-7%→清仓"
+    },
+    "limit_up_hold": true,
+    "limit_up_drop_sell": -0.03
+  },
+  "stocks": {
+    "sh688120": {
+      "enabled": false,
+      "auto_reason": "熊市双模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 281.41,
+      "soft_stop_loss": 281.41,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 321.61,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "华海清科",
+      "close": 297.79,
+      "industry": "电子"
+    },
+    "sh605589": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 51.03,
+      "soft_stop_loss": 51.03,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 58.32,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "圣泉集团",
+      "close": 54.0,
+      "industry": "基础化工"
+    },
+    "sh600459": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 20.02,
+      "soft_stop_loss": 20.04,
+      "soft_stop_loss_pct": 0.0539,
+      "take_profit": 22.87,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "贵研铂业",
+      "close": 21.18,
+      "industry": "有色金属"
+    },
+    "sh688017": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 374.22,
+      "soft_stop_loss": 374.22,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 427.68,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "绿的谐波",
+      "close": 396.0,
+      "industry": "机械设备"
+    },
+    "sh603026": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 66.06,
+      "soft_stop_loss": 66.45,
+      "soft_stop_loss_pct": 0.0493,
+      "take_profit": 75.49,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "石大胜华",
+      "close": 69.9,
+      "industry": "电力设备"
+    },
+    "sz300179": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 45.86,
+      "soft_stop_loss": 45.86,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 52.41,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "四方达",
+      "close": 48.53,
+      "industry": "机械设备"
+    },
+    "sh603601": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 9.53,
+      "soft_stop_loss": 9.59,
+      "soft_stop_loss_pct": 0.0488,
+      "take_profit": 10.89,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "再升科技",
+      "close": 10.08,
+      "industry": "建筑材料"
+    },
+    "sh600330": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 22.86,
+      "soft_stop_loss": 22.93,
+      "soft_stop_loss_pct": 0.052,
+      "take_profit": 26.13,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "天通股份",
+      "close": 24.19,
+      "industry": "电子"
+    },
+    "sz300223": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 213.85,
+      "soft_stop_loss": 213.85,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 244.4,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "北京君正",
+      "close": 226.3,
+      "industry": "电子"
+    },
+    "sh688019": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 301.01,
+      "soft_stop_loss": 302.52,
+      "soft_stop_loss_pct": 0.0503,
+      "take_profit": 344.01,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "安集科技",
+      "close": 318.53,
+      "industry": "电子"
+    },
+    "sh603629": {
+      "enabled": "False",
+      "auto_reason": "ML=69 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 114.29,
+      "soft_stop_loss": 116.1,
+      "soft_stop_loss_pct": 0.03,
+      "take_profit": 135.45,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "利通电子",
+      "close": 120.94,
+      "industry": "电子"
+    },
+    "sh600601": {
+      "enabled": "False",
+      "auto_reason": "ML=63 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 12.69,
+      "soft_stop_loss": 12.89,
+      "soft_stop_loss_pct": 0.03,
+      "take_profit": 15.04,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "方正科技",
+      "close": 13.43,
+      "industry": "电子"
+    },
+    "sz301308": {
+      "enabled": "False",
+      "auto_reason": "ML=62 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 572.63,
+      "soft_stop_loss": 581.72,
+      "soft_stop_loss_pct": 0.03,
+      "take_profit": 678.68,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "江波龙",
+      "close": 605.96,
+      "industry": "电子"
+    },
+    "sz002484": {
+      "enabled": "False",
+      "auto_reason": "ML=62 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 80.13,
+      "soft_stop_loss": 81.4,
+      "soft_stop_loss_pct": 0.03,
+      "take_profit": 94.96,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "江海股份",
+      "close": 84.79,
+      "industry": "电子"
+    },
+    "sh688020": {
+      "enabled": "False",
+      "auto_reason": "ML=60 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 183.31,
+      "soft_stop_loss": 186.22,
+      "soft_stop_loss_pct": 0.03,
+      "take_profit": 217.26,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "方邦股份",
+      "close": 193.98,
+      "industry": "电子"
+    }
+  }
+}

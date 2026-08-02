@@ -88,8 +88,8 @@ def run(strategy_name: str, days: int = 90, cash: float = 1_000_000) -> dict:
     cerebro.addsizer(RoundLotSizer)
     cerebro.broker.addcommissioninfo(StampDutyCommission())
 
-    from data_loader import load_stock_data_from_cache
-    stock_data = load_stock_data_from_cache()
+    from data_loader import load_stock_data_cache
+    stock_data = load_stock_data_cache(r"D:\quant_web\stock_data.parquet", keep_days=250)
     if not stock_data:
         return {"success": False, "message": "数据加载失败"}
 

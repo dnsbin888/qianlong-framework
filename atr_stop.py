@@ -46,8 +46,14 @@ def get_stop_price(symbol, stock_data, atr_multiplier=2.0, fallback_pct=-0.05):
 
         last_close = float(close[-1])
         atr_pct = (atr * atr_multiplier) / last_close
-        # 钳制: ATR止损在2%-8%之间
-        atr_pct = max(0.02, min(0.08, atr_pct))
+        # 上限从 trade_config_master 读取硬止损, 改一处全系统生效
+        try:
+            import json as _j
+            _m = _j.load(open(r"D:\quant_framework\trade_config_master.json", encoding="utf-8"))
+            _hard = abs(_m.get("stop_loss", {}).get("hard", -0.055))
+        except Exception:
+            _hard = 0.055
+        atr_pct = max(0.02, min(atr_pct, _hard))
         stop_price = last_close * (1 - atr_pct)
 
         return {
@@ -61,11 +67,14 @@ def get_stop_price(symbol, stock_data, atr_multiplier=2.0, fallback_pct=-0.05):
         return {"stop_price": 0, "stop_pct": fallback_pct, "atr": 0, "method": "fixed"}
 
 
-def get_stop_config(symbol, stock_data, base_pct=-0.03, atr_multiplier=2.0):
-    """获取推荐的止损配置（优先ATR，回退固定百分比）
-
-    Returns:
-        float: 止损百分比 (如 -0.035 = -3.5%)
-    """
+def get_stop_config(symbol, stock_data, base_pct=None, atr_multiplier=2.0):
+    """获取推荐的止损配置（优先ATR，回退从master读硬止损）"""
+    if base_pct is None:
+        try:
+            import json as _j2
+            _m2 = _j2.load(open(r"D:\quant_framework\trade_config_master.json", encoding="utf-8"))
+            base_pct = _m2.get("stop_loss", {}).get("hard", -0.055)
+        except Exception:
+            base_pct = -0.055
     result = get_stop_price(symbol, stock_data, atr_multiplier, base_pct)
     return result["stop_pct"]

@@ -51,6 +51,10 @@ def generate_strategy(desc: str, model: str = "deepseek") -> dict:
         api_key = ""
 
     if not api_key:
+        import os as _os
+        api_key = _os.environ.get("DEEPSEEK_API_KEY", "")
+
+    if not api_key:
         return {"success": False, "error": "API Key未配置"}
 
     prompt = PROMPT_TEMPLATE.format(desc=desc)

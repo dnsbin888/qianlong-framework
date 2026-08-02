@@ -10,6 +10,7 @@ P2-2: 事件总线(EventBus: 发布/订阅, 6种内置事件)
 P2-3: 容量分析(CapacityAnalyzer: 基于换手率和流动性估算)
 执行模型: T日收盘计算信号 → T+1日开盘执行。
 """
+import os
 import numpy as np
 import pandas as pd
 import random
@@ -535,9 +536,19 @@ class BacktestEngine:
             seed: 随机种子(P1-7修复: 固定种子保证回测可复现, 默认42)
         """
         self.stock_data = stock_data
+        # P2: 幸存者偏差修正 — 合并退市股数据
+        _delisted_path = r"D:\quant_framework\delisted_stocks.pkl"
+        if os.path.exists(_delisted_path):
+            try:
+                import pickle as _pkl
+                _delisted = _pkl.load(open(_delisted_path, "rb"))
+                if isinstance(_delisted, dict):
+                    self.stock_data = {**stock_data, **_delisted}  # 合并
+            except Exception:
+                pass
         self.factor_cache = factor_cache
         self.name_map = name_map or {}
-        self.portal = DataPortal(stock_data)  # P0-3: 内置数据门户
+        self.portal = DataPortal(self.stock_data)  # P0-3: 内置数据门户
         self.event_bus = event_bus or EventBus()  # P2-2: 事件总线
         self._strategies = {}  # 注册的策略字典 {name: class}
         self._seed = seed  # P1-7修复
@@ -578,16 +589,18 @@ class BacktestEngine:
     def run(self, strategy="tdx_resonance", signal_field="signal_resonance",
             formula_symbols=None, signal_store=None,
             start="2022-01-01", end="2025-12-31",
-            max_positions=3, position_pct=0.3, stop_loss=-0.05, take_profit=0.08,
-            hold_days=1, trail1_profit=0.05, trail1_drop=0.02,
-            trail2_profit=0.07, trail2_drop=0.03,
+            max_positions=3, position_pct=0.3, stop_loss=None, take_profit=None,
+            hold_days=1, trail1_profit=None, trail1_drop=None,
+            trail2_profit=None, trail2_drop=None,
             trail3_profit=None, trail3_drop=None,
             sell_ratio_1=None, sell_ratio_2=None, sell_ratio_3=None,
             limit_up_enabled=True, limit_up_open_drop=0.03,
             min_power=50, initial_capital=1_000_000,
-            commission_rate=0.00025, stamp_duty=0.001,
+            entry_buffer=0.0,  # 入场缓冲: 限价单在开盘下方N%
+            commission_rate=None, stamp_duty=None,  # E372: None=读master
             benchmark_sym='sh000300',
-            strategy_obj=None):
+            strategy_obj=None,
+            stop_loss_map=None):  # {symbol: stop_pct} 逐股ATR止损，优先于全局stop_loss
         """
         执行回测 — 事件驱动，T+1执行，真实数据+交易成本。
 
@@ -600,6 +613,62 @@ class BacktestEngine:
             strategy_obj: BaseStrategy 实例(优先级最高)
             signal_store: {symbol: pd.Series} 预计算信号序列
         """
+        # E372: 回测参数对齐实盘 — 优先从 trade_config_master.json 读取
+        if commission_rate is None or stamp_duty is None:
+            try:
+                import json as _json
+                _m = _json.load(open(r"D:\quant_framework\trade_config_master.json", encoding="utf-8"))
+                _cost = _m.get("trading_cost", {})
+                if commission_rate is None:
+                    commission_rate = _cost.get("commission_rate", 0.00025)
+                if stamp_duty is None:
+                    stamp_duty = _cost.get("stamp_duty", 0.0005)
+            except Exception:
+                if commission_rate is None: commission_rate = 0.00025
+                if stamp_duty is None: stamp_duty = 0.0005
+
+        # ── 止盈止损从 master 读取 (统一参数源, 对齐 paper_engine) ──
+        try:
+            import json as _json2
+            _m2 = _json2.load(open(r"D:\quant_framework\trade_config_master.json", encoding="utf-8"))
+            # 止损
+            if stop_loss is None:
+                stop_loss = _m2.get("stop_loss", {}).get("hard", -0.055)
+            # 三级移动止盈
+            _tp = _m2.get("take_profit", {})
+            if take_profit is None:
+                take_profit = _tp.get("tp1", {}).get("profit_pct", 0.05)
+            if trail1_profit is None:
+                trail1_profit = _tp.get("tp1", {}).get("profit_pct", 0.05)
+            if trail1_drop is None:
+                trail1_drop = _tp.get("tp1", {}).get("trail_pct", 0.01)
+            if trail2_profit is None:
+                trail2_profit = _tp.get("tp2", {}).get("profit_pct", 0.07)
+            if trail2_drop is None:
+                trail2_drop = _tp.get("tp2", {}).get("trail_pct", 0.02)
+            # T3 在回测引擎中暂不启用 — 回测的T3是简单涨N%回落，不是paper_engine的涨停炸板检测
+            # T3 对齐需先实现涨停价检测 → 单独立项
+        except Exception:
+            # master不可用时的兜底值
+            if stop_loss is None: stop_loss = -0.055
+            if take_profit is None: take_profit = 0.05
+            if trail1_profit is None: trail1_profit = 0.05
+            if trail1_drop is None: trail1_drop = 0.01
+            if trail2_profit is None: trail2_profit = 0.07
+            if trail2_drop is None: trail2_drop = 0.02
+
+        # ── 移动止盈规则实例 (对齐 paper_engine AutoTrailingStopRule) ──
+        from quant_framework.execution.rules.trailing_stop import AutoTrailingStopRule as _ATSR
+        _tp_rules = []
+        if trail1_profit and trail1_drop:
+            _tp_rules.append(_ATSR(tier=1, profit_pct=trail1_profit, trail_pct=trail1_drop,
+                                   sell_ratio=sell_ratio_1 or 0.33, stop_loss=-0.03))
+        if trail2_profit is not None and trail2_drop is not None:
+            _tp_rules.append(_ATSR(tier=2, profit_pct=trail2_profit, trail_pct=trail2_drop,
+                                   sell_ratio=sell_ratio_2 or 0.33, stop_loss=-0.05))
+        # T3(=3) 涨停炸板: 需回测日线模拟涨停检测 → 单独立项
+        _tp_rules.sort(key=lambda r: r.tier, reverse=True)  # 高tier优先
+
         # ── 获取策略实例 ──
         print(f"[Engine-run] ENTERED strategy={strategy}")
         active_strategy = strategy_obj
@@ -736,6 +805,8 @@ class BacktestEngine:
                     buy_price = self.portal.get_price(sym, 'close', today)
                 if np.isnan(buy_price) or buy_price <= 0:
                     continue
+                # 入场缓冲: 限价单在开盘价下方1% (补偿T+1跳空,行业标准)
+                buy_price *= (1 - entry_buffer)
 
                 buy_price *= (1 + np.random.uniform(0.0001, 0.0003))
                 shares = pb["shares"]
@@ -758,6 +829,9 @@ class BacktestEngine:
                     "commission": buy_commission,
                     "slippage": buy_slippage,
                     "power_score": pb["power_score"],
+                    "stop_loss": pb.get("stop_loss"),  # 策略信号级止损
+                    "soft_stop_loss": pb.get("soft_stop_loss"),
+                    "take_profit": pb.get("take_profit"),
                 }
                 positions.append(pos_record)
                 # P2-2: 成交事件
@@ -791,27 +865,50 @@ class BacktestEngine:
 
                 exit_type = None
                 trail_reason = ""
-                if ret <= stop_loss:
+                # 止损优先级: 信号级 > ATR逐股 > 全局 (信号级只能更严)
+                sym_stop = stop_loss  # 全局兜底
+                # 信号级止损 (策略自己算的精确价, 优先)
+                _sig_sl = pos.get("stop_loss")
+                if _sig_sl and _sig_sl > 0 and pos["buy_price"] > 0:
+                    _sig_sl_pct = (_sig_sl / pos["buy_price"] - 1)
+                    sym_stop = max(sym_stop, _sig_sl_pct)  # 取更严的
+                # ATR逐股止损
+                if stop_loss_map:
+                    _atr_sl = stop_loss_map.get(sym)
+                    if _atr_sl:
+                        sym_stop = max(sym_stop, _atr_sl)
+                if ret <= sym_stop:
                     exit_type = "stop_loss"
-                elif trail1_drop > 0 and peak_ret >= trail1_profit and ret <= peak_ret - trail1_drop:
-                    exit_type = "trail_stop"
-                    trail_reason = "一级"
-                elif trail2_drop > 0 and peak_ret >= trail2_profit and ret <= peak_ret - trail2_drop:
-                    exit_type = "trail_stop"
-                    trail_reason = "二级"
-                elif trail3_drop is not None and trail3_drop > 0 and (trail3_profit or 0) > 0 and peak_ret >= (trail3_profit or 0.12) and ret <= peak_ret - trail3_drop:
-                    exit_type = "trail_stop"
-                    trail_reason = "三级"
-                elif ret >= take_profit:
-                    exit_type = "take_profit"
-                elif days_held >= hold_days:
-                    exit_type = "normal"
+                # ── 移动止盈规则 (对齐 paper_engine AutoTrailingStopRule) ──
+                _trail_action = None
+                if not exit_type and _tp_rules:
+                    _prev_close = self.portal.get_prev_close(sym, today)
+                    _md = {"price": judge_price,
+                           "prev_close": _prev_close if not np.isnan(_prev_close) else pos["buy_price"]}
+                    _pd = {"symbol": sym, "avg_cost": pos["buy_price"], "qty": pos["shares"]}
+                    for _rule in _tp_rules:
+                        _trail_action = _rule.check(_pd, _md, {})
+                        if _trail_action:
+                            exit_type = "trail_stop"
+                            trail_reason = _trail_action.reason
+                            break
+
+                # ── 简单止盈 (信号级优先) / 持仓到期 ──
+                if not exit_type:
+                    _tp = take_profit
+                    if pos.get("take_profit") and pos["buy_price"] > 0:
+                        _tp = (pos["take_profit"] / pos["buy_price"] - 1)
+                    if ret >= _tp:
+                        exit_type = "take_profit"
+                    elif days_held >= hold_days:
+                        exit_type = "normal"
 
                 # P4-04: 跌停不卖 (A股铁律)
                 if exit_type and self.portal.is_limit_down(sym, today):
                     exit_type = None  # 跌停日跳过卖出，下个交易日再试
 
                 if exit_type:
+                    # 卖价: 止损用low最低价，其余用收盘价
                     if exit_type == "stop_loss":
                         sell_price = self.portal.get_price(sym, 'low', today)
                         if np.isnan(sell_price): sell_price = settle_price
@@ -819,15 +916,22 @@ class BacktestEngine:
                     else:
                         sell_price = settle_price
 
-                    sell_amount = sell_price * pos["shares"]
+                    # 部分卖出 (trail_stop) vs 全量卖出 (其他)
+                    _sell_qty = min(_trail_action.qty, pos["shares"]) if (_trail_action and exit_type == "trail_stop") else pos["shares"]
+                    _sell_qty = max(100, _sell_qty // 100 * 100)  # 整手
+                    _is_partial = _sell_qty < pos["shares"]
+
+                    sell_amount = sell_price * _sell_qty
                     sell_commission = sell_amount * commission_rate
                     if sell_commission < 5: sell_commission = 5
                     sell_stamp = sell_amount * stamp_duty
                     slippage = sell_amount * (0.00005 + np.random.uniform(0, 0.00025) * min(sell_amount/500000, 1))
-                    total_cost = (pos.get("commission",0) + pos.get("slippage",0) + sell_commission + sell_stamp + slippage)
+                    # 成本按卖出占比分摊
+                    _cost_ratio = _sell_qty / pos["shares"]
+                    total_cost = (pos.get("commission",0) + pos.get("slippage",0)) * _cost_ratio + sell_commission + sell_stamp + slippage
 
-                    pnl = (sell_price - pos["buy_price"]) * pos["shares"] - total_cost
-                    available += pos["cost"] + pnl
+                    pnl = (sell_price - pos["buy_price"]) * _sell_qty - total_cost
+                    available += pos["cost"] * _cost_ratio + pnl
 
                     trade_rec = {
                         "symbol": sym,
@@ -836,11 +940,12 @@ class BacktestEngine:
                         "sell_date": today_str,
                         "buy_price": round(pos["buy_price"], 2),
                         "sell_price": round(sell_price, 2),
-                        "return_pct": round((pnl / pos["cost"]) if pos["cost"] > 0 else 0, 4),
+                        "return_pct": round((pnl / (pos["cost"] * _cost_ratio)) if pos["cost"] > 0 else 0, 4),
                         "net_profit": round(pnl, 0),
                         "hold_days": days_held,
                         "exit_type": exit_type,
                         "trail_reason": trail_reason if exit_type == "trail_stop" else "",
+                        "partial": _is_partial,
                         "signal": getattr(active_strategy, 'name', strategy),
                         "power_score": pos.get("power_score", 50),
                         "cost_total": round(total_cost, 2),
@@ -849,9 +954,18 @@ class BacktestEngine:
                     # P2-2: 成交事件
                     self.event_bus.publish(EventBus.ON_TRADE,
                                            type="sell", symbol=sym, price=sell_price,
-                                           shares=pos["shares"], date=today,
+                                           shares=_sell_qty, date=today,
                                            exit_type=exit_type, pnl=pnl)
                     active_strategy.on_trade(context, trade_rec)
+
+                    # 部分卖出: 减仓继续持有; 全量卖出: 移除
+                    if _is_partial:
+                        pos["shares"] -= _sell_qty
+                        pos["cost"] -= pos["cost"] * _cost_ratio
+                        pos["commission"] -= pos.get("commission", 0) * _cost_ratio
+                        pos["slippage"] -= pos.get("slippage", 0) * _cost_ratio
+                        still_held.append(pos)
+                    # else: 全量卖出, 不加入still_held
                 else:
                     still_held.append(pos)
 
@@ -884,6 +998,9 @@ class BacktestEngine:
                         "symbol": c["symbol"],
                         "shares": shares,
                         "power_score": c.get("power_score", 50),
+                        "stop_loss": c.get("stop_loss"),  # 策略信号级止损
+                        "soft_stop_loss": c.get("soft_stop_loss"),
+                        "take_profit": c.get("take_profit"),
                     })
                 # P2-2: 信号事件
                 self.event_bus.publish(EventBus.ON_SIGNAL,
@@ -1031,6 +1148,15 @@ class BacktestEngine:
             tail = dr_arr[dr_arr <= var_95]
             cvar = float(np.mean(tail)) if len(tail) > 0 else var_95
 
+        # DSR: Deflated Sharpe Ratio (Prado 2014, 统计显著性检验)
+        dsr_result = {"dsr": 0, "verdict": "数据不足", "significant": False}
+        if len(daily_rets) >= 60:
+            try:
+                from deflated_sharpe import deflated_sharpe_ratio
+                dsr_result = deflated_sharpe_ratio(daily_rets, n_trials=n)
+            except Exception:
+                pass
+
         # 行业集中度
         industry_pnl = {}
         for t in trades:
@@ -1060,6 +1186,7 @@ class BacktestEngine:
             "var_95": round(var_95, 6),
             "var_99": round(var_99, 6),
             "cvar": round(cvar, 6),
+            "dsr": dsr_result,
             "industry_concentration": industry_conc,
         }
         result.update(bm_metrics)
@@ -1177,7 +1304,9 @@ class BacktestEngine:
                      formula_symbols=None, signal_store=None,
                      max_positions=3, position_pct=0.3,
                      initial_capital=1_000_000,
-                     benchmark_sym='sh000300'):
+                     benchmark_sym='sh000300',
+                     stop_loss_map=None,
+                     **kwargs):
         """Walk-Forward 分析: 滚动窗口检验参数稳定性
 
         将回测区间分成 n_folds 个折叠, 每个折叠:
@@ -1251,6 +1380,8 @@ class BacktestEngine:
                         hold_days=params.get("hold_days", 1),
                         initial_capital=initial_capital,
                         benchmark_sym=benchmark_sym,
+                        stop_loss_map=stop_loss_map,
+                        **kwargs,
                     )
                     metrics = res.get("metrics", {})
                     sharpe = metrics.get("sharpe", 0)
@@ -1281,6 +1412,8 @@ class BacktestEngine:
                 hold_days=best_params.get("hold_days", 1),
                 initial_capital=initial_capital,
                 benchmark_sym=benchmark_sym,
+                stop_loss_map=stop_loss_map,
+                **kwargs,
             )
             test_m = test_result.get("metrics", {})
             train_m = best_train_result.get("metrics", {}) if best_train_result else {}
@@ -1301,6 +1434,8 @@ class BacktestEngine:
                 "sharpe_decay": round(
                     test_m.get("sharpe", 0) - train_m.get("sharpe", 0), 2
                 ),
+                "test_dsr": test_m.get("dsr", {}).get("dsr", 0),
+                "test_dsr_verdict": test_m.get("dsr", {}).get("verdict", "?"),
             }
             fold_results.append(fold_info)
             best_params_per_fold.append(best_params)
@@ -1325,6 +1460,8 @@ class BacktestEngine:
                 "avg_test_max_drawdown": round(float(avg_test_dd), 4),
                 "avg_sharpe_decay": round(float(avg_sharpe_decay), 2),
                 "param_stability": param_stability,
+                "avg_dsr": round(float(np.mean([f.get("test_dsr",0) for f in fold_results])), 2),
+                "dsr_verdicts": [f.get("test_dsr_verdict","?") for f in fold_results],
                 "conclusion": self._wf_conclusion(avg_sharpe_decay, param_stability),
             }
 

@@ -1,0 +1,74 @@
+{
+  "cash": 993985.0,
+  "positions": {
+    "sh600406": {
+      "qty": 100,
+      "avg_cost": 22.0,
+      "last_price": 22.0,
+      "name": "国电南瑞",
+      "buy_date": "2026-07-17",
+      "strategy_id": "",
+      "_verified": true
+    },
+    "sh600089": {
+      "qty": 200,
+      "avg_cost": 19.0,
+      "last_price": 19.0,
+      "name": "特变电工",
+      "buy_date": "2026-07-17",
+      "strategy_id": "",
+      "_verified": true
+    }
+  },
+  "trade_log": [
+    {
+      "symbol": "sh600406",
+      "name": "国电南瑞",
+      "side": "buy",
+      "price": 22.0,
+      "qty": 100,
+      "cost": 2200.0,
+      "amount": 2200.0,
+      "fee": 5.0,
+      "pnl": null,
+      "cost_price": 22.0,
+      "signal_source": "auto",
+      "date": "2026-07-17",
+      "time": "19:57:36",
+      "type": "test",
+      "reason": "买入"
+    },
+    {
+      "symbol": "sh600089",
+      "name": "特变电工",
+      "side": "buy",
+      "price": 19.0,
+      "qty": 100,
+      "cost": 1900.0,
+      "amount": 1900.0,
+      "fee": 5.0,
+      "pnl": null,
+      "cost_price": 19.0,
+      "signal_source": "auto",
+      "date": "2026-07-17",
+      "time": "19:57:37",
+      "type": "test",
+      "reason": "买入"
+    },
+    {
+      "symbol": "sh600089",
+      "side": "buy",
+      "price": 19.0,
+      "qty": 100,
+      "date": "2026-07-17",
+      "time": "09:30:00",
+      "type": "auto"
+    }
+  ],
+  "auto_enabled": true,
+  "daily_date": "20260717",
+  "daily_trade_count": 3,
+  "daily_buy_count": 3,
+  "daily_loss_total": 0.0,
+  "day_start_equity": null
+}

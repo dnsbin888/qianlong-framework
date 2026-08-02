@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><title>底部快捷栏预览</title>
+<style>
+body{background:#0d0e10;color:#b4b6b8;font-family:sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0}
+.preview{background:#141619;border:1px solid #2a2c30;border-radius:6px;max-width:860px;width:100%}
+.header{display:flex;align-items:center;gap:8px;padding:6px 16px;background:#0a0c10;border-bottom:1px solid #1a1c20;font-size:13px}
+.header .regime{display:flex;align-items:center;gap:4px;font-weight:700;color:#00b96b}
+.header .stars{color:#F1A100;font-size:14px}
+.header .sep{width:1px;height:14px;background:#2a2c30}
+.header .heat{font-size:12px;color:#F1A100}
+.content{padding:16px;min-height:200px}
+/* ── 底部快捷栏 ── */
+.qbar{display:flex;border-top:1px solid #1d1f24;background:#0a0c10;padding:4px 0}
+.qbar a{flex:1;text-align:center;padding:8px 4px;text-decoration:none;color:#888;font-size:11px;border-right:1px solid #1a1c20;transition:.15s}
+.qbar a:last-child{border-right:none}
+.qbar a:hover{background:rgba(255,255,255,.03);color:#e3e3e3}
+.qbar .ico{display:block;font-size:18px;margin-bottom:2px}
+.qbar .badge{display:inline-block;background:#FF4051;color:#fff;font-size:9px;border-radius:8px;padding:0 5px;margin-left:2px;line-height:15px}
+.qbar a.active{color:#F1A100;background:rgba(241,161,0,.06)}
+.qbar a.active .ico{color:#F1A100}
+</style></head><body>
+<div class="preview">
+  <div class="header">
+    <span class="regime">🐻 熊市</span><span class="stars">★☆☆☆☆</span><span style="font-size:12px;color:#888">仓位x40%</span>
+    <span class="sep"></span>
+    <span class="heat">市场:🐂 乐观 · 涨停32 · 消息:📰 中性</span>
+  </div>
+  <div class="content">
+    <p style="color:#888;font-size:13px">← 这是现有的市场行情条</p>
+    <p style="color:#888;font-size:13px;margin-top:60px">↓ 下面是新增的底部快捷栏</p>
+  </div>
+  <div class="qbar">
+    <a href="/terminal" class="active"><span class="ico">🏠</span>指挥中心</a>
+    <a href="/ml-signals"><span class="ico">🧠</span>ML信号<span class="badge">60</span></a>
+    <a href="/paper-trade-v3"><span class="ico">🧪</span>模拟盘<span class="badge" style="background:#00b96b">3</span></a>
+    <a href="/live-trade"><span class="ico">💰</span>实盘<span class="badge">0</span></a>
+    <a href="/risk-console"><span class="ico">🛡️</span>风控</a>
+    <a href="/static/潜龙策略体系_v3.html"><span class="ico">📖</span>策略</a>
+  </div>
+</div>
+</body></html>

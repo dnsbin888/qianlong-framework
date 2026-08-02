@@ -457,9 +457,12 @@ def generate_from_ai(desc: str, model: str = "deepseek") -> str | None:
             api_key = _cfg.get("aiKey", "")
         except: pass
     if not api_key:
+        import os as _os
+        api_key = _os.environ.get("DEEPSEEK_API_KEY", "")
+    if not api_key:
         print(f"[AI-Factor] 请设置API Key")
-        print(f"  方法1: 在 live_trader_config.json 的 aiKey 字段填入key")
-        print(f"  方法2: 环境变量 DEEPSEEK_API_KEY")
+        print(f"  方法1: 环境变量 DEEPSEEK_API_KEY")
+        print(f"  方法2: 在 live_trader_config.json 的 aiKey 字段填入key")
         print(f"  手动模式: python factor_pipeline.py --ai manual")
         return None
 

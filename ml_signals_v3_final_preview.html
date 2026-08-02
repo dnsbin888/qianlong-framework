@@ -1,0 +1,715 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>ML信号复盘 v3 最终方案预览 — 潜龙</title>
+<style>
+/* ═══════════════════════════════════════════════════════════
+   ML信号页 v3 最终方案 — 融合治理铁律+行业最佳实践
+   设计依据:
+   - 铁律#11: 字段顺序(识别→行情→评分→决策) | A股红涨绿跌 | 品种+模型筛选
+   - 铁律#10: 代码+名称成对出现
+   - 铁律#12: GBDT三模型(LGBM+XGBoost+CB Meta裁判)
+   - 铁律#14: 参数三层治理, 市场三态自适应
+   - 宪法#2: 竞品对标(私募/QuantConnect/BigQuant)
+   - 行业标准: Regime Context First | Decision Chain Visible
+   - 行业标准: Multi-Model Ensemble | Attribution Aware
+   ═══════════════════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0e10;color:#b4b6b8;font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;height:100vh;overflow:hidden}
+
+/* ═══ 布局 ═══ */
+.sc-wrap{display:flex;height:100vh;overflow:hidden}
+
+/* ═══ 左侧栏 ═══ */
+.sc-side{width:266px;min-width:266px;background:#141619;border-right:1px solid #202225;padding:12px 10px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;position:relative;transition:width 0.2s,min-width 0.2s,padding 0.2s;z-index:10;scrollbar-width:thin;scrollbar-color:#2a2c30 transparent}
+.sc-side::-webkit-scrollbar{width:4px}
+.sc-side::-webkit-scrollbar-track{background:transparent}
+.sc-side::-webkit-scrollbar-thumb{background:#2a2c30;border-radius:2px}
+.sc-side::-webkit-scrollbar-thumb:hover{background:#3a3c40}
+.sc-side.collapsed{width:44px;min-width:44px;padding:6px;overflow:hidden}
+.sc-side.collapsed>*{display:none}
+.sc-side.collapsed .sc-collapse-btn{display:flex}
+.sc-collapse-btn{position:absolute;top:50%;transform:translateY(-50%);right:-12px;width:22px;height:56px;background:#1d1f23;border:1px solid #2a2c30;border-radius:3px;cursor:pointer;font-size:13px;color:#666;display:flex;align-items:center;justify-content:center;z-index:10;user-select:none}
+.sc-collapse-btn:hover{color:#e3e3e3;border-color:#409eff}
+.sc-side-header{display:flex;align-items:center;gap:6px;padding-right:28px}
+.sc-side-logo{font-size:18px}
+.sc-side-title{font-size:13px;font-weight:700;color:#e3e3e3;white-space:nowrap}
+.sc-side-subtitle{font-size:9px;color:#555;white-space:nowrap}
+
+/* ═══ 主区 ═══ */
+.sc-main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#0d0e10}
+.sc-top{padding:8px 12px 4px;flex-shrink:0}
+.sc-table-area{flex:1;overflow:hidden;padding:0 12px 8px;display:flex;flex-direction:column}
+.sc-tbl-wrap{border:1px solid #202225;border-radius:4px;background:#141619;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.sc-tbl-scroll{flex:1;overflow:auto}
+.sc-tbl{width:100%;border-collapse:collapse;font-size:11px;table-layout:auto}
+.sc-tbl thead{position:sticky;top:0;z-index:5}
+.sc-tbl th{background:#1a1c21;padding:6px 8px;text-align:left;font-weight:500;border-bottom:2px solid #202225;white-space:nowrap;color:#777;font-size:10.5px;cursor:pointer;user-select:none;transition:color .15s}
+.sc-tbl th:hover{color:#e3e3e3}
+.sc-tbl th .sort-arrow{font-size:9px;margin-left:1px;color:#555}
+.sc-tbl td{padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.025);white-space:nowrap;font-size:11px;user-select:text;-webkit-user-select:text}
+.sc-tbl td::selection{background:rgba(64,158,255,.35);color:#fff}
+.sc-tbl tr:hover td{background:rgba(64,158,255,.05)}
+
+/* ═══ 行背景色 (行业标准: 优质=绿底, 共振=金底, 低质=红底) ═══ */
+.sc-tbl tr.q-high td{background:rgba(0,185,107,.03)}
+.sc-tbl tr.q-high:hover td{background:rgba(0,185,107,.07)}
+.sc-tbl tr.q-resonance td{background:rgba(241,161,0,.03)}
+.sc-tbl tr.q-resonance:hover td{background:rgba(241,161,0,.07)}
+.sc-tbl tr.q-low td{background:rgba(255,64,81,.015)}
+
+/* ═══ 卡片 ═══ */
+.card{background:#16181d;border:1px solid #1d1f24;border-radius:4px;padding:9px 10px;transition:border-color .15s}
+.card:hover{border-color:#25282e}
+.card-title{font-size:11px;font-weight:600;color:#c0c2c6;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.card-hint{font-size:9px;color:#555;margin-top:3px;line-height:1.4}
+
+/* ═══ 颜色系统 (A股: 红涨绿跌 #铁律11) ═══ */
+.up,.red{color:#FF4051}.dn,.green{color:#00b96b}
+.gold{color:#F1A100}.blue{color:#409eff}.purple{color:#e040fb}
+
+/* ═══ 评分等级 ═══ */
+.score-s{color:#F1A100;font-weight:700;font-size:13px}   /* ≥90 */
+.score-a{color:#e3e3e3;font-weight:600}                /* ≥80 */
+.score-b{color:#b4b6b8}                                 /* ≥60 */
+.score-c{color:#888}                                    /* <60 */
+
+/* ═══ 标签 ═══ */
+.tag{font-size:9px;padding:1px 6px;border-radius:2px;font-weight:600;display:inline-block;line-height:1.5}
+.tag-bull{background:rgba(255,64,81,.12);color:#FF4051}
+.tag-bear{background:rgba(0,185,107,.10);color:#00b96b}
+.tag-side{background:rgba(241,161,0,.10);color:#F1A100}
+
+/* ═══ 共识点 ═══ */
+.dot-on-l{color:#00b96b}.dot-on-x{color:#409eff}.dot-on-c{color:#F1A100}
+.dot-off{color:#333}
+
+/* ═══ CB标签 ═══ */
+.cb-tag{font-size:9px;font-weight:700;margin-left:2px}
+.cb-ok{color:#F1A100}.cb-warn{color:#888}.cb-no{color:#FF4051}
+
+/* ═══ 等级徽章 ═══ */
+.lv-badge{padding:1px 6px;border-radius:2px;font-size:10px;font-weight:700;display:inline-block}
+.lv5{background:rgba(255,64,81,.12);color:#FF4051}
+.lv4{background:rgba(241,161,0,.10);color:#F1A100}
+.lv3{background:rgba(64,158,255,.10);color:#409eff}
+.lv2{background:rgba(136,136,136,.1);color:#999}
+.lv1{background:rgba(85,85,85,.06);color:#666}
+
+/* ═══ 质量条 ═══ */
+.ql-bar-wrap{display:inline-flex;align-items:center;gap:4px}
+.ql-bar{width:36px;height:5px;background:#1d1f23;border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle}
+.ql-bar div{height:100%;border-radius:3px;transition:width .3s}
+
+/* ═══ KPI卡 ═══ */
+.kpi-card{background:#16181d;border:1px solid #1d1f24;border-radius:4px;padding:7px 10px;text-align:center;cursor:pointer;transition:border-color .15s;flex:1;min-width:70px}
+.kpi-card:hover{border-color:#409eff}
+.kpi-card.clickable:hover{border-color:#F1A100}
+.kpi-l{font-size:10px;color:#777;margin-bottom:1px}
+.kpi-v{font-size:18px;font-weight:700}
+.kpi-sub{font-size:9px;color:#555;margin-top:1px}
+
+/* ═══ 按钮 ═══ */
+.btn{font-size:10px;padding:2px 8px;border-radius:3px;cursor:pointer;border:1px solid #2a2c30;background:#1d1f23;color:#777;transition:all .12s;white-space:nowrap;font-family:inherit}
+.btn:hover{color:#e3e3e3;border-color:#555}
+.btn.on,.btn.active{background:rgba(64,158,255,.1);color:#409eff;border-color:rgba(64,158,255,.3)}
+.btn.ap{background:rgba(64,158,255,.1);color:#409eff;border-color:rgba(64,158,255,.3);font-weight:600;padding:3px 10px;font-size:10px}
+.btn.ap:hover{background:rgba(64,158,255,.18)}
+.btn.rj{color:#555;border-color:transparent;background:transparent;padding:3px 6px;font-size:10px}
+.btn.rj:hover{color:#FF4051}
+.btn.ok{background:rgba(0,185,107,.08);color:#00b96b;border-color:rgba(0,185,107,.2)}
+.btn.warn{background:rgba(241,161,0,.08);color:#F1A100;border-color:rgba(241,161,0,.2)}
+.btn.primary{width:100%;font-size:11px;padding:7px;background:rgba(64,158,255,.1);color:#409eff;border:1px solid rgba(64,158,255,.25);border-radius:3px;cursor:pointer;font-family:inherit;font-weight:600}
+.btn.primary:hover{background:rgba(64,158,255,.18)}
+.btn.alt{width:100%;font-size:10px;margin-top:3px;padding:5px;background:#1d1f23;color:#777;border:1px solid #2a2c30;border-radius:3px;cursor:pointer;font-family:inherit}
+.btn.alt:hover{color:#e3e3e3}
+
+/* ═══ 表单 ═══ */
+.ck-row{display:flex;align-items:center;gap:4px;font-size:10.5px;color:#b4b6b8;padding:2px 4px;cursor:pointer;white-space:nowrap;border-radius:2px}
+.ck-row:hover{background:rgba(64,158,255,.04)}
+.ck-row input{accent-color:#409eff;width:13px;height:13px}
+
+/* ═══ 行项目 ═══ */
+.market-row{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;padding:1.5px 0}
+.factor-row{display:flex;justify-content:space-between;padding:2.5px 4px;font-size:10.5px;border-bottom:1px solid #15171c;cursor:pointer;border-radius:2px;transition:background .1s}
+.factor-row:hover{background:rgba(64,158,255,.05)}
+.factor-row .ic{font-weight:600;font-size:11px}
+.sector-row{font-size:10px;margin:1px 0;cursor:pointer;padding:1px 2px;border-radius:2px}
+.sector-row:hover{color:#e3e3e3;background:rgba(64,158,255,.04)}
+.sector-bar{height:12px;background:#1a1c21;border-radius:2px;margin:1px 0 3px;overflow:hidden}
+.sector-bar div{height:100%;float:left;border-radius:2px;min-width:2px}
+.q-row{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;padding:2.5px 4px;cursor:pointer;border-radius:2px;transition:background .1s}
+.q-row:hover{background:rgba(64,158,255,.04);color:#e3e3e3}
+.heat-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle;flex-shrink:0}
+
+/* ═══ 工具 ═══ */
+.divider{height:1px;background:#1d1f24;margin:2px 0}
+.muted{color:#555;font-size:9px}
+.mono{font-family:"Cascadia Code","Fira Code","Consolas",monospace;font-size:10.5px}
+
+/* ═══ 空状态 ═══ */
+.empty-state{text-align:center;padding:40px;color:#444}
+.empty-state .icon{font-size:36px;margin-bottom:8px}
+.empty-state .msg{font-size:12px}
+
+/* ═══ 响应式 ═══ */
+@media(max-width:1000px){.sc-side{width:220px;min-width:220px}.sc-side.collapsed{width:36px;min-width:36px}}
+@media(max-width:700px){.sc-side{display:none}.sc-top{padding:6px}.sc-table-area{padding:0 4px 6px}}
+</style>
+</head>
+<body>
+
+<div class="sc-wrap">
+<!-- ═══════════════════════════════════════════════════════════
+     左侧栏: 决策辅助面板
+     设计理念: Regime First → Quality Filter → Attribution → Risk → Action
+     对标: 私募Cockpit Model + QuantConnect侧栏
+     ═══════════════════════════════════════════════════════════ -->
+<aside class="sc-side collapsed" id="sideBar">
+  <div class="sc-collapse-btn" onclick="toggleSidebar()" title="展开侧栏" style="display:flex">»</div>
+  <div class="sc-side-header">
+    <span class="sc-side-logo">🧠</span>
+    <div><div class="sc-side-title">ML 信号复盘</div><div class="sc-side-subtitle">TripleVote Consensus</div></div>
+  </div>
+
+  <!-- 市场状态: 精简摘要 -->
+  <div class="card" id="regimeCard">
+    <div class="card-title">📊 市场 <span class="muted" id="marketAge" style="float:right">--</span></div>
+    <div id="regimeContent" style="font-size:10px;color:#888">加载中...</div>
+  </div>
+
+  <!-- 快速筛选 -->
+  <div style="display:flex;flex-direction:column;gap:1px;margin-top:2px" id="quickFilters">
+    <div class="q-row" onclick="quickFilter('auto_full')"><span>🔥 全仓自动</span><b class="gold" id="qfFull">--</b><span class="muted" id="qfFullDetail" style="float:none">--</span></div>
+    <div class="q-row" onclick="quickFilter('auto_half')"><span>⚡ 半仓自动</span><b class="blue" id="qfHalf">--</b><span class="muted" id="qfHalfDetail" style="float:none">--</span></div>
+    <div class="q-row" onclick="quickFilter('review')"><span>👁 待审批</span><b style="color:#888" id="qfReview">--</b><span class="muted" style="float:none">--</span></div>
+    <div class="q-row" onclick="quickFilter('blocked')"><span>🚫 已拦截</span><b style="color:#FF4051" id="qfBlocked">--</b><span class="muted" style="float:none">分歧/CB否/超限</span></div>
+  </div>
+
+  <!-- 因子贡献 -->
+  <div class="card">
+    <div class="card-title">🔥 因子贡献 <span class="muted" style="float:right">IC</span></div>
+    <div id="factorList"></div>
+  </div>
+
+  <!-- 板块集中度 -->
+  <div class="card">
+    <div class="card-title">🏭 板块集中度 <span id="sectorWarn" style="font-size:9px;float:right"></span></div>
+    <div id="sectorList"></div>
+  </div>
+
+  <!-- 操作 -->
+  <div class="divider"></div>
+  <button class="btn primary" onclick="approveAllQuality()">📥 批准全部优质</button>
+  <button class="btn alt" onclick="exportCSV()">📤 导出CSV</button>
+</aside>
+
+<!-- ═══════════════════════════════════════════════════════════
+     主区: KPI → 筛选栏 → 信号表
+     设计理念: Overview → Filter → Detail (行业标准: F-pattern)
+     ═══════════════════════════════════════════════════════════ -->
+<main class="sc-main">
+  <div class="sc-top">
+    <!-- KPI 卡片行 (行业标准: Overview at top) -->
+    <div style="display:flex;gap:5px;margin-bottom:5px;flex-wrap:wrap" id="kpiRow">
+      <div class="kpi-card"><div class="kpi-l">📊 信号总数</div><div class="kpi-v blue" id="kpiTotal">--</div></div>
+      <div class="kpi-card clickable" onclick="quickFilter('auto_full')" title="点击过滤"><div class="kpi-l">🔥 全仓自动</div><div class="kpi-v gold" id="kpiResonance">--</div></div>
+      <div class="kpi-card clickable" onclick="quickFilter('auto_half')" title="点击过滤"><div class="kpi-l">⚡ 半仓自动</div><div class="kpi-v green" id="kpiAuto">--</div></div>
+      <div class="kpi-card"><div class="kpi-l">⭐ 均分</div><div class="kpi-v" style="color:#e3e3e3" id="kpiAvg">--</div></div>
+      <div class="kpi-card"><div class="kpi-l">🕐 更新</div><div class="kpi-v" style="color:#888;font-size:13px" id="kpiTime">--</div></div>
+    </div>
+
+    <!-- 筛选栏 (铁律#11: 品种+模型复选框+模式切换) -->
+    <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;flex-wrap:wrap">
+      <span class="muted" style="font-size:10px">品种</span>
+      <span class="btn on" data-type="all" onclick="setType(this)">全部</span>
+      <span class="btn" data-type="STOCK" onclick="setType(this)">个股</span>
+      <span class="btn" data-type="ETF" onclick="setType(this)">ETF</span>
+      <span class="btn" data-type="INDEX" onclick="setType(this)">指数</span>
+      <span class="btn" data-type="BOND" onclick="setType(this)">转债</span>
+
+      <span class="muted" style="font-size:10px;margin-left:8px">模型</span>
+      <label class="ck-row"><input type="checkbox" id="chkLGBM" checked onchange="onFilterChange()">LGBM <span class="muted">(25)</span></label>
+      <label class="ck-row"><input type="checkbox" id="chkXGB" checked onchange="onFilterChange()">XGB <span class="muted">(8)</span></label>
+      <label class="ck-row"><input type="checkbox" id="chkCB" checked onchange="onFilterChange()">CB <span class="muted">裁判</span></label>
+
+      <span class="muted" style="font-size:10px;margin-left:8px">模式</span>
+      <span class="btn on" data-mode="or" onclick="setMode(this)">OR (任一)</span>
+      <span class="btn" data-mode="and" onclick="setMode(this)">AND (全部)</span>
+
+      <span style="font-size:9.5px;color:#555;white-space:nowrap">📋识别行情 ▸ <span style="color:#F1A100">🔍可信度</span><span style="color:#666">(质量=共识+尾部风险→仓位乘数)</span> ▸ <span style="color:#409eff">📶强度</span><span style="color:#666">(三维评分=max三模型百分位→等级)</span> ▸ 🎯决策</span>
+      <span style="font-size:9px;color:#444;margin:0 6px">|</span>
+      <span style="margin-left:auto;font-size:10px;color:#444">LGBM(●绿) XGB(●蓝) CB(●金) | 排序点击表头 | Ctrl+B</span>
+    </div>
+  </div>
+
+  <!-- ═══ 信号表 (行业标准: Sticky Header + Color-Coded Rows) ═══ -->
+  <div class="sc-table-area">
+  <div class="sc-tbl-wrap">
+  <div class="sc-tbl-scroll" id="tableContainer">
+    <div class="empty-state"><div class="icon">⏳</div><div class="msg">加载中...</div></div>
+  </div>
+  </div>
+  </div>
+</main>
+</div>
+
+<!-- ═══ 底部状态栏 ═══ -->
+<div style="position:fixed;bottom:6px;right:14px;font-size:9px;color:#444;pointer-events:none">
+  ML信号 v3 | TripleVote Consensus | 数据源: signal_table.json | 自动刷新 60s
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// State Management
+// ═══════════════════════════════════════════════════════════
+var ALL = [];                    // 全量信号 (from /api/signal-table)
+var FILTER = {
+  type: 'all',                  // all | STOCK | ETF | INDEX | BOND
+  models: { LGBM: true, XGB: true, CB: true },
+  mode: 'or',                   // or | and
+  quick: null                   // null | 'auto_full' | 'auto_half' | 'review' | 'blocked'
+};
+var SORT = { field: 'combined_score', asc: false };
+var MARKET = null;
+var APPROVED = {};              // 批准状态追踪 (本地)
+
+// ═══ Persistence ═══
+function savePrefs() {
+  try { localStorage.setItem('ml_v3_prefs', JSON.stringify({ type: FILTER.type, mode: FILTER.mode, sort: SORT })); } catch(e) {}
+}
+function loadPrefs() {
+  try {
+    var p = JSON.parse(localStorage.getItem('ml_v3_prefs'));
+    if (p) { FILTER.type = p.type || 'all'; FILTER.mode = p.mode || 'or'; if (p.sort) SORT = p.sort; }
+  } catch(e) {}
+}
+loadPrefs();
+
+// ═══ 品种分类 ═══
+function classify(sym) {
+  var s = sym.toLowerCase();
+  if (/^(sh51|sh58|sh56|sh15|sz15|sz16|sh50|sz159)/.test(s)) return 'ETF';
+  if (/^(sh000|sz399|sz98|bj8|bj9)/.test(s)) return 'INDEX';
+  if (/^(sh11|sh12|sh13|sh14|sz11|sz12|sz13|sz18)/.test(s)) return 'BOND';
+  return 'STOCK';
+}
+
+// ═══════════════════════════════════════════════════════════
+// Data Loading
+// ═══════════════════════════════════════════════════════════
+function loadAll() {
+  // 市场状态
+  fetch('/api/market-regime').then(function(r){return r.json()}).then(function(d){
+    if (d.code === 200) { MARKET = d; renderRegime(); }
+  }).catch(function(){});
+
+  // 因子IC
+  fetch('/api/factor/xgb-status').then(function(r){return r.json()}).then(function(d){
+    var facts = (d && d.factors && d.factors.list) || [];
+    renderFactors(facts);
+  }).catch(function(){});
+
+  // 主信号数据
+  fetch('/api/signal-table').then(function(r){return r.json()}).then(function(D){
+    ALL = Array.isArray(D) ? D : (D.data || []);
+    refresh();
+    renderSectors();
+    renderQualityDist();
+  }).catch(function(){});
+
+  // 已批准状态
+  fetch('/api/signal/approvals').then(function(r){return r.json()}).then(function(d){
+    if (d && d.approved) d.approved.forEach(function(a){ APPROVED[a.symbol] = 'done'; });
+  }).catch(function(){});
+}
+
+// ═══════════════════════════════════════════════════════════
+// 市场状态渲染 (Regime Context First)
+// ═══════════════════════════════════════════════════════════
+function renderRegime() {
+  if (!MARKET || MARKET.code !== 200) return;
+  var m = MARKET;
+  var lb = { bull: '🐂 牛市', sideways: '📊 震荡', bear: '🐻 熊市', unknown: '❓ 未知' };
+  var cl = { bull: '#FF4051', sideways: '#F1A100', bear: '#00b96b', unknown: '#888' };
+  var h = '';
+  h += '<div class="market-row"><span>方向</span><span style="font-size:15px;font-weight:800;color:' + (cl[m.regime]||'#888') + '">' + (lb[m.regime]||m.regime) + '</span></div>';
+  h += '<div class="market-row"><span>仓位系数</span><span style="color:#e3e3e3;font-weight:700">' + ((m.position_scale||0.5)*100).toFixed(0) + '%</span></div>';
+  h += '<div class="market-row"><span>置信度</span><span style="color:#e3e3e3">' + ((m.confidence||0)*100).toFixed(0) + '%</span></div>';
+  h += '<div class="market-row"><span>波动率</span><span style="color:#e3e3e3">' + ((m.volatility||0)*100).toFixed(1) + '%</span></div>';
+  h += '<div class="market-row"><span>最大持仓</span><span style="color:#e3e3e3">' + (m.max_positions||3) + '只</span></div>';
+  h += '<div class="card-hint">四因子: 趋势(40%)+量价(20%)+宽度(20%)+波动(20%)</div>';
+  document.getElementById('regimeContent').innerHTML = h;
+  document.getElementById('marketAge').textContent = '实时';
+
+  // 动态更新筛选标签 (对齐 market_adaptive)
+  var regime = m.regime || 'sideways';
+  var cfg = {bull:{ml:65,pos:15,n2:'半仓'},sideways:{ml:75,pos:10,n2:'半仓'},bear:{ml:85,pos:5,n2:'审核'}};
+  var c = cfg[regime] || cfg.sideways;
+  document.getElementById('qfFullDetail').textContent = 'n≥3 ML>'+c.ml+' pos≤'+c.pos+'%';
+  document.getElementById('qfHalfDetail').textContent = 'n=2 '+c.n2+'自动';
+  document.getElementById('qfReview').nextElementSibling.textContent = 'n=1或ML≤'+c.ml;
+
+  // 存到全局供过滤使用
+  window._REGIME_CFG = c;
+}
+
+// ═══════════════════════════════════════════════════════════
+// 因子渲染
+// ═══════════════════════════════════════════════════════════
+function renderFactors(facts) {
+  var el = document.getElementById('factorList');
+  if (!facts.length) { el.innerHTML = '<div class="muted">暂无IC数据</div>'; return; }
+  facts.sort(function(a,b){ return Math.abs(b.ic_5d||0) - Math.abs(a.ic_5d||0); });
+  var colors = ['#409eff','#00b96b','#F1A100','#e040fb','#FF4051'];
+  el.innerHTML = facts.slice(0,5).map(function(f,i){
+    var ic = f.ic_5d || 0, cls = ic > 0 ? 'green' : 'red', sign = ic >= 0 ? '+' : '';
+    return '<div class="factor-row" title="' + (f.display||f.name) + '">' +
+      '<span style="color:' + (colors[i]||'#e3e3e3') + '">' + (i+1) + '. ' + (f.display||f.name) + '</span>' +
+      '<span class="ic ' + cls + '" style="color:' + (ic>0?'#00b96b':'#FF4051') + '">' + sign + ic.toFixed(3) + '</span></div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// 板块分布
+// ═══════════════════════════════════════════════════════════
+function renderSectors() {
+  var sects = {};
+  ALL.forEach(function(r){ if (r.industry) { sects[r.industry] = (sects[r.industry]||0) + 1; } });
+  var sorted = Object.entries(sects).sort(function(a,b){ return b[1] - a[1]; }).slice(0,6);
+  var el = document.getElementById('sectorList');
+  if (!sorted.length) { el.innerHTML = '<div class="muted">暂无数据</div>'; return; }
+  var maxN = sorted[0][1], total = ALL.length || 1;
+  var over30 = sorted.filter(function(s){ return s[1]/total*100 > 30; });
+  document.getElementById('sectorWarn').textContent = over30.length ? '⚠ ' + over30.length + '超限' : '✅ 安全';
+  var barColors = ['#409eff','#00b96b','#F1A100','#e040fb','#FF4051','#00bcd4'];
+  el.innerHTML = sorted.map(function(s,i){
+    var pct = (s[1]/total*100).toFixed(0);
+    return '<div class="sector-row" onclick="filterSector(\'' + s[0].replace(/'/g,"\\'") + '\')">' +
+      s[0] + ' <b style="color:#e3e3e3">' + s[1] + '只</b> (' + pct + '%)' +
+      (pct > 30 ? ' <span style="color:#FF4051">⚠</span>' : '') +
+      '</div><div class="sector-bar"><div style="width:' + (s[1]/maxN*100).toFixed(0) + '%;background:' + (barColors[i]||'#888') + '"></div></div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// 信号质量分布
+// ═══════════════════════════════════════════════════════════
+function renderQualityDist() {
+  // 快速筛选计数 (动态阈值: 从 market_regime 实时获取)
+  var cfg = window._REGIME_CFG || {ml:75, pos:10, n2:'半仓'};
+  var ML_MIN = cfg.ml, POS_MAX = cfg.pos;
+  document.getElementById('qfFull').textContent = ALL.filter(function(r){
+    return (r.combined_score||0) > ML_MIN && (r.position_pct||0) <= POS_MAX && r.n_models >= 3;
+  }).length + '只';
+  document.getElementById('qfHalf').textContent = ALL.filter(function(r){
+    return (r.combined_score||0) > ML_MIN && (r.position_pct||0) <= POS_MAX && r.n_models === 2;
+  }).length + '只';
+  document.getElementById('qfReview').textContent = ALL.filter(function(r){
+    return r.n_models === 1 || ((r.combined_score||0) <= ML_MIN && (r.combined_score||0) >= 50);
+  }).length + '只';
+  document.getElementById('qfBlocked').textContent = ALL.filter(function(r){
+    var d = r.decision || '';
+    return d.indexOf('🚫') >= 0 || d.indexOf('⏸️') >= 0 || d.indexOf('⚠️') >= 0;
+  }).length + '只';
+}
+
+// ═══════════════════════════════════════════════════════════
+// 过滤逻辑
+// ═══════════════════════════════════════════════════════════
+function getFiltered() {
+  var rows = ALL.slice();
+
+  // 品种
+  if (FILTER.type !== 'all') {
+    rows = rows.filter(function(r){ return (r.type||classify(r.symbol)) === FILTER.type; });
+  }
+
+  // 模型 (checkboxes)
+  var active = [];
+  if (FILTER.models.LGBM) active.push('LGBM');
+  if (FILTER.models.XGB) active.push('XGB');
+  if (FILTER.models.CB) active.push('CB');
+  if (active.length === 0) return [];
+
+  rows = rows.filter(function(r){
+    var hasL = !!(r.lgbm_score), hasX = !!(r.xgb_score), hasC = !!(r.cb_score);
+    if (FILTER.mode === 'or') {
+      return (FILTER.models.LGBM && hasL) || (FILTER.models.XGB && hasX) || (FILTER.models.CB && hasC);
+    } else { // and
+      return (!FILTER.models.LGBM || hasL) && (!FILTER.models.XGB || hasX) && (!FILTER.models.CB || hasC);
+    }
+  });
+
+  // 快速筛选
+  // 快速筛选 (动态阈值: 从 market_regime 实时获取, 兜底震荡)
+  var cfg = window._REGIME_CFG || {ml:75, pos:10, n2:'半仓'};
+  var ML_MIN = cfg.ml, POS_MAX = cfg.pos;
+  if (FILTER.quick === 'auto_full') rows = rows.filter(function(r){ return (r.combined_score||0) > ML_MIN && (r.position_pct||0) <= POS_MAX && r.n_models >= 3; });
+  else if (FILTER.quick === 'auto_half') rows = rows.filter(function(r){ return (r.combined_score||0) > ML_MIN && (r.position_pct||0) <= POS_MAX && r.n_models === 2; });
+  else if (FILTER.quick === 'review') rows = rows.filter(function(r){ return r.n_models === 1 || ((r.combined_score||0) <= ML_MIN && (r.combined_score||0) >= 50); });
+  else if (FILTER.quick === 'blocked') rows = rows.filter(function(r){ var d = r.decision || ''; return d.indexOf('🚫') >= 0 || d.indexOf('⏸️') >= 0 || d.indexOf('⚠️') >= 0; });
+
+  // 排序
+  rows.sort(function(a,b){
+    var va = a[SORT.field], vb = b[SORT.field];
+    if (va == null) va = typeof vb === 'string' ? '' : 0;
+    if (vb == null) vb = typeof va === 'string' ? '' : 0;
+    if (typeof va === 'string') va = va.toLowerCase();
+    if (typeof vb === 'string') vb = vb.toLowerCase();
+    if (va < vb) return SORT.asc ? -1 : 1;
+    if (va > vb) return SORT.asc ? 1 : -1;
+    return 0;
+  });
+
+  return rows;
+}
+
+// ═══════════════════════════════════════════════════════════
+// 主刷新: 表格+KPI
+// ═══════════════════════════════════════════════════════════
+function refresh() {
+  savePrefs();
+  var rows = getFiltered();
+
+  // KPI
+  var cfg = window._REGIME_CFG || {ml:75, pos:10, n2:'半仓'};
+  var ML_MIN = cfg.ml, POS_MAX = cfg.pos;
+  var resonance3 = rows.filter(function(r){ return (r.combined_score||0) > ML_MIN && (r.position_pct||0) <= POS_MAX && r.n_models >= 3; }).length;
+  var autoCount = rows.filter(function(r){ return (r.combined_score||0) > ML_MIN && (r.position_pct||0) <= POS_MAX && r.n_models === 2; }).length;
+  var avgScore = rows.length ? Math.round(rows.reduce(function(s,r){ return s + (r.combined_score||0); }, 0) / rows.length) : 0;
+  var genTime = ALL.length && ALL[0]._generated_at ? ALL[0]._generated_at : '--';
+
+  document.getElementById('kpiTotal').textContent = rows.length;
+  document.getElementById('kpiResonance').textContent = resonance3;
+  document.getElementById('kpiAuto').textContent = autoCount;
+  document.getElementById('kpiAvg').textContent = avgScore;
+  document.getElementById('kpiTime').textContent = genTime;
+
+  // 构建表格
+  var html = '<table class="sc-tbl"><thead><tr>';
+  var cols = [
+    ['#', 'idx', 30],
+    ['代码', 'symbol', 70],
+    ['名称', 'name', 72],
+    ['行业', 'industry', 85],
+    ['现价', 'close', 55],
+    ['涨跌', 'change_pct', 55],
+    ['质量', '_quality', 72],
+    ['共识', 'n_models', 52],
+    ['CB', 'cb_score', 36],
+    ['三维评分', 'combined_score', 48],
+    ['等级', 'buy_signal', 42],
+    ['仓位', 'position_pct', 48],
+    ['持仓天', 'hold_days', 48],
+    ['止损', 'stop_loss', 50],
+    ['操作', null, 80]
+  ];
+  cols.forEach(function(c){
+    var arrow = (c[1] && c[1] === SORT.field) ? (' <span class="sort-arrow">' + (SORT.asc ? '▲' : '▼') + '</span>') : '';
+    html += '<th onclick="toggleSort(\'' + c[1] + '\')" style="min-width:' + c[2] + 'px">' + c[0] + arrow + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+
+  if (!rows.length) {
+    html += '<tr><td colspan="15"><div class="empty-state"><div class="icon">📭</div><div class="msg">无匹配信号 — 调整筛选条件</div></div></td></tr>';
+  } else {
+    rows.forEach(function(r, i){
+      // 评分
+      var sc = r.combined_score || 0;
+      var scCls = sc >= 90 ? 'score-s' : sc >= 80 ? 'score-a' : sc >= 60 ? 'score-b' : 'score-c';
+
+      // 行业热力点 (基于涨跌幅)
+      var chg = r.change_pct || 0;
+      var hColor = '#555';
+      if (chg > 3) hColor = '#FF4051'; else if (chg > 1) hColor = '#FF6D3F'; else if (chg > 0) hColor = '#F1A100';
+      else if (chg > -1) hColor = '#888'; else if (chg > -3) hColor = '#00b96b'; else hColor = '#00e676';
+      var indHtml = r.industry ? ('<span class="heat-dot" style="background:' + hColor + '"></span>' + r.industry) : '--';
+
+      // 共识点 (绿LGBM|蓝XGB|金CB)
+      var hasL = !!(r.lgbm_score), hasX = !!(r.xgb_score), hasC = !!(r.cb_score);
+      var dots = '<span class="dot-on-l">' + (hasL ? '●' : '') + '</span>' +
+                 '<span class="dot-on-x">' + (hasX ? '●' : '') + '</span>' +
+                 '<span class="dot-on-c">' + (hasC ? '●' : '') + '</span>';
+      if (!hasL && !hasX && !hasC) dots = '<span class="dot-off">●●●</span>';
+
+      // CB 裁判标签
+      var cbRaw = r.cb_score || 0, hasML = !!(r.lgbm_score || r.xgb_score);
+      var cbHtml = '';
+      if (hasML && cbRaw > 60) cbHtml = '<span class="cb-tag cb-ok">✓</span>';
+      else if (hasML && cbRaw > 0 && cbRaw < 20) cbHtml = '<span class="cb-tag cb-no">✗</span>';
+      else if (cbRaw > 0) cbHtml = '<span class="cb-tag cb-warn">~</span>';
+      else cbHtml = '<span style="color:#333">--</span>';
+
+      // 等级
+      var signal = r.signal || '', lv = 1;
+      var m = signal.match(/Lv(\d)/);
+      if (m) lv = parseInt(m[1]);
+      else if (r.n_models >= 2 && (r.combined_score||0) > 80) lv = 5;
+      else if ((r.combined_score||0) > 80) lv = 4;
+      else if ((r.combined_score||0) > 60) lv = 3;
+      else lv = 2;
+      var lvLabel = lv >= 5 ? 'L5 🔥' : 'L' + lv;
+
+      // 质量条
+      var q = r._quality || 1;
+      var qColor = q >= 1 ? '#00b96b' : q >= 0.8 ? '#F1A100' : '#FF4051';
+      var qHtml = '<span class="ql-bar-wrap"><span class="ql-bar"><div style="width:' + (q*100).toFixed(0) + '%;background:' + qColor + '"></div></span><span style="color:' + qColor + ';font-weight:600;font-size:10px">' + (q*100).toFixed(0) + '%</span></span>';
+
+      // 操作按钮
+      var apd = APPROVED[r.symbol];
+      var apHtml = apd === 'done'
+        ? '<span class="btn ok" style="cursor:default">✓ 已批</span>'
+        : apd === 'sending'
+        ? '<span style="color:#F1A100;font-size:10px">⏳</span>'
+        : '<button class="btn ap" onclick="doApprove(\'' + r.symbol + '\',' + (r.position_pct||0) + ',' + (r.close||0) + ',\'' + (r.decision||'').replace(/'/g,"\\'") + '\')">批准</button>' +
+          '<button class="btn rj" onclick="doReject(\'' + r.symbol + '\')" title="拒绝">✕</button>';
+
+      // 行样式
+      var rowCls = '';
+      if (r.n_models >= 3) rowCls = 'q-resonance';
+      else if (q >= 1) rowCls = 'q-high';
+      else if (q < 0.8) rowCls = 'q-low';
+
+      html += '<tr class="' + rowCls + '">' +
+        '<td style="color:#555">' + (i+1) + '</td>' +
+        '<td class="mono">' + r.symbol + '</td>' +
+        '<td>' + (r.name || r.symbol) + '</td>' +
+        '<td>' + indHtml + '</td>' +
+        '<td class="mono">¥' + (r.close||0).toFixed(2) + '</td>' +
+        '<td class="' + (chg >= 0 ? 'up' : 'dn') + '">' + (chg >= 0 ? '+' : '') + chg.toFixed(1) + '%</td>' +
+        '<td>' + qHtml + '</td>' +
+        '<td>' + dots + '</td>' +
+        '<td>' + cbHtml + '</td>' +
+        '<td><span class="' + scCls + '">' + Math.round(sc) + '</span></td>' +
+        '<td><span class="lv-badge lv' + lv + '">' + lvLabel + '</span></td>' +
+        '<td>' + ((r.position_pct||0)).toFixed(1) + '%</td>' +
+        '<td>' + (r.hold_days||'--') + '天</td>' +
+        '<td class="mono">' + (r.stop_loss ? '¥' + r.stop_loss.toFixed(2) : '--') + '</td>' +
+        '<td>' + apHtml + '</td>' +
+        '</tr>';
+    });
+  }
+  html += '</tbody></table>';
+  document.getElementById('tableContainer').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════
+// 事件处理
+// ═══════════════════════════════════════════════════════════
+
+function toggleSidebar() {
+  var s = document.getElementById('sideBar');
+  s.classList.toggle('collapsed');
+  s.querySelector('.sc-collapse-btn').textContent = s.classList.contains('collapsed') ? '»' : '«';
+}
+
+function toggleSort(field) {
+  if (!field) return;
+  if (SORT.field === field) SORT.asc = !SORT.asc;
+  else { SORT.field = field; SORT.asc = false; }
+  refresh();
+}
+
+function setType(el) {
+  document.querySelectorAll('[data-type]').forEach(function(b){ b.classList.remove('on'); });
+  el.classList.add('on');
+  FILTER.type = el.dataset.type;
+  FILTER.quick = null;
+  refresh();
+}
+
+function setMode(el) {
+  document.querySelectorAll('[data-mode]').forEach(function(b){ b.classList.remove('on'); });
+  el.classList.add('on');
+  FILTER.mode = el.dataset.mode;
+  refresh();
+}
+
+function onFilterChange() {
+  FILTER.models.LGBM = document.getElementById('chkLGBM').checked;
+  FILTER.models.XGB = document.getElementById('chkXGB').checked;
+  FILTER.models.CB = document.getElementById('chkCB').checked;
+  refresh();
+}
+
+function quickFilter(type) {
+  FILTER.quick = FILTER.quick === type ? null : type;
+  refresh();
+}
+
+function filterSector(name) {
+  var orig = ALL;
+  ALL = orig.filter(function(r){ return r.industry === name; });
+  FILTER.type = 'all';
+  FILTER.quick = null;
+  document.querySelectorAll('[data-type]').forEach(function(b){ b.classList.remove('on'); });
+  var allBtn = document.querySelector('[data-type="all"]');
+  if (allBtn) allBtn.classList.add('on');
+  refresh();
+  ALL = orig;
+}
+
+function doApprove(sym, posPct, close, decision) {
+  APPROVED[sym] = 'sending'; refresh();
+  fetch('/api/signal/approve', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ symbol: sym, position_pct: posPct||0, close: close||0, decision: decision||'', source: 'ml' })
+  }).then(function(r){ return r.json(); }).then(function(d){
+    APPROVED[sym] = d.code === 200 ? 'done' : false; refresh();
+  }).catch(function(){ APPROVED[sym] = false; refresh(); });
+}
+
+function doReject(sym) {
+  ALL = ALL.filter(function(r){ return r.symbol !== sym; }); refresh();
+  fetch('/api/signal/reject', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({symbol:sym,decision:''}) }).catch(function(){});
+}
+
+function approveAllQuality() {
+  var quality = ALL.filter(function(r){ return (r._quality||0) >= 1 && !APPROVED[r.symbol]; });
+  if (!quality.length) { alert('无待批准的优质信号'); return; }
+  if (!confirm('一键批准 ' + quality.length + ' 只优质信号 (质量≥100%)?\n将通过模拟盘执行，position_pct计算仓位')) return;
+  var done = 0, total = quality.length;
+  function next() {
+    if (done >= total) { alert('✅ 已提交 ' + total + ' 只'); refresh(); return; }
+    var s = quality[done++];
+    APPROVED[s.symbol] = 'sending';
+    fetch('/api/signal/approve', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ symbol: s.symbol, position_pct: s.position_pct||0, close: s.close||0, decision: s.decision||'', source: 'ml' })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      APPROVED[s.symbol] = d.code === 200 ? 'done' : false;
+      next();
+    }).catch(function(){ next(); });
+  }
+  next();
+}
+
+function exportCSV() {
+  var rows = getFiltered();
+  if (!rows.length) { alert('无数据可导出'); return; }
+  var csv = '代码,名称,行业,现价,涨跌%,综合评分,共识模型数,LGBM分,XGB分,CB分,质量%,仓位%,持仓天,止损,等级\n';
+  rows.forEach(function(r){
+    csv += [r.symbol, (r.name||''), (r.industry||''), r.close, r.change_pct, r.combined_score,
+      r.n_models, r.lgbm_score, r.xgb_score, r.cb_score, ((r._quality||0)*100).toFixed(0),
+      r.position_pct, r.hold_days, r.stop_loss, (r.signal||'')
+    ].join(',') + '\n';
+  });
+  var blob = new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ml_signals_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ═══ 定时刷新 ═══
+loadAll();
+setInterval(function(){ if (!document.hidden) loadAll(); }, 60000);
+
+// ═══ 键盘快捷键 ═══
+document.addEventListener('keydown', function(e){
+  if (e.ctrlKey && e.key === 'b') { e.preventDefault(); toggleSidebar(); }  // Ctrl+B 折叠侧栏
+  if (e.key === 'Escape') { FILTER.quick = null; refresh(); }               // Esc 清除筛选
+});
+</script>
+</body>
+</html>

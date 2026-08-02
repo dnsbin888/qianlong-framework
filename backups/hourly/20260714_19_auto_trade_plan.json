@@ -1,0 +1,995 @@
+{
+  "generated_at": "2026-07-14 15:01:54",
+  "mode": "L4",
+  "global_limits": {
+    "max_daily_trades": 5,
+    "max_daily_loss_pct": 5,
+    "circuit_breaker": false,
+    "qmt_fast_enabled": true,
+    "ai_auto_enabled": false,
+    "_regime": "bear",
+    "_sector_strength": {
+      "电子": 3.53,
+      "机械设备": -0.39,
+      "基础化工": 0.05,
+      "有色金属": -1.16,
+      "通信": 0.76,
+      "电力设备": -1.4,
+      "建筑材料": 4.06,
+      "汽车": 0.2,
+      "房地产": 0.96,
+      "建筑装饰": 3.79
+    },
+    "hard_stop_loss_pct": -0.055,
+    "soft_stop_loss_pct": -0.03,
+    "tp1": {
+      "profit_pct": 0.05,
+      "trail_pct": 0.01,
+      "sell_ratio": 0.33,
+      "stop_loss": -0.03,
+      "stop_action": "卖半仓",
+      "description": "移动止盈1: 涨≥5%触发, 回落1%→卖1/3, 跌-3%→卖半仓"
+    },
+    "tp2": {
+      "profit_pct": 0.07,
+      "trail_pct": 0.02,
+      "sell_ratio": 0.33,
+      "stop_loss": -0.05,
+      "stop_action": "清仓",
+      "description": "移动止盈2: 涨≥7%触发, 回落2%→再卖1/3, 跌-5%→清仓"
+    },
+    "tp3": {
+      "profit_pct": 0.1,
+      "trail_pct": 0.03,
+      "sell_ratio": 1.0,
+      "stop_loss": -0.07,
+      "stop_action": "清仓",
+      "description": "移动止盈3: 涨≥10%触发, 回落3%→全清, 跌-7%→清仓"
+    },
+    "limit_up_hold": true,
+    "limit_up_drop_sell": -0.03,
+    "_limit_up_precache": "2026-07-14 15:14"
+  },
+  "stocks": {
+    "sh688120": {
+      "enabled": false,
+      "auto_reason": "熊市双模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 281.41,
+      "soft_stop_loss": 281.41,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 321.61,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "华海清科",
+      "close": 297.79,
+      "industry": "电子"
+    },
+    "sh605589": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 51.03,
+      "soft_stop_loss": 51.03,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 58.32,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "圣泉集团",
+      "close": 54.0,
+      "industry": "基础化工"
+    },
+    "sh600459": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 20.02,
+      "soft_stop_loss": 20.04,
+      "soft_stop_loss_pct": 0.0539,
+      "take_profit": 22.87,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "贵研铂业",
+      "close": 21.18,
+      "industry": "有色金属"
+    },
+    "sh688017": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 374.22,
+      "soft_stop_loss": 374.22,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 427.68,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "绿的谐波",
+      "close": 396.0,
+      "industry": "机械设备"
+    },
+    "sh600522": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 42.9,
+      "soft_stop_loss": 43.08,
+      "soft_stop_loss_pct": 0.0511,
+      "take_profit": 49.03,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "中天科技",
+      "close": 45.4,
+      "industry": "通信"
+    },
+    "sh603026": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 66.06,
+      "soft_stop_loss": 66.45,
+      "soft_stop_loss_pct": 0.0493,
+      "take_profit": 75.49,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "石大胜华",
+      "close": 69.9,
+      "industry": "电力设备"
+    },
+    "sh603601": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 9.53,
+      "soft_stop_loss": 9.59,
+      "soft_stop_loss_pct": 0.0488,
+      "take_profit": 10.89,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "再升科技",
+      "close": 10.08,
+      "industry": "建筑材料"
+    },
+    "sh600330": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 22.86,
+      "soft_stop_loss": 22.93,
+      "soft_stop_loss_pct": 0.052,
+      "take_profit": 26.13,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "天通股份",
+      "close": 24.19,
+      "industry": "电子"
+    },
+    "sz300223": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 213.85,
+      "soft_stop_loss": 213.85,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 244.4,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "北京君正",
+      "close": 226.3,
+      "industry": "电子"
+    },
+    "sh688019": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 301.01,
+      "soft_stop_loss": 302.52,
+      "soft_stop_loss_pct": 0.0503,
+      "take_profit": 344.01,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "安集科技",
+      "close": 318.53,
+      "industry": "电子"
+    },
+    "sh688808": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 2113.96,
+      "soft_stop_loss": 2113.96,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 2415.96,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "sh688808",
+      "close": 2237.0,
+      "industry": "机械设备"
+    },
+    "sh605117": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 79.79,
+      "soft_stop_loss": 81.07,
+      "soft_stop_loss_pct": 0.0398,
+      "take_profit": 91.18,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "德业股份",
+      "close": 84.43,
+      "industry": "电力设备"
+    },
+    "sh603986": {
+      "enabled": false,
+      "auto_reason": "熊市双模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 616.14,
+      "soft_stop_loss": 616.14,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 704.16,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "兆易创新",
+      "close": 652.0,
+      "industry": "电子"
+    },
+    "sh603688": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 59.07,
+      "soft_stop_loss": 59.53,
+      "soft_stop_loss_pct": 0.0477,
+      "take_profit": 67.51,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "石英股份",
+      "close": 62.51,
+      "industry": "基础化工"
+    },
+    "sz301099": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 83.46,
+      "soft_stop_loss": 83.46,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 95.39,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "雅创电子",
+      "close": 88.32,
+      "industry": "电子"
+    },
+    "sh688630": {
+      "enabled": false,
+      "auto_reason": "单模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 454.89,
+      "soft_stop_loss": 455.45,
+      "soft_stop_loss_pct": 0.0538,
+      "take_profit": 519.87,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "芯碁微装",
+      "close": 481.36,
+      "industry": "机械设备"
+    },
+    "sh688548": {
+      "enabled": false,
+      "auto_reason": "ML=85 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 44.07,
+      "soft_stop_loss": 44.07,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 50.37,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "广钢气体",
+      "close": 46.64,
+      "industry": "电子"
+    },
+    "sh603799": {
+      "enabled": false,
+      "auto_reason": "ML=83 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 39.36,
+      "soft_stop_loss": 40.12,
+      "soft_stop_loss_pct": 0.0368,
+      "take_profit": 44.98,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "华友钴业",
+      "close": 41.65,
+      "industry": "有色金属"
+    },
+    "sh605358": {
+      "enabled": false,
+      "auto_reason": "ML=82 pos=4%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 57.19,
+      "soft_stop_loss": 57.5,
+      "soft_stop_loss_pct": 0.0499,
+      "take_profit": 65.36,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "立昂微",
+      "close": 60.52,
+      "industry": "电子"
+    },
+    "sh600869": {
+      "enabled": false,
+      "auto_reason": "ML=80 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 21.43,
+      "soft_stop_loss": 21.48,
+      "soft_stop_loss_pct": 0.053,
+      "take_profit": 24.49,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "远东股份",
+      "close": 22.68,
+      "industry": "电力设备"
+    },
+    "sh688502": {
+      "enabled": false,
+      "auto_reason": "ML=80 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 529.31,
+      "soft_stop_loss": 529.31,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 604.93,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "茂莱光学",
+      "close": 560.12,
+      "industry": "电子"
+    },
+    "sz300179": {
+      "enabled": false,
+      "auto_reason": "ML=79 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 45.86,
+      "soft_stop_loss": 45.86,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 52.41,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "四方达",
+      "close": 48.53,
+      "industry": "机械设备"
+    },
+    "sh688603": {
+      "enabled": false,
+      "auto_reason": "ML=77 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 137.37,
+      "soft_stop_loss": 137.37,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 157.0,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "天承科技",
+      "close": 145.37,
+      "industry": "电子"
+    },
+    "sz300285": {
+      "enabled": false,
+      "auto_reason": "ML=77 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 74.88,
+      "soft_stop_loss": 74.88,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 85.58,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "国瓷材料",
+      "close": 79.24,
+      "industry": "电子"
+    },
+    "sh603083": {
+      "enabled": false,
+      "auto_reason": "ML=75 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 178.88,
+      "soft_stop_loss": 178.88,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 204.43,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "剑桥科技",
+      "close": 189.29,
+      "industry": "通信"
+    },
+    "sh600160": {
+      "enabled": false,
+      "auto_reason": "ML=75 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 42.56,
+      "soft_stop_loss": 42.7,
+      "soft_stop_loss_pct": 0.052,
+      "take_profit": 48.64,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "巨化股份",
+      "close": 45.04,
+      "industry": "基础化工"
+    },
+    "sh688146": {
+      "enabled": false,
+      "auto_reason": "ML=72 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 320.26,
+      "soft_stop_loss": 320.26,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 366.01,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "中船特气",
+      "close": 338.9,
+      "industry": "电子"
+    },
+    "sz301377": {
+      "enabled": false,
+      "auto_reason": "ML=71 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 445.4,
+      "soft_stop_loss": 445.4,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 509.03,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "鼎泰高科",
+      "close": 471.32,
+      "industry": "机械设备"
+    },
+    "sh603618": {
+      "enabled": false,
+      "auto_reason": "ML=70 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 33.99,
+      "soft_stop_loss": 33.99,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 38.85,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "杭电股份",
+      "close": 35.97,
+      "industry": "电力设备"
+    },
+    "sh688200": {
+      "enabled": false,
+      "auto_reason": "ML=69 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 480.95,
+      "soft_stop_loss": 480.95,
+      "soft_stop_loss_pct": 0.055,
+      "take_profit": 549.66,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "华峰测控",
+      "close": 508.94,
+      "industry": "电子"
+    },
+    "sh603928": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sh603666": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sh603137": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sh603813": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sh600992": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sh603991": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sh603726": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sh600353": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sh600228": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sh600909": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sh603329": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sh600520": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz002845": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz002829": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz301379": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz000004": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz002677": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz002414": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz000892": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz002274": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz000977": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz000639": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz002632": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz002067": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz002346": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz002208": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz000417": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz001395": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz002745": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz002552": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    },
+    "sz002579": {
+      "enabled": false,
+      "auto_reason": "板后接力预选池+板后预选+板后预选",
+      "max_position_pct": 2,
+      "min_ml_score": 0,
+      "signal_types": [
+        "板后接力"
+      ],
+      "max_order_qty": 0
+    }
+  }
+}

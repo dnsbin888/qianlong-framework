@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><title>打板策略 · 全流程图</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:#0a0c10;color:#c9d1d9;padding:20px}
+.flow{display:flex;flex-direction:column;gap:0}
+.step{display:flex;align-items:flex-start;gap:16px;padding:0}
+.step-num{min-width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;flex-shrink:0}
+.step-num.daily{background:rgba(88,166,255,.15);color:#58a6ff;border:2px solid #58a6ff}
+.step-num.plan{background:rgba(188,140,255,.15);color:#bc8cff;border:2px solid #bc8cff}
+.step-num.qmt{background:rgba(0,185,107,.15);color:#00b96b;border:2px solid #00b96b}
+.step-num.exec{background:rgba(248,81,73,.15);color:#f85149;border:2px solid #f85149}
+.step-body{flex:1;padding:8px 0}
+.step-title{font-weight:700;font-size:14px;margin-bottom:2px}
+.step-desc{font-size:11px;color:#8b949e;line-height:1.5}
+.step-file{font-size:10px;color:#484f58;font-family:'SF Mono',Consolas,monospace}
+.arrow{display:flex;align-items:center;padding:4px 0 4px 20px}
+.arrow-line{width:2px;height:24px;background:linear-gradient(to bottom,#58a6ff,#bc8cff);margin-left:20px}
+.arrow-line2{width:2px;height:24px;background:linear-gradient(to bottom,#bc8cff,#00b96b);margin-left:20px}
+.arrow-line3{width:2px;height:24px;background:linear-gradient(to bottom,#00b96b,#f85149);margin-left:20px}
+.divider{height:1px;background:#21262d;margin:8px 0 8px 56px}
+
+/* 时间线 */
+.timeline{background:#14161a;border:1px solid #21262d;border-radius:8px;padding:16px;margin:12px 0}
+.timeline h3{font-size:13px;color:#58a6ff;margin-bottom:8px}
+.tl-row{display:flex;gap:12px;align-items:center;padding:4px 0;font-size:11px}
+.tl-time{color:#58a6ff;font-weight:600;min-width:50px}
+.tl-action{color:#c9d1d9}
+.tl-file{color:#484f58;font-size:10px;margin-left:auto}
+
+/* 标注 */
+.note{font-size:10px;color:#d29922;background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.2);border-radius:4px;padding:8px 12px;margin:8px 0}
+</style>
+</head>
+<body>
+
+<h1 style="color:#58a6ff;font-size:18px;margin-bottom:4px">🎯 打板策略 · 全流程</h1>
+<div style="font-size:11px;color:#8b949e;margin-bottom:20px">从信号生成 → 候选入池 → QMT监控 → 实时确认 → 下单执行</div>
+
+<!-- 流程图 -->
+<div class="flow">
+
+  <!-- 第1步: 日线 -->
+  <div class="step">
+    <div class="step-num daily">1</div>
+    <div class="step-body">
+      <div class="step-title">收盘后: 日线扫描 → 封板质量评分</div>
+      <div class="step-desc">Flask 日线批处理: 5201只A股 → 检测今日涨停票 → 评分(开盘位置×量比×炸板×板块联动×封板时间)</div>
+      <div class="step-file">signals/daban.py → score_board_quality(df)</div>
+      <div style="font-size:10px;color:#58a6ff;margin-top:4px">↓ 输出: 3-20 只候选票 + 封板质量分(0-100)</div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line"></div></div>
+
+  <!-- 第2步: 写入plan -->
+  <div class="step">
+    <div class="step-num plan">2</div>
+    <div class="step-body">
+      <div class="step-title">写入 auto_trade_plan.json</div>
+      <div class="step-desc">候选票 + 封板质量分 + 止损价 → 写入 plan → QMT 3秒后自动加载</div>
+      <div class="step-file">generate_signal_table.py → auto_trade_plan.json</div>
+      <div style="font-size:10px;color:#bc8cff;margin-top:4px">↓ 输出: plan.stocks["sz002208"] = {stop_loss, take_profit, signal_types:["打板追封"]}</div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line2"></div></div>
+
+  <!-- 第3步: QMT加载 -->
+  <div class="step">
+    <div class="step-num qmt">3</div>
+    <div class="step-body">
+      <div class="step-title">次日开盘: QMT 加载候选池</div>
+      <div class="step-desc">QMT 策略启动 → 读 plan → 构建 _fast_cache → 96只候选票进入监控列表</div>
+      <div class="step-file">qmt_full_strategy.py → _load_plan() → _build_fast_cache()</div>
+      <div style="font-size:10px;color:#00b96b;margin-top:4px">↓ 输出: _fast_cache["sz002208"] = (enabled=True, pos=3%, stop=18.81, signal=打板追封)</div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line3"></div></div>
+
+  <!-- 第4步: tick检测 -->
+  <div class="step">
+    <div class="step-num exec">4</div>
+    <div class="step-body">
+      <div class="step-title">盘中: tick 级检测 — 封板确认</div>
+      <div class="step-desc">每笔 tick 推送到 handle_bar() → 检测:</div>
+      <div class="step-desc" style="margin-top:4px">
+        ✅ 现价 == 涨停价? → 封板成功<br>
+        ✅ 封板时间 < 10:00? → 早盘最强<br>
+        ✅ 封单量 > 流通盘 3%? → 强封<br>
+        ✅ 未炸板或 30 分钟内回封? → 回封加分<br>
+        → 四项全过 → 触发买入信号
+      </div>
+      <div class="step-file">qmt_full_strategy.py → handle_bar() → signal_name = "打板追封"</div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line3"></div></div>
+
+  <!-- 第5步: 下单 -->
+  <div class="step">
+    <div class="step-num exec">5</div>
+    <div class="step-body">
+      <div class="step-title">下单执行 & 推送信号</div>
+      <div class="step-desc">
+        ① passorder(23, ...) → QMT 快速下单 (实盘)<br>
+        ② POST /api/qmt/signal → Flask 记录 + 前端展示<br>
+        ③ 前端 ⚡盘中信号 显示: 🎯 打板 + 批准按钮
+      </div>
+      <div class="step-file">passorder() + FLASK_URL</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 时间线 -->
+<div class="timeline">
+  <h3>⏱ 完整时间线: 从收盘到次日交易</h3>
+  <div class="tl-row"><span class="tl-time">T日 15:00</span><span class="tl-action">收盘 → Flask 跑日线评分 → 出信号表 + plan</span><span class="tl-file">generate_signal_table.py</span></div>
+  <div class="tl-row"><span class="tl-time">T日 15:05</span><span class="tl-action">QMT 3秒检测到 plan 更新 → 自动加载候选池</span><span class="tl-file">qmt_full_strategy.py</span></div>
+  <div class="tl-row"><span class="tl-time">T+1 09:25</span><span class="tl-action">竞价结束 → 候选票高开确认 → 进入重点监控</span><span class="tl-file">handle_bar() 竞价守护</span></div>
+  <div class="tl-row"><span class="tl-time">T+1 09:30-</span><span class="tl-action">盘中 tick 检测 → 封板瞬间 → 确认 → passorder 下单</span><span class="tl-file">handle_bar() → passorder</span></div>
+  <div class="tl-row"><span class="tl-time">T+1 实时</span><span class="tl-action">POST Flask → 前端 ⚡盘中信号 出现 📡 QMT 标签信号</span><span class="tl-file">FLASK_URL</span></div>
+</div>
+
+<!-- 差距标注 -->
+<div class="note">
+  <b>⚠️ 当前差距</b>: 第4步的评分逻辑还在用 QMT 里的粗糙版本——没有用 signals/daban.py 的精密评分。<br>
+  <b>终极方案</b>: QMT handle_bar() import signals/daban.py 的评分函数 → 替换现有粗糙检测 → 精密评分驱动下单。
+</div>
+
+<div style="font-size:10px;color:#484f58;text-align:center;margin-top:12px">
+  改动量: ~30行 | QMT import signals/daban.py | 不改架构 | 不改注册表
+</div>
+
+</body>
+</html>

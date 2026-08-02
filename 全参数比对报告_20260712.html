@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全参数比对报告 — 游资 vs 私募 vs 潜龙 — 2026-07-12</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;background:#0f1117;color:#e1e4e8;padding:20px;line-height:1.6}
+h1{text-align:center;padding:24px;color:#58a6ff;border-bottom:2px solid #21262d;margin-bottom:20px}
+h2{color:#f0883e;margin:32px 0 16px;padding:8px 16px;border-left:3px solid #f0883e;background:#1a1c23}
+h3{color:#7ee787;margin:20px 0 12px}
+.summary{display:flex;gap:16px;margin:20px 0;flex-wrap:wrap}
+.summary .card{flex:1;min-width:180px;background:#1a1c23;border-radius:8px;padding:20px;text-align:center;border:1px solid #21262d}
+.summary .card .num{font-size:36px;font-weight:bold}
+.summary .card .label{color:#8b949e;margin-top:4px}
+.summary .done .num{color:#7ee787}
+.summary .todo .num{color:#f0883e}
+.summary .later .num{color:#8b949e}
+table{width:100%;border-collapse:collapse;margin:12px 0 24px;font-size:14px}
+th{background:#1a1c23;padding:10px 12px;text-align:left;font-weight:600;border-bottom:2px solid #30363d;white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid #21262d;vertical-align:top}
+tr:hover td{background:#161b22}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:bold}
+.tag-red{background:#da3633;color:#fff}
+.tag-yellow{background:#d29922;color:#000}
+.tag-green{background:#238636;color:#fff}
+.tag-gray{background:#30363d;color:#8b949e}
+.gap-red{color:#f85149;font-weight:bold}
+.gap-yellow{color:#d29922}
+.gap-green{color:#7ee787}
+.gap-gray{color:#8b949e}
+.action-bar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.action-item{background:#1a1c23;border:1px solid #30363d;border-radius:6px;padding:12px 16px;flex:1;min-width:280px}
+.action-item h4{margin-bottom:6px}
+.action-item .file{color:#58a6ff;font-family:Consolas,monospace;font-size:13px}
+.action-item .cost{color:#8b949e;font-size:12px}
+hr{border:none;border-top:1px solid #21262d;margin:20px 0}
+.note{background:#1a1c23;border-left:3px solid #58a6ff;padding:12px 16px;margin:12px 0;border-radius:0 6px 6px 0;font-size:14px}
+</style>
+</head>
+<body>
+
+<h1>📊 全参数详细比对报告<br><small style="color:#8b949e;font-size:16px">游资 vs 中小私募 vs 潜龙 · 2026-07-12</small></h1>
+
+<div class="summary">
+  <div class="card done"><div class="num">20</div><div class="label">已对齐 ✅</div></div>
+  <div class="card todo"><div class="num">12</div><div class="label">需改进 🔧</div></div>
+  <div class="card later"><div class="num">3</div><div class="label">暂缓 ⏸</div></div>
+  <div class="card"><div class="num">35</div><div class="label">总参数</div></div>
+</div>
+
+<!-- ═══════════ 止损 ═══════════ -->
+<h2>一、止损参数（7项）</h2>
+
+<table>
+<tr><th>#</th><th>参数</th><th>游资标准</th><th>中小私募</th><th>潜龙现状</th><th>差距</th><th>改进方案</th><th>层级</th></tr>
+<tr>
+  <td>1</td><td><b>硬止损%</b></td>
+  <td>-5% 无条件</td><td>-5%~-8%</td>
+  <td><span class="gap-green">-5.5%</span></td>
+  <td><span class="tag tag-green">对齐</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>2</td><td><b>软止损%</b></td>
+  <td>-3% 减半仓</td><td>-3%</td>
+  <td><span class="gap-green">-3% 卖半仓</span></td>
+  <td><span class="tag tag-green">对齐</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>3</td><td><b>分级场景止损</b></td>
+  <td><b>4种</b>: 炸板/低开/技术(破10日线)/时间(3天)</td>
+  <td>依赖量化信号</td>
+  <td><span class="gap-red">仅2种</span>: 软/硬</td>
+  <td><span class="tag tag-red">缺</span></td>
+  <td>加时间止损: 持超期+无盈利→强平</td>
+  <td><span class="tag tag-yellow">策略</span></td>
+</tr>
+<tr>
+  <td>4</td><td><b>ATR动态止损</b></td>
+  <td>人工判断</td>
+  <td>ATR倍数</td>
+  <td><span class="gap-red">2%-8%，上限8% > 硬止损5.5%</span></td>
+  <td><span class="tag tag-red">缺陷</span></td>
+  <td><code>atr_stop.py:50</code> 上限→5.5%</td>
+  <td><span class="tag tag-red">宪法</span></td>
+</tr>
+<tr>
+  <td>5</td><td><b>移动止盈</b></td>
+  <td>人工判断</td>
+  <td>分级移动</td>
+  <td><span class="gap-green">TP1/TP2/TP3 三级</span></td>
+  <td><span class="tag tag-green">超越游资</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>6</td><td><b>涨停持仓</b></td>
+  <td>封板持有</td><td>—</td>
+  <td><span class="gap-green">limit_up_hold=True</span></td>
+  <td><span class="tag tag-green">对齐</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>7</td><td><b>跌停挂单</b></td>
+  <td><b>跌停也挂卖单排队</b></td>
+  <td>实盘可挂</td>
+  <td><span class="gap-yellow">模拟盘禁了，实盘未明确</span></td>
+  <td><span class="tag tag-yellow">缺规则</span></td>
+  <td>加宪法条款: 实盘涨跌停可挂单</td>
+  <td><span class="tag tag-red">宪法</span></td>
+</tr>
+</table>
+
+<!-- ═══════════ 仓位 ═══════════ -->
+<h2>二、仓位参数（7项）</h2>
+
+<table>
+<tr><th>#</th><th>参数</th><th>游资标准</th><th>中小私募</th><th>潜龙现状</th><th>差距</th><th>改进方案</th><th>层级</th></tr>
+<tr>
+  <td>8</td><td><b>单票上限</b></td>
+  <td>≤30%/≤20%</td><td>≤10%</td>
+  <td><span class="gap-green">≤20%硬/≤15%软</span></td>
+  <td><span class="tag tag-green">对齐</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>9</td><td><b>持仓数</b></td>
+  <td>≤5只</td><td>50-200只</td>
+  <td><span class="gap-green">≤5只</span></td>
+  <td><span class="tag tag-green">对齐</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>10</td><td><b>弱市仓位</b></td>
+  <td>≤30%或空仓</td><td>降敞口</td>
+  <td><span class="gap-green">熊市×0.4</span></td>
+  <td><span class="tag tag-green">已实现</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>11</td><td><b>牛市仓位</b></td>
+  <td>可满仓龙头</td><td>满仓+对冲</td>
+  <td><span class="gap-yellow">牛市×1.0(12%/票)</span></td>
+  <td><span class="tag tag-yellow">可优化</span></td>
+  <td>牛市系数可提至1.2</td>
+  <td><span class="tag tag-green">执行</span></td>
+</tr>
+<tr>
+  <td>12</td><td><b>行业集中度</b></td>
+  <td>≤3个行业</td><td>≤30%</td>
+  <td><span class="gap-green">≤30%</span></td>
+  <td><span class="tag tag-green">对齐私募</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>13</td><td><b>仓位分层</b></td>
+  <td>核心50%+卫星30%+游击20%</td><td>风险平价</td>
+  <td>方案A: 信号×市场</td>
+  <td><span class="tag tag-gray">暂缓</span></td>
+  <td>过度工程</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>14</td><td><b>绝不补仓</b></td>
+  <td><b>❌ 铁律</b></td>
+  <td>❌禁止</td>
+  <td><span class="gap-red">⚠️ 未明文禁止</span></td>
+  <td><span class="tag tag-red">缺铁律</span></td>
+  <td>宪法+配置+铁律文件三处补</td>
+  <td><span class="tag tag-red">宪法</span></td>
+</tr>
+</table>
+
+<!-- ═══════════ 风控 ═══════════ -->
+<h2>三、风控熔断参数（6项）</h2>
+
+<table>
+<tr><th>#</th><th>参数</th><th>游资标准</th><th>中小私募</th><th>潜龙现状</th><th>差距</th><th>改进方案</th><th>层级</th></tr>
+<tr>
+  <td>15</td><td><b>日亏损熔断</b></td>
+  <td>日亏>3%→次日减半</td><td>日亏>5%熔断</td>
+  <td><span class="gap-green">三档: 2%/3.5%/5%</span></td>
+  <td><span class="tag tag-green">超越</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>16</td><td><b>连亏熔断</b></td>
+  <td>连2笔→空3天</td><td>连5笔→停</td>
+  <td><span class="gap-green">三档: 2/3/5笔</span></td>
+  <td><span class="tag tag-green">对齐</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>17</td><td><b>月回撤熔断</b></td>
+  <td><b>月回撤>10%→当月停手</b></td>
+  <td>峰值15%</td>
+  <td><span class="gap-red">有峰值无月度</span></td>
+  <td><span class="tag tag-red">缺</span></td>
+  <td>auto_breaker +月回撤+当月禁买</td>
+  <td><span class="tag tag-red">宪法</span></td>
+</tr>
+<tr>
+  <td>18</td><td><b>峰值回撤</b></td>
+  <td>靠感觉</td><td>15%硬停</td>
+  <td><span class="gap-green">15%熔断</span></td>
+  <td><span class="tag tag-green">超越游资</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>19</td><td><b>市场自适应</b></td>
+  <td>人工判断</td><td>牛/熊/震荡</td>
+  <td><span class="gap-green">动态阈值三态</span></td>
+  <td><span class="tag tag-green">对齐</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>20</td><td><b>总闸</b></td>
+  <td>一键清仓</td><td>风控总闸</td>
+  <td><span class="gap-green">emergency_halt()</span></td>
+  <td><span class="tag tag-green">对齐</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+</table>
+
+<!-- ═══════════ 选股 ═══════════ -->
+<h2>四、选股与信号参数（6项）</h2>
+
+<table>
+<tr><th>#</th><th>参数</th><th>游资标准</th><th>中小私募</th><th>潜龙现状</th><th>差距</th><th>改进方案</th><th>层级</th></tr>
+<tr>
+  <td>21</td><td><b>选股核心</b></td>
+  <td>龙头+题材</td><td>多因子Alpha</td>
+  <td><span class="gap-green">ML秩平均+中性化</span></td>
+  <td><span class="tag tag-green">各自路线</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>22</td><td><b>情绪周期</b></td>
+  <td><b>四阶段: 启动→发酵→高潮→退潮</b></td>
+  <td>市场状态</td>
+  <td><span class="gap-red">仅三态(牛/熊/震)</span></td>
+  <td><span class="tag tag-red">缺四阶段</span></td>
+  <td>新建 sentiment_cycle.py</td>
+  <td><span class="tag tag-yellow">策略</span></td>
+</tr>
+<tr>
+  <td>23</td><td><b>流动性过滤</b></td>
+  <td>>5000万</td>
+  <td><b>>1000万</b></td>
+  <td><span class="gap-red">有代码但JSON bug</span></td>
+  <td><span class="tag tag-red">不干活</span></td>
+  <td>修bug+加过滤器</td>
+  <td><span class="tag tag-yellow">策略</span></td>
+</tr>
+<tr>
+  <td>24</td><td><b>基本面因子</b></td>
+  <td>题材硬逻辑</td><td>PE/PB/ROE</td>
+  <td><span class="gap-yellow">quality_proxy已退役</span></td>
+  <td><span class="tag tag-yellow">缺</span></td>
+  <td>暂缓(AkShare)</td>
+  <td><span class="tag tag-gray">暂缓</span></td>
+</tr>
+<tr>
+  <td>25</td><td><b>信号冷却</b></td>
+  <td>手工不会重复</td><td>N分钟不重</td>
+  <td><span class="gap-green">Signal ID + 冷却</span></td>
+  <td><span class="tag tag-green">对齐</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>26</td><td><b>"没把握就空仓"</b></td>
+  <td><b>七成把握才出手</b></td>
+  <td>ML概率→仓位</td>
+  <td><span class="gap-yellow">持续推信号</span></td>
+  <td><span class="tag tag-yellow">缺门控</span></td>
+  <td>置信度门槛</td>
+  <td><span class="tag tag-green">执行</span></td>
+</tr>
+</table>
+
+<!-- ═══════════ 执行 ═══════════ -->
+<h2>五、执行参数（4项）</h2>
+
+<table>
+<tr><th>#</th><th>参数</th><th>游资标准</th><th>中小私募</th><th>潜龙现状</th><th>差距</th><th>改进方案</th><th>层级</th></tr>
+<tr>
+  <td>27</td><td><b>买入时机</b></td>
+  <td>早盘10点前</td><td>开盘/收盘</td>
+  <td><span class="gap-green">T+1开盘执行</span></td>
+  <td><span class="tag tag-green">适配日线</span></td>
+  <td>无需改</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td>28</td><td><b>卖出纪律</b></td>
+  <td>不连板→走</td><td>信号失效</td>
+  <td><span class="gap-yellow">止损/止盈/持有天数</span></td>
+  <td><span class="tag tag-yellow">可补</span></td>
+  <td>时间止损补上即对齐</td>
+  <td><span class="tag tag-yellow">策略</span></td>
+</tr>
+<tr>
+  <td>29</td><td><b>实盘涨跌停挂单</b></td>
+  <td><b>涨停可挂买、跌停可挂卖</b></td>
+  <td>交易所接受挂单</td>
+  <td><span class="gap-red">未明确</span></td>
+  <td><span class="tag tag-red">缺规则</span></td>
+  <td>constitution+live_trader明确</td>
+  <td><span class="tag tag-red">宪法</span></td>
+</tr>
+<tr>
+  <td>30</td><td><b>算法拆单</b></td>
+  <td>手工整单</td><td>VWAP/TWAP</td>
+  <td>无</td>
+  <td><span class="tag tag-green">不需要</span></td>
+  <td>5万/笔无需拆</td>
+  <td>—</td>
+</tr>
+</table>
+
+<!-- ═══════════ 成本 ═══════════ -->
+<h2>六、成本参数（2项 — 刚统一）</h2>
+
+<table>
+<tr><th>#</th><th>参数</th><th>行业标准</th><th colspan="2">潜龙现状</th><th>改进</th></tr>
+<tr>
+  <td>34</td><td><b>印花税</b></td><td>0.05%单边卖出</td>
+  <td colspan="2"><span class="gap-green">✅ 0.0005 四通道统一</span></td>
+  <td>无需改</td>
+</tr>
+<tr>
+  <td>35</td><td><b>佣金</b></td><td>0.025%万2.5</td>
+  <td colspan="2"><span class="gap-green">✅ 0.00025 四通道统一</span></td>
+  <td>无需改</td>
+</tr>
+</table>
+
+<!-- ═══════════ 行动计划 ═══════════ -->
+<hr>
+<h2>📋 改进清单</h2>
+
+<h3>🔴 宪法级 — 立刻做（5项）</h3>
+<div class="action-bar">
+  <div class="action-item">
+    <h4>C1 · ATR上限 ≤ 硬止损5.5%</h4>
+    <div class="file">atr_stop.py:50</div>
+    <div class="cost">1行 · 1分钟</div>
+  </div>
+  <div class="action-item">
+    <h4>C2 · 绝不补仓铁律</h4>
+    <div class="file">trade_config_master.json + 交易决策铁律.md + live_trader.py</div>
+    <div class="cost">3处 · 5分钟</div>
+  </div>
+  <div class="action-item">
+    <h4>C3 · 月回撤>10%→当月禁买</h4>
+    <div class="file">auto_breaker.py</div>
+    <div class="cost">+15行 · 15分钟</div>
+  </div>
+  <div class="action-item">
+    <h4>C4 · 实盘涨停可挂买单</h4>
+    <div class="file">trade_config_master.json constitution段</div>
+    <div class="cost">+3行 · 3分钟</div>
+  </div>
+  <div class="action-item">
+    <h4>C5 · 实盘跌停可挂卖单</h4>
+    <div class="file">同C4</div>
+    <div class="cost">含在C4</div>
+  </div>
+</div>
+
+<h3>🟡 策略级 — 本周做（5项）</h3>
+<div class="action-bar">
+  <div class="action-item">
+    <h4>S1 · 时间止损</h4>
+    <div class="file">paper_engine.py + live_trader.py</div>
+    <div class="cost">+15行</div>
+  </div>
+  <div class="action-item">
+    <h4>S2 · 情绪周期四阶段</h4>
+    <div class="file">sentiment_cycle.py (新建)</div>
+    <div class="cost">~80行</div>
+  </div>
+  <div class="action-item">
+    <h4>S3 · 日均成交额>1000万过滤</h4>
+    <div class="file">stock_filters.py</div>
+    <div class="cost">+10行</div>
+  </div>
+  <div class="action-item">
+    <h4>S4 · DSR集成</h4>
+    <div class="file">deflated_sharpe.py→接入评估</div>
+    <div class="cost">+10行</div>
+  </div>
+  <div class="action-item">
+    <h4>S5 · 流动性过滤JSON bug</h4>
+    <div class="file">stock_filters.py:76</div>
+    <div class="cost">+3行</div>
+  </div>
+</div>
+
+<h3>🟢 执行级 — 按需（2项）</h3>
+<div class="action-bar">
+  <div class="action-item">
+    <h4>E1 · 置信度门控</h4>
+    <div class="file">generate_signal_table.py</div>
+    <div class="cost">+10行</div>
+  </div>
+  <div class="action-item">
+    <h4>E2 · 牛市仓位系数1.2</h4>
+    <div class="file">market_regime.py</div>
+    <div class="cost">+3行</div>
+  </div>
+</div>
+
+<div class="note">
+  <b>📌 关联文件</b><br>
+  风控与策略对标报告 · architecture-upgrade-guide v4.0 · ml-scoring-audit · 交易决策铁律 · trade_config_master.json
+</div>
+
+</body>
+</html>

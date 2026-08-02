@@ -1,0 +1,178 @@
+{
+  "version": "3.1",
+  "updated": "2026-07-08",
+  "description": "潜龙交易规则主配置 — 老板终审版 (v3.1: 动态自动交易阈值 + 共识分级)",
+
+  "constitution": {
+    "t1_rule": "A股T+1红线: 当日买入的股票当日不可卖出, 此规则优先级最高, 覆盖所有止损/止盈/风控规则",
+    "max_positions": "模拟5只, 实盘3只 (T+1限制需考虑次日可卖数量)",
+    "limit_up_real": "涨停封板持有到次日 (T+1: 今日卖出无法当日买回, 次日如仍封板可继续持有)",
+    "note": "以上为宪法级规则, 任何策略/因子/AI不得违反"
+  },
+
+  "sim": {
+    "initial_cash": 1000000,
+    "max_positions": 5,
+    "min_cash_reserve": 100000,
+    "rules": {
+      "limit_up_buy": false,
+      "limit_up_buy_note": "涨停价无法买入(模拟真实市场: 封板无卖单)",
+      "limit_down_sell": false,
+      "limit_down_sell_note": "跌停价无法卖出(模拟真实市场: 封板无买单), 持到次日",
+      "t1_sell": "当日买入次日才能卖出(A股T+1)",
+      "description": "模拟盘真实涨跌停限制: 买不进涨停, 卖不出跌停, T+1锁定"
+    }
+  },
+
+  "real": {
+    "live_total_asset": 33895,
+    "live_cash": 2107,
+    "max_positions": 3,
+    "min_cash_reserve": 5000
+  },
+
+  "take_profit": {
+    "tp1": {
+      "profit_pct": 0.05,
+      "trail_pct": 0.01,
+      "sell_ratio": 0.33,
+      "stop_loss": -0.03,
+      "stop_action": "卖半仓",
+      "description": "移动止盈1: 涨≥5%触发, 回落1%→卖1/3, 跌-3%→卖半仓"
+    },
+    "tp2": {
+      "profit_pct": 0.07,
+      "trail_pct": 0.02,
+      "sell_ratio": 0.33,
+      "stop_loss": -0.05,
+      "stop_action": "清仓",
+      "description": "移动止盈2: 涨≥7%触发, 回落2%→再卖1/3, 跌-5%→清仓"
+    },
+    "tp3": {
+      "profit_pct": 0.10,
+      "trail_pct": 0.03,
+      "sell_ratio": 1.0,
+      "stop_loss": -0.07,
+      "stop_action": "清仓",
+      "description": "移动止盈3: 涨≥10%触发, 回落3%→全清, 跌-7%→清仓"
+    }
+  },
+
+  "stop_loss": {
+    "hard": -0.055,
+    "soft": -0.03,
+    "hard_action": "清仓",
+    "soft_action": "卖半仓",
+    "description": "硬止损-5.5%无条件清仓, 软止损-3%卖半仓"
+  },
+
+  "daily_risk": {
+    "level1_pct": -0.03,
+    "level1_action": "卖50%",
+    "level2_pct": -0.05,
+    "level2_action": "清仓",
+    "max_trades": 5,
+    "max_consecutive_loss": 3,
+    "description": "日内风控: 亏-3%卖半仓, 亏-5%清仓, 日5笔上限, 连亏3笔停"
+  },
+
+  "limit_rules": {
+    "sim": {
+      "limit_up_hold": true,
+      "limit_up_open_sell_pct": 0.5,
+      "limit_up_drop_sell_pct": -0.03,
+      "limit_down_sell": true,
+      "flow": "涨停封板→持有, 炸板→卖50%, 炸板后回落3%→清仓",
+      "t1_note": "仅对T+1已解锁的持仓生效(昨日及以前买入), 今日买入不执行"
+    },
+    "real": {
+      "limit_up_hold": true,
+      "limit_up_open_sell_pct": 0.0,
+      "limit_up_drop_sell_pct": -0.03,
+      "limit_down_sell": true,
+      "flow": "涨停封板→持有到次日, 次日仍封板→继续持有, 次日炸板回落3%→清仓",
+      "t1_note": "今日买入的涨停股不开板卖出(防止T+1无法当日买回)"
+    },
+    "description": "涨跌停特殊处理: 模拟/实盘因T+1约束有不同开板策略"
+  },
+
+  "position_sizing": {
+    "mode": "fixed",
+    "lv5": 0.50,
+    "lv4": 0.33,
+    "lv3": 0.25,
+    "lv2": 0.20,
+    "lv1": 0.05,
+    "max_single_pct": 0.20,
+    "max_single_hard": 0.25,
+    "max_sector_pct": 0.25,
+    "max_same_sector_positions": 2,
+    "min_daily_amount": 20000000,
+    "max_positions": 5,
+    "min_cash_reserve_pct": 0.15,
+    "max_hold_days": 7,
+    "description": "E372: 单票20%硬25%, 行业25%, 5只, 现金15%动态, 持仓7天"
+  },
+
+  "signal_filter": {
+    "min_strength": 3,
+    "vol_ratio_threshold": 1.2,
+    "chase_pct": 8.0,
+    "weak_pct": -5.0,
+    "description": "信号强度≥3, 量比≥1.2, 追涨≤8%, 弱势≥-5%"
+  },
+
+  "auto_trade": {
+    "enabled": true,
+    "channel": "qmt",
+    "order_mode": "auto",
+    "min_ml_score": 70,
+    "max_auto_position": 12,
+    "market_adaptive": {
+      "bull":      {"min_ml_score": 65, "max_auto_position": 15, "n2_auto": true},
+      "sideways":  {"min_ml_score": 75, "max_auto_position": 10, "n2_auto": true},
+      "bear":      {"min_ml_score": 85, "max_auto_position":  5, "n2_auto": false}
+    },
+    "consensus_tiers": {
+      "_comment": "n≥3=全仓位自动, n=2=半仓位自动(熊市不自动), n=1=始终待审批",
+      "n3_full_position": true,
+      "n2_half_position": true,
+      "n1_always_review": true
+    },
+    "description": "动态自动交易: 三态ML门槛×共识分级, 牛市多买/熊市少买, 对齐铁律#14市场自适应, QMT通道"
+  },
+
+  "hotkeys": {
+    "buy": "f1",
+    "sell": "f2",
+    "cancel": "f3",
+    "buy_up": "f5",
+    "sell_down": "f6",
+    "half_position": "f7",
+    "full_position": "f8"
+  },
+
+  "execution": {
+    "max_cancel_rate": 0.5,
+    "max_order_value": 1000000,
+    "emergency_stop": false,
+    "description": "撤单率>50%触发风控, 单笔最大100万"
+  },
+
+  "strategy_weights": {
+    "因子评分": 0.4,
+    "动量突破": 0.3,
+    "反转策略": 0.3
+  },
+
+  "sources": [
+    "D:\\quant_web\\snapshot_20260612_0127\\live_trader_config.json (0612原始)",
+    "D:\\quant_web\\backup\\20260619_live_trader_config.json (0619实盘33K)",
+    "D:\\quant_framework\\paper_engine.py.backup_20260620_084529 (0620模拟)",
+    "D:\\quant_framework\\live_trader.py.bak_20260626 (0626默认值)",
+    "D:\\quant_framework\\trade_config.json (0628风控规则)",
+    "D:\\quant_framework\\backups\\archived_config_backup.json (0630归档)",
+    "老板草稿修正 (0701终审)",
+    "v3.1动态阈值+共识分级 (0708)"
+  ]
+}

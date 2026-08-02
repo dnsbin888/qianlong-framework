@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>潜龙·策略指挥塔 — 交互原型 v1.0</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:#0a0c10;color:#c9d1d9;min-height:100vh}
+.header{background:#0d1117;border-bottom:1px solid #21262d;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:18px;color:#58a6ff}
+.header .meta{font-size:12px;color:#8b949e}
+.stats-row{display:flex;gap:12px;padding:12px 20px;background:#0d1117;border-bottom:1px solid #21262d;flex-wrap:wrap}
+.stat-card{flex:1;min-width:140px;background:#161b22;border:1px solid #21262d;border-radius:8px;padding:12px 16px;text-align:center}
+.stat-card .num{font-size:24px;font-weight:bold}
+.stat-card .label{font-size:11px;color:#8b949e;margin-top:2px}
+.stat-card.ml{border-left:3px solid #58a6ff}
+.stat-card.ml .num{color:#58a6ff}
+.stat-card.rev{border-left:3px solid #d29922}
+.stat-card.rev .num{color:#d29922}
+.stat-card.db{border-left:3px solid #f85149}
+.stat-card.db .num{color:#f85149}
+.tabs{display:flex;gap:4px;padding:12px 20px;background:#0d1117;overflow-x:auto}
+.tab{padding:8px 20px;border-radius:6px;border:1px solid #21262d;background:#161b22;color:#8b949e;cursor:pointer;font-size:13px;white-space:nowrap;transition:all 0.2s}
+.tab:hover{background:#1c2128;color:#c9d1d9}
+.tab.active{background:#1f6feb22;border-color:#58a6ff;color:#58a6ff}
+.tab .count{font-size:10px;opacity:0.7;margin-left:4px}
+.toolbar{display:flex;gap:12px;padding:0 20px 12px;background:#0d1117;align-items:center;flex-wrap:wrap}
+.toggle-row{display:flex;align-items:center;gap:8px;font-size:13px;color:#c9d1d9}
+.toggle{position:relative;width:40px;height:22px;background:#21262d;border-radius:11px;cursor:pointer;transition:0.2s;flex-shrink:0}
+.toggle.on{background:#238636}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:0.2s}
+.toggle.on::after{left:20px}
+.signal-table{padding:12px 20px}
+.signal-card{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;gap:14px;transition:0.15s}
+.signal-card:hover{background:#1c2128;border-color:#30363d}
+.signal-card.reversal{border-left:3px solid #d29922}
+.signal-card.pattern{border-left:3px solid #f85149}
+.signal-card.trend{border-left:3px solid #58a6ff}
+.strategy-badge{padding:3px 10px;border-radius:10px;font-size:11px;font-weight:bold;white-space:nowrap}
+.badge-trend{background:#58a6ff22;color:#58a6ff;border:1px solid #58a6ff44}
+.badge-reversal{background:#d2992222;color:#d29922;border:1px solid #d2992244}
+.badge-pattern{background:#f8514922;color:#f85149;border:1px solid #f8514944}
+.sym{font-weight:bold;font-size:14px;min-width:80px}
+.name{color:#8b949e;font-size:13px;min-width:70px}
+.score{font-weight:bold;font-size:16px;min-width:45px;text-align:center}
+.price{color:#8b949e;font-size:13px;min-width:60px;text-align:right}
+.reason{color:#6e7681;font-size:12px;flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hold{color:#6e7681;font-size:11px;min-width:50px;text-align:center}
+.empty{padding:40px;text-align:center;color:#484f58;font-size:14px}
+.note{background:#161b22;border:1px solid #d2992255;border-radius:6px;padding:12px 16px;margin:8px 20px;font-size:12px;color:#d29922}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>📡 潜龙·策略指挥塔</h1>
+    <div class="meta">4 条策略 · 78 个信号 · 2026-07-13</div>
+  </div>
+  <div class="meta" style="text-align:right">🐻 熊市 · 自动交易:关 · 月回撤:0.2%</div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card ml">
+    <div class="num">60</div>
+    <div class="label">📊 ML日线趋势</div>
+  </div>
+  <div class="stat-card rev">
+    <div class="num">15</div>
+    <div class="label">🔄 反转策略</div>
+  </div>
+  <div class="stat-card db">
+    <div class="num">3</div>
+    <div class="label">🎯 打板候选</div>
+  </div>
+  <div class="stat-card" style="border-left:3px solid #7ee787">
+    <div class="num" style="color:#7ee787">78</div>
+    <div class="label">📋 总计</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-filter="all">全部<span class="count">78</span></div>
+  <div class="tab" data-filter="trend">📊 ML趋势<span class="count">60</span></div>
+  <div class="tab" data-filter="reversal">🔄 反转<span class="count">15</span></div>
+  <div class="tab" data-filter="pattern">🎯 打板<span class="count">3</span></div>
+</div>
+
+<div class="toolbar">
+  <div class="toggle-row">
+    <span>📊 ML趋势</span>
+    <div class="toggle on" data-strategy="ml_daily" onclick="toggleStrategy(this)"></div>
+  </div>
+  <div class="toggle-row">
+    <span>🔄 弱转强</span>
+    <div class="toggle on" data-strategy="weak_to_strong" onclick="toggleStrategy(this)"></div>
+  </div>
+  <div class="toggle-row">
+    <span>🔄 超跌反弹</span>
+    <div class="toggle on" data-strategy="oversold_bounce" onclick="toggleStrategy(this)"></div>
+  </div>
+  <div class="toggle-row">
+    <span>🎯 打板</span>
+    <div class="toggle on" data-strategy="daban" onclick="toggleStrategy(this)"></div>
+  </div>
+</div>
+
+<div class="note">💡 <b>原型说明</b>：Tab切换过滤策略类型 · 开关模拟启用/禁用 · 数据为真实信号表输出 · 行业对标: QuantDash + Vue3量化平台 + TradingView Flux面板</div>
+
+<div class="signal-table" id="signalContainer">
+  <!-- 动态填充 -->
+</div>
+
+<script>
+// 模拟真实信号数据 (来自 signal_table.json)
+const signals = [
+  // ML趋势
+  {symbol:"sh688323",name:"瑞华泰",score:100,price:36.91,reason:"LGBM+XGB双模共振",hold:7,type:"trend",strategy:"ML日线趋势"},
+  {symbol:"sh605117",name:"德业股份",score:100,price:84.43,reason:"LGBM+XGB双模共振",hold:7,type:"trend",strategy:"ML日线趋势"},
+  {symbol:"sh688400",name:"凌云光",score:100,price:54.20,reason:"LGBM+XGB双模共振",hold:7,type:"trend",strategy:"ML日线趋势"},
+  {symbol:"sz002167",name:"东方锆业",score:100,price:19.70,reason:"LGBM+XGB双模共振",hold:7,type:"trend",strategy:"ML日线趋势"},
+  {symbol:"sh688120",name:"华海清科",score:100,price:297.79,reason:"LGBM+XGB双模共振",hold:7,type:"trend",strategy:"ML日线趋势"},
+  {symbol:"sz301526",name:"国际复材",score:97,price:38.05,reason:"LGBM单模推荐",hold:7,type:"trend",strategy:"ML日线趋势"},
+  {symbol:"sz300223",name:"北京君正",score:96,price:226.30,reason:"XGB单模推荐",hold:7,type:"trend",strategy:"ML日线趋势"},
+  {symbol:"sh600246",name:"万通发展",score:93,price:19.61,reason:"LGBM+XGB双模共振",hold:7,type:"trend",strategy:"ML日线趋势"},
+  // 超跌反弹
+  {symbol:"sh603257",name:"XXX",score:71.4,price:12.50,reason:"超跌反弹 z=-4.4σ Connors=True",hold:3,type:"reversal",strategy:"超跌反弹"},
+  {symbol:"sh603843",name:"XXX",score:71.4,price:18.20,reason:"超跌反弹 z=-4.4σ Connors=True",hold:3,type:"reversal",strategy:"超跌反弹"},
+  {symbol:"sz001268",name:"XXX",score:70.0,price:22.30,reason:"超跌反弹 z=-6.2σ Connors=True",hold:3,type:"reversal",strategy:"超跌反弹"},
+  {symbol:"sz300808",name:"XXX",score:68.9,price:15.80,reason:"超跌反弹 z=-4.0σ Connors=True",hold:3,type:"reversal",strategy:"超跌反弹"},
+  // 打板候选
+  {symbol:"sh603906",name:"龙蟠科技",score:78.5,price:24.62,reason:"封板质量=78.5 一字板+高开",hold:1,type:"pattern",strategy:"打板候选"},
+  {symbol:"sh688627",name:"精智达",score:65.2,price:608.00,reason:"封板质量=65.2 放量封板",hold:1,type:"pattern",strategy:"打板候选"},
+  {symbol:"sh600520",name:"三佳科技",score:55.8,price:38.19,reason:"封板质量=55.8 尾盘回封",hold:1,type:"pattern",strategy:"打板候选"},
+];
+
+let activeFilter = 'all';
+
+function render() {
+  const container = document.getElementById('signalContainer');
+  const filtered = activeFilter === 'all' ? signals : signals.filter(s => s.type === activeFilter);
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="empty">当前筛选条件下无信号</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(s => {
+    const typeClass = s.type === 'trend' ? 'trend' : s.type === 'reversal' ? 'reversal' : 'pattern';
+    const badgeClass = s.type === 'trend' ? 'badge-trend' : s.type === 'reversal' ? 'badge-reversal' : 'badge-pattern';
+    const badgeText = s.type === 'trend' ? '📊 ML' : s.type === 'reversal' ? '🔄 反转' : '🎯 打板';
+    return `
+    <div class="signal-card ${typeClass}">
+      <span class="strategy-badge ${badgeClass}">${badgeText}</span>
+      <span class="sym">${s.symbol}</span>
+      <span class="name">${s.name}</span>
+      <span class="score">${s.score}</span>
+      <span class="price">¥${s.price.toFixed(2)}</span>
+      <span class="hold">${s.hold}天</span>
+      <span class="reason">${s.reason}</span>
+    </div>`;
+  }).join('');
+}
+
+// Tab切换
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    activeFilter = tab.dataset.filter;
+    render();
+  });
+});
+
+// 策略开关
+function toggleStrategy(el) {
+  el.classList.toggle('on');
+  const strategy = el.dataset.strategy;
+  const enabled = el.classList.contains('on');
+  console.log(`策略 ${strategy}: ${enabled ? '启用' : '禁用'} → 下次信号表生成生效`);
+}
+
+// 初始渲染
+render();
+</script>
+
+</body>
+</html>

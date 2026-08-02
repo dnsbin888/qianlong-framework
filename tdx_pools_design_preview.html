@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>TDX选股池 · 设计预览 (最优方案 v2.2)</title>
+<style>
+/* ══════ TDX池管理 v2.2 最优设计 ══════ */
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0e10;color:#e3e3e3;font-family:'Segoe UI','PingFang SC',sans-serif;font-size:13px;line-height:1.5}
+a{color:#409eff;text-decoration:none}a:hover{text-decoration:underline}
+
+/* 顶栏: 内联样式, 与 _topbar.html + unified.css 保持一致 */
+
+.wrap{max-width:960px;margin:0 auto;padding:20px 24px}
+.page-title{font-size:18px;font-weight:700;margin-bottom:2px}
+.page-sub{color:#888;font-size:11px;margin-bottom:16px}
+
+/* ── 状态栏 ── */
+.stats{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:12px 16px;background:#141619;border:1px solid #202225;border-radius:8px;margin-bottom:14px;font-size:11px}
+.stats .dot{width:8px;height:8px;border-radius:50%}
+.stats .dot.live{background:#00b96b;box-shadow:0 0 6px rgba(0,185,107,.4);animation:pulse 1.5s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.stats .dot.warn{background:#f0a030}
+.stats .dot.dead{background:#FF4051}
+.stats .stat{color:#888}.stats .stat b{color:#e3e3e3;font-weight:600}
+.stats .sep{width:1px;height:14px;background:#2a2c30}
+.stats .tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:3px;font-weight:600}
+.stats .tag-data{background:rgba(64,158,255,.1);color:#409eff}
+.stats .tag-today{background:rgba(0,185,107,.1);color:#00b96b}
+.stats .tag-stale{background:rgba(255,64,81,.06);color:#FF4051}
+
+/* ── 卡片 ── */
+.card{background:#141619;border:1px solid #202225;border-radius:8px;padding:18px;margin-bottom:14px}
+
+/* ── 表格 ── */
+.tbl-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:11px}
+.tbl th{background:#1a1c21;padding:10px 12px;text-align:left;font-weight:500;color:#777;font-size:10px;text-transform:uppercase;border-bottom:2px solid #202225;position:sticky;top:0;white-space:nowrap}
+.tbl th.sort{cursor:pointer}.tbl th.sort:hover{color:#bbb}
+.tbl th.sort .arrow{font-size:8px;margin-left:2px}
+.tbl td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
+.tbl tbody tr:hover td{background:rgba(64,158,255,.03)}
+.tbl tbody tr.stale{border-left:2px solid rgba(255,64,81,.3)}
+.sig-count{font-family:'Consolas',monospace;font-weight:600}
+/* 新鲜度色标 */
+.badge{font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;display:inline-block}
+.badge.today{background:rgba(0,185,107,.12);color:#00b96b}
+.badge.yesterday{background:rgba(240,160,48,.12);color:#f0a030}
+.badge.old{background:rgba(255,64,81,.08);color:#FF4051}
+.badge.none{background:rgba(128,128,128,.06);color:#555}
+
+/* ── 展开信号 ── */
+.signal-panel{background:rgba(0,0,0,.2);margin-top:4px;border-radius:4px;overflow:hidden}
+.signal-panel .sig-head{display:flex;justify-content:space-between;padding:8px 14px;font-size:10px;color:#888;border-bottom:1px solid rgba(255,255,255,.03)}
+.signal-panel .sig-list{max-height:200px;overflow-y:auto}
+.signal-row{display:flex;align-items:center;gap:12px;padding:5px 14px;font-size:10px;color:#aaa;border-bottom:1px solid rgba(255,255,255,.015)}
+.signal-row:hover{background:rgba(64,158,255,.04)}
+.signal-row .sym{color:#e3e3e3;font-family:'Consolas',monospace;font-size:10.5px;min-width:80px}
+.signal-row .name{color:#e3e3e3;min-width:65px}
+.signal-row .meta{color:#666;font-size:9px;display:flex;gap:8px;align-items:center;margin-left:auto}
+.signal-row .link{color:#409eff;font-size:9px;cursor:pointer}
+
+/* ── 标签 ── */
+.pool-tag{font-size:9px;padding:2px 8px;border-radius:3px;font-weight:600;display:inline-block}
+.pool-tag.daban{background:rgba(255,64,81,.1);color:#FF4051}
+.pool-tag.wts{background:rgba(0,185,107,.1);color:#00b96b}
+.pool-tag.qmt{background:rgba(64,158,255,.1);color:#409eff}
+.pool-tag.signal{background:rgba(160,85,247,.12);color:#a855f7}
+
+/* ── 开关 ── */
+.toggle{display:inline-flex;align-items:center;gap:4px;font-size:10px}
+.toggle .sw{width:30px;height:16px;border-radius:8px;position:relative;transition:background .2s}
+.toggle .sw.on{background:rgba(0,185,107,.3)}.toggle .sw.off{background:rgba(128,128,128,.2)}
+.toggle .sw::after{content:'';position:absolute;top:2px;width:12px;height:12px;border-radius:50%;transition:left .2s}
+.toggle .sw.on::after{left:16px;background:#00b96b}
+.toggle .sw.off::after{left:2px;background:#888}
+
+/* ── 表单 ── */
+.form-row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-top:10px}
+.form-g{display:flex;flex-direction:column;gap:4px}
+.form-g label{font-size:10px;color:#888}
+.form-g input,.form-g select{background:#1a1c21;border:1px solid #2a2c30;color:#e3e3e3;padding:7px 10px;border-radius:4px;font-size:11px;font-family:inherit}
+.form-g input:focus,.form-g select:focus{outline:none;border-color:#409eff}
+.opt-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;margin:8px 0}
+.opt-btn{font-size:10px;padding:10px 14px;border-radius:5px;cursor:pointer;border:1px solid #2a2c30;background:transparent;color:#888;font-family:inherit;text-align:left;transition:all .15s}
+.opt-btn:hover{border-color:#555}
+.opt-btn.sel{border-color:#409eff;background:rgba(64,158,255,.06);color:#e3e3e3}
+.opt-btn .opt-label{font-weight:600;font-size:11px}
+.opt-btn .opt-desc{font-size:9px;color:#555;margin-top:3px;display:block}
+.opt-btn.sel .opt-desc{color:#666}
+
+/* ── 按钮 ── */
+.btn{padding:5px 14px;border-radius:4px;cursor:pointer;border:1px solid #2a2c30;background:#1d1f23;color:#999;font-family:inherit;font-size:11px;transition:all .15s}
+.btn:hover{color:#e3e3e3;border-color:#555}
+.btn.primary{background:#00b96b;color:#fff;border-color:#00b96b;font-weight:600}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn.danger{color:#FF4051;border-color:rgba(255,64,81,.3)}
+.btn.danger:hover{border-color:#FF4051;background:rgba(255,64,81,.06)}
+.btn.sm{font-size:10px;padding:3px 10px}
+
+/* ── 横幅 ── */
+.alert{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:4px;font-size:10px;margin-bottom:12px}
+.alert.warn{background:rgba(240,160,48,.06);border:1px solid rgba(240,160,48,.2);color:#f0a030}
+.alert.dead{background:rgba(255,64,81,.04);border:1px solid rgba(255,64,81,.15);color:#FF4051}
+.alert .alert-action{margin-left:auto}
+
+/* ── 空状态 ── */
+.empty{text-align:center;padding:48px 20px;color:#555;font-size:12px}
+.empty .icon{font-size:36px;margin-bottom:10px}
+.empty .hint{font-size:10px;color:#666;margin-top:4px}
+
+/* ── 移动端 ── */
+@media(max-width:640px){
+  .wrap{padding:12px 10px}
+  .form-row{flex-direction:column}
+  .opt-row{grid-template-columns:1fr}
+  .tbl th:nth-child(3),.tbl td:nth-child(3),
+  .tbl th:nth-child(6),.tbl td:nth-child(6){display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ 导航 ═══════════════ -->
+<header class="topbar" id="qlTopbar" style="display:flex;align-items:center;justify-content:space-between;height:44px;background:#141619;border-bottom:1px solid #202225;padding:0 20px;z-index:100;width:100%">
+  <div style="display:flex;align-items:center;gap:20px">
+    <a href="/terminal" style="text-decoration:none;font-weight:700;font-size:14px;color:#e3e3e3">🐉 潜龙</a>
+    <nav style="display:flex;align-items:center;gap:4px;font-size:11px">
+      <a href="/terminal" style="color:#888;padding:6px 10px;border-radius:4px;text-decoration:none">终端</a>
+      <a href="/screener" style="color:#888;padding:6px 10px;border-radius:4px;text-decoration:none">筛选器</a>
+      <a href="/ml-signals" style="color:#888;padding:6px 10px;border-radius:4px;text-decoration:none">ML选股</a>
+      <a href="/tdx-pools" style="color:#e3e3e3;background:#1a1d24;padding:6px 10px;border-radius:4px;text-decoration:none;font-weight:600">TDX池</a>
+    </nav>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;font-size:10px;color:#888">
+    <span>⚡ 快速</span>
+    <span>🤖 AI</span>
+    <span style="margin-left:8px">14:32:05</span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h1 class="page-title">📡 通达信选股池</h1>
+  <div class="page-sub">每池自设入口策略 · 保存即时生效 · watcher 每30秒自动扫描</div>
+
+  <!-- ═══════════════ 状态栏 ═══════════════ -->
+  <div class="stats">
+    <span class="dot live" title="watcher运行中"></span>
+    <span style="font-weight:600;font-size:12px">监控中</span>
+    <span class="sep"></span>
+    <span class="stat">数据 <b class="tag tag-today">今天</b></span>
+    <span class="stat">心跳 <b style="color:#e3e3e3">14:32:05</b></span>
+    <span class="sep"></span>
+    <span class="stat">配置 <b style="color:#e3e3e3">8 池</b></span>
+    <span class="stat">今日信号 <b class="tag tag-today">6 只</b></span>
+    <button class="btn sm" style="margin-left:auto">🔄 刷新</button>
+  </div>
+
+  <!-- ═══════════════ 表格 ═══════════════ -->
+  <div class="card">
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr>
+          <th style="width:28px"></th>
+          <th class="sort">池名 <span class="arrow">▲</span></th>
+          <th style="width:60px">标签</th>
+          <th>入口策略</th>
+          <th style="width:52px">启用</th>
+          <th style="width:42px">信号</th>
+          <th class="sort" style="width:68px">最新 <span class="arrow"></span></th>
+          <th style="width:72px">操作</th>
+        </tr></thead>
+        <tbody>
+
+          <!-- 示例行1: 活跃池 -->
+          <tr>
+            <td style="color:#888;text-align:center;font-size:10px">▼</td>
+            <td style="font-family:'Consolas',monospace;color:#e3e3e3">妖股先锋</td>
+            <td style="font-size:10px">妖股</td>
+            <td><span class="pool-tag qmt">⚡ QMT</span></td>
+            <td><span class="toggle"><span class="sw on"></span><span style="color:#00b96b;font-size:9px">启</span></span></td>
+            <td class="sig-count" style="color:#00b96b">12</td>
+            <td><span class="badge today">07-13</span></td>
+            <td><button class="btn sm" style="margin-right:3px">✎</button><button class="btn sm danger">✕</button></td>
+          </tr>
+
+          <!-- 展开信号区 -->
+          <tr><td></td><td colspan="7">
+            <div class="signal-panel">
+              <div class="sig-head">
+                <span>12 只信号</span>
+                <span style="font-size:9px">色标: <span class="badge today">今天</span> <span class="badge yesterday">昨天</span> <span class="badge old">更早</span></span>
+              </div>
+              <div class="sig-list">
+                <div class="signal-row">
+                  <span class="sym">sh600519</span>
+                  <span class="name">贵州茅台</span>
+                  <span class="meta">
+                    <span class="badge today">07-13</span>
+                    <span>¥1850.00 · 14:25</span>
+                  </span>
+                  <span class="link">详情 →</span>
+                </div>
+                <div class="signal-row">
+                  <span class="sym">sz300750</span>
+                  <span class="name">宁德时代</span>
+                  <span class="meta">
+                    <span class="badge today">07-13</span>
+                    <span>¥210.50 · 14:22</span>
+                  </span>
+                  <span class="link">详情 →</span>
+                </div>
+                <div class="signal-row">
+                  <span class="sym">sz000858</span>
+                  <span class="name">五粮液</span>
+                  <span class="meta">
+                    <span class="badge today">07-13</span>
+                    <span>¥156.80 · 14:18</span>
+                  </span>
+                  <span class="link">详情 →</span>
+                </div>
+              </div>
+            </div>
+          </td></tr>
+
+          <!-- 示例行2: 数据过期的池 -->
+          <tr class="stale">
+            <td style="color:#888;text-align:center;font-size:10px">▶</td>
+            <td style="font-family:'Consolas',monospace;color:#e3e3e3">超跌反弹</td>
+            <td style="font-size:10px">反转</td>
+            <td><span class="pool-tag wts">🔄 弱转强</span></td>
+            <td><span class="toggle"><span class="sw on"></span><span style="color:#00b96b;font-size:9px">启</span></span></td>
+            <td class="sig-count" style="color:#f0a030">3</td>
+            <td><span class="badge old">07-10</span></td>
+            <td><button class="btn sm" style="margin-right:3px">✎</button><button class="btn sm danger">✕</button></td>
+          </tr>
+
+          <!-- 示例行3: 已停用 -->
+          <tr>
+            <td style="color:#888;text-align:center;font-size:10px">▶</td>
+            <td style="font-family:'Consolas',monospace;color:#e3e3e3">长线白马</td>
+            <td style="font-size:10px">长线</td>
+            <td><span class="pool-tag signal">📋 信号表</span></td>
+            <td><span class="toggle"><span class="sw off"></span><span style="color:#888;font-size:9px">停</span></span></td>
+            <td class="sig-count" style="color:#555">0</td>
+            <td><span class="badge none">--</span></td>
+            <td><button class="btn sm" style="margin-right:3px">✎</button><button class="btn sm danger">✕</button></td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════ 添加/编辑表单 ═══════════════ -->
+  <div class="card" style="border-left:2px solid #409eff">
+    <div style="font-size:13px;font-weight:600;color:#e3e3e3;margin-bottom:6px">➕ 添加选股池</div>
+    <div class="form-row">
+      <div class="form-g"><label>通达信板块名 *</label><input placeholder=".blk 文件名" style="width:140px"></div>
+      <div class="form-g"><label>显示标签</label><input placeholder="如: 妖股先锋" style="width:140px"></div>
+      <div class="form-g"><label>类型</label><select style="width:70px"><option>blk</option><option>pool</option></select></div>
+    </div>
+
+    <div style="color:#e3e3e3;font-size:11px;margin-top:14px;font-weight:500">入口策略</div>
+    <div class="opt-row">
+      <button class="opt-btn">
+        <span class="opt-label">🎯 打板候选池</span>
+        <span class="opt-desc">→ confirm_board L2确认</span>
+      </button>
+      <button class="opt-btn">
+        <span class="opt-label">🔄 弱转强候选池</span>
+        <span class="opt-desc">→ confirm_wts 竞价确认</span>
+      </button>
+      <button class="opt-btn sel">
+        <span class="opt-label">⚡ QMT直接执行</span>
+        <span class="opt-desc">→ passorder 直通</span>
+      </button>
+      <button class="opt-btn">
+        <span class="opt-label">📋 信号表通用</span>
+        <span class="opt-desc">→ 各策略自选</span>
+      </button>
+    </div>
+
+    <div class="form-row">
+      <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#888;cursor:pointer">
+        <input type="checkbox" checked style="accent-color:#409eff">自动交易</label>
+      <span style="color:#888;font-size:10px">仓位%</span>
+      <input type="number" value="2" min="1" max="20" style="width:50px;background:#1a1c21;border:1px solid #2a2c30;color:#e3e3e3;padding:6px;border-radius:4px;font-size:11px">
+      <button class="btn primary">💾 保存</button>
+    </div>
+  </div>
+
+  <div style="font-size:9px;color:#555;margin-top:8px;line-height:1.8">
+    📖 <b>使用说明</b> — TDX Ctrl+T → 条件选股 → 选股入板块 → 输入板块名 → 上方添加同名 → watcher 自动监控<br>
+    🔗 <b>快捷入口</b> — <a href="/terminal">终端</a> · <a href="/ml-signals">ML选股器</a> · <a href="/screener">筛选器</a>
+  </div>
+</div>
+</body>
+</html>

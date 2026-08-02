@@ -56,10 +56,22 @@ def _get_market_state():
     except: return "unknown"
 
 def _save_market_state():
-    """写入缓存文件供API读取"""
-    import json as _j
+    """写入缓存文件供API读取 (E349: 统一路径到 data/market_state.json)"""
+    import json as _j, os as _os
     try:
-        _j.dump({"state":_get_market_state()}, open(r"D:\quant_framework\market_state.json","w"))
+        _p = r"D:\quant_web\data\market_state.json"
+        _existing = {}
+        if _os.path.exists(_p):
+            try:
+                with open(_p, "r") as _f:
+                    _existing = _j.load(_f)
+            except Exception:
+                _existing = {}
+        _existing["state"] = _get_market_state()
+        _tmp = _p + ".tmp"
+        with open(_tmp, "w") as _f:
+            _j.dump(_existing, _f)
+        _os.replace(_tmp, _p)
     except: pass
 
 
@@ -160,8 +172,10 @@ def _loop(paper_acc):
     while _running:
         try:
             _loop_count += 1
-            if _loop_count % 6 == 1:
-                print(f"[Loop] 运行中 (#{_loop_count}) can_trade={_can_trade()} auto={paper_acc.auto_enabled} positions={len(paper_acc.positions)}")
+            _cur_state = (_can_trade(), paper_acc.auto_enabled, len(paper_acc.positions))
+            if _loop_count == 1 or _cur_state != getattr(_loop, '_last_state', None):
+                print(f"[Loop] 运行中 (#{_loop_count}) can_trade={_cur_state[0]} auto={_cur_state[1]} positions={_cur_state[2]}")
+                setattr(_loop, '_last_state', _cur_state)
             if not _can_trade() or not paper_acc.auto_enabled:
                 _t.sleep(INTERVAL)
                 continue
@@ -216,6 +230,6 @@ def _loop(paper_acc):
             try: paper_acc._paper_log(f"循环异常: {e}")
             except: pass
         # 每30循环更新市场状态缓存
-        if _loop._cnt % 30 == 0:
+        if _loop_count % 30 == 0:
             _save_market_state()
         _t.sleep(INTERVAL)

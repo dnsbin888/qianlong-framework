@@ -1,0 +1,188 @@
+[Trader] Loaded CONFIG overrides from d:\\quant_framework\\live_trader_config.json
+[TradeKB] 34 hotkeys registered
+[Trader] Auto-sync + Auto-trade started (30s interval, link_trader enabled)
+[Realtime] 已加载缓存: 314只
+[Realtime] 初始股票池: 4468只A股, 取前1000只
+[Realtime] 后台缓存已启动 (3秒批量刷新)
+[TDXWatcher] Monitoring D:\通信达技术指标\六合一竞价擒龙（下载到电脑里解压）\六合一竞价擒龙（下载到电脑里解压）\T0002\tpool every 30s
+[App] 自动交易状态已恢复: auto=True
+[App] Paper auto-trade loop started
+[Scheduler] Evolution scheduler started
+[App] Auto-evolve system loaded
+[App] Knowledge base API loaded
+[System] 上次关闭: shutdown: 2026-06-21 17:07:35.464969
+[HealthCheck] === 启动健康检查 ===
+  [✅] 日线数据: D:\quant_web\stock_data.pkl.gz
+  [❌] 因子缓存: D:\quant_web\factor_cache.pkl
+  [✅] 价格缓存: D:\quant_framework\price_cache.json
+  [✅] 股票名称: D:\quant_web\stock_names_full.csv
+  [✅] 交易配置: D:\quant_framework\live_trader_config.json
+  [✅] 依赖: numpy
+  [✅] 依赖: pandas
+  [✅] 依赖: scipy
+  [✅] 依赖: flask
+  [❌] stock_data损坏: Compressed file ended before the end-of-stream marker was reached
+[HealthCheck] 结果: 有失败项
+[PnL] 日频净值记录已启动 (每日15:30)
+============================================================
+  潜龙选股 Web 系统 v1.0
+  http://localhost:5002
+============================================================
+[Startup] Watchdog auto-started
+[2026-06-21 22:36:39] ==================================================
+[2026-06-21 22:36:39]   潜龙 Flask 看门狗 v3.0
+[2026-06-21 22:36:39]   检测: http://localhost:5002/api/paper-trade/v2
+[2026-06-21 22:36:39]   间隔: 60s  容错: 2次
+[2026-06-21 22:36:39]   重启上限: 5次/小时
+[2026-06-21 22:36:39]   PID: 41244
+[2026-06-21 22:36:39] ==================================================
+[Cache] 已加载 200 条回测缓存
+[Init] Loading names...
+[Names] Loaded 5525 names from CSV
+[Names] Builtin: 394 names
+[Names] Full CSV loaded: 5525 names, total: 5633
+  + app.py
+  + auto_evolve.py
+  + data_collector.py
+  + watchdog.py
+  + dingtalk_alerts.py
+  + paper_engine.py
+  + risk_guard.py
+  + realtime_quotes.py
+  + live_trader_config.json
+  + templates/ (42 files)
+  + quant_agent/ (6 files)
+
+📦 备份完成: backup_20260621_223639.zip (273KB)
+[Startup] 日终报告已就绪 (每日15:05)
+[Startup] 盘前推送已就绪 (每日09:25)
+[Startup] 盘后因子更新已就绪 (每日15:30)
+[Startup] 日志清理已就绪 (每日)
+[Startup] 备份失败: name 'logger' is not defined
+[Startup] Ready! Open http://localhost:5002
+[Memory] 内存监控已启动 (5分钟间隔)
+[Health] 启动自检中...
+[Health] ✅ 纸引擎就绪
+[Health] ✅ 因子缓存存在
+[Health] ⚠ THS持仓文件缺失/为空
+[Health] 自检完成: 2通过 1警告
+
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-21 22:36:41] 心跳💓 Flask=OK
+[Names] Ready: 5633 names
+[Industry] Ready: 5509 mappings
+[Names] Total: 5633 names
+[LinkTrader] DLL loaded: D:\联动精灵\第三方交易接口\Win64\linkorder.dll
+
+ℹ️ [INFO] ✅ 潜龙系统已就绪
+行情:314只 | 因子:0条 | DLL:已加载
+策略:3个在线 | 时间:22:36
+
+[Init] Sector indices loaded: 110, source=📡 westock实时 (市场指数)
+[Init] Data cache load failed: invalid load key, '\x1f'.
+[Init] Loading data from: D:\通信达技术指标\六合一竞价擒龙（下载到电脑里解压）\六合一竞价擒龙（下载到电脑里解压）\vipdoc
+[Init] Loaded 5860 stocks, saving data cache...
+[Init] Background: computing factors...
+[Factor] Building signals for 3500 stocks (step=1)...
+[Paper] _load: cash=831730.235 (from file=831730.235), positions=1, trades=7, auto=True
+[Factor] Built 0 signals (5-level scoring)
+[Init] Factor cache ready: 0 stocks
+[Init] Background: 0 factors computed, saving...
+[Init] Factor cache saved — ready!
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-21 22:41:52] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-21 22:47:02] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-21 22:52:12] 心跳💓 Flask=OK
+[SLOW] GET /api/screener/top_stocks 4.3s
+[2026-06-21 22:53:24] Flask 无响应 (1/2)
+[2026-06-21 22:54:36] Flask 无响应 (2/2)
+[2026-06-21 22:54:36] 连续2次失败，重启Flask...
+[2026-06-21 22:54:36] 杀掉Flask进程 PID=37920
+[2026-06-21 22:54:38] Flask 启动中...
+[2026-06-21 22:54:38] Flask重启#1 (本小时第1次)，等待30秒...
+
+🚨 [ERROR] ⚠️ 系统异常: Flask
+**组件**: Flask
+
+**错误**: 自动重启#1 (本小时第1次)
+
+[2026-06-21 22:56:20] Flask 无响应 (1/2)
+[2026-06-21 22:57:32] Flask 无响应 (2/2)
+[2026-06-21 22:57:32] 连续2次失败，重启Flask...
+[2026-06-21 22:57:32] 杀掉Flask进程 PID=23180
+[2026-06-21 22:57:34] Flask 启动中...
+[2026-06-21 22:57:34] Flask重启#2 (本小时第2次)，等待30秒...
+
+🚨 [ERROR] ⚠️ 系统异常: Flask
+**组件**: Flask
+
+**错误**: 自动重启#2 (本小时第2次)
+
+[2026-06-21 22:58:04] 心跳💓 Flask=DOWN
+[2026-06-21 22:59:17] Flask 无响应 (1/2)
+[2026-06-21 23:00:29] Flask 无响应 (2/2)
+[2026-06-21 23:00:29] 连续2次失败，重启Flask...
+[2026-06-21 23:00:30] 杀掉Flask进程 PID=31912
+[2026-06-21 23:00:32] Flask 启动中...
+[2026-06-21 23:00:32] Flask重启#3 (本小时第3次)，等待30秒...
+
+🚨 [ERROR] ⚠️ 系统异常: Flask
+**组件**: Flask
+
+**错误**: 自动重启#3 (本小时第3次)
+
+[2026-06-21 23:02:14] Flask 无响应 (1/2)
+[2026-06-21 23:03:25] Flask 无响应 (2/2)
+[2026-06-21 23:03:25] 连续2次失败，重启Flask...
+[2026-06-21 23:03:27] Flask 启动中...
+[2026-06-21 23:03:27] Flask重启#4 (本小时第4次)，等待30秒...
+
+🚨 [ERROR] ⚠️ 系统异常: Flask
+**组件**: Flask
+
+**错误**: 自动重启#4 (本小时第4次)
+
+[2026-06-21 23:03:57] 心跳💓 Flask=DOWN
+[2026-06-21 23:05:09] Flask 无响应 (1/2)
+[2026-06-21 23:06:21] Flask 无响应 (2/2)
+[2026-06-21 23:06:21] 连续2次失败，重启Flask...
+[2026-06-21 23:06:23] Flask 启动中...
+[2026-06-21 23:06:23] Flask重启#5 (本小时第5次)，等待30秒...
+
+🚨 [ERROR] ⚠️ 系统异常: Flask
+**组件**: Flask
+
+**错误**: 自动重启#5 (本小时第5次)
+
+[2026-06-21 23:08:05] Flask 无响应 (1/2)
+[2026-06-21 23:09:17] Flask 无响应 (2/2)
+[2026-06-21 23:09:17] ⚠️ 1小时内已重启5次，超过上限5，暂停重启!
+[2026-06-21 23:09:17] ⚠️ 请手动检查系统状态! Flask持续宕机!
+
+🔥 [CRITICAL] 🔥 Flask持续宕机
+1小时内已重启5次，超过上限！请手动处理！
+
+[2026-06-21 23:14:17] 心跳💓 Flask=DOWN
+[2026-06-21 23:15:29] Flask 无响应 (1/2)
+[2026-06-21 23:15:29] 心跳💓 Flask=DOWN
+[2026-06-21 23:16:41] Flask 无响应 (2/2)
+[2026-06-21 23:16:41] ⚠️ 1小时内已重启5次，超过上限5，暂停重启!
+[2026-06-21 23:16:41] ⚠️ 请手动检查系统状态! Flask持续宕机!
+
+🔥 [CRITICAL] 🔥 Flask持续宕机
+1小时内已重启5次，超过上限！请手动处理！
+

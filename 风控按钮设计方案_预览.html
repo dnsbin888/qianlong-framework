@@ -1,0 +1,233 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><title>风控按钮位置设计方案对比</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0e10;color:#b4b6b8;font-family:"PingFang SC","Microsoft YaHei",sans-serif;padding:20px}
+h1{color:#e3e3e3;font-size:18px;margin-bottom:4px}
+.sub{color:#666;font-size:12px;margin-bottom:24px}
+h2{color:#c0c2c6;font-size:14px;margin:24px 0 12px;padding-bottom:6px;border-bottom:1px solid #1d1f24}
+.desc{color:#888;font-size:11px;margin-bottom:12px;line-height:1.6}
+
+/* ═══ 模拟顶栏 ═══ */
+.topbar{display:flex;align-items:center;gap:16px;background:#141619;border:1px solid #202225;border-radius:4px;padding:0 16px;height:44px;margin-bottom:8px}
+.topbar .logo{color:#409eff;font-weight:700;font-size:15px}
+.topbar .nav{display:flex;gap:12px;font-size:12px;color:#888}
+.topbar .nav span{color:#b4b6b8}
+
+/* ═══ 按钮样式 ═══ */
+.ks-btn{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid;transition:all .15s;white-space:nowrap}
+.ks-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ks-live{background:rgba(0,185,107,.1);color:#00b96b;border-color:rgba(0,185,107,.25)} .ks-live .ks-dot{background:#00b96b;box-shadow:0 0 6px rgba(0,185,107,.4)}
+.ks-halt{background:rgba(255,64,81,.1);color:#FF4051;border-color:rgba(255,64,81,.25)} .ks-halt .ks-dot{background:#FF4051;box-shadow:0 0 6px rgba(255,64,81,.4)}
+.ks-warn{background:rgba(241,161,0,.1);color:#F1A100;border-color:rgba(241,161,0,.25)} .ks-warn .ks-dot{background:#F1A100;box-shadow:0 0 4px rgba(241,161,0,.3)}
+.ks-emergency{background:#FF4051;color:#fff;border-color:#FF4051;padding:8px 20px;font-size:13px;font-weight:700;animation:none}
+.ks-emergency:hover{background:#ff2040;transform:scale(1.02)}
+.ks-emergency.confirming{animation:pulse 0.5s ease-in-out 3}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* ═══ 下拉面板 ═══ */
+.ks-dropdown{position:absolute;top:100%;right:0;margin-top:4px;background:#1a1c20;border:1px solid #2a2c30;border-radius:4px;padding:8px;min-width:160px;z-index:200;display:none}
+.ks-dropdown.show{display:block}
+.ks-dropdown .row{display:flex;justify-content:space-between;align-items:center;padding:5px 8px;font-size:11px;border-radius:2px}
+.ks-dropdown .row:hover{background:rgba(255,255,255,.03)}
+.ks-dropdown .row .lbl{color:#b4b6b8}
+.ks-dropdown .row .val{font-weight:600;font-size:10px}
+.ks-dropdown .sep{height:1px;background:#1d1f24;margin:4px 0}
+
+/* ═══ 方案展示区 ═══ */
+.panel{background:#141619;border:1px solid #202225;border-radius:4px;padding:16px;margin-bottom:16px;position:relative}
+.panel .label{position:absolute;top:-10px;left:12px;background:#409eff;color:#fff;font-size:10px;padding:2px 8px;border-radius:3px;font-weight:600}
+.badge-rec{position:absolute;top:-10px;right:12px;background:#F1A100;color:#000;font-size:10px;padding:2px 8px;border-radius:3px;font-weight:700}
+
+/* ═══ 迷你首页 ═══ */
+.mini-page{background:#0d0e10;border:1px solid #1d1f24;border-radius:4px;min-height:120px;padding:12px}
+.mini-kpi{display:flex;gap:8px;margin-bottom:8px}
+.mini-kpi div{flex:1;background:#16181d;border-radius:3px;padding:6px 8px;text-align:center;font-size:10px;color:#777}
+.mini-kpi div b{display:block;font-size:16px;color:#e3e3e3}
+.mini-table{font-size:10px;color:#555}
+
+/* ═══ 底部浮条 ═══ */
+.float-bar{position:sticky;bottom:0;background:#141619;border:1px solid #FF4051;border-radius:4px;padding:8px 12px;display:flex;align-items:center;gap:12px;margin-top:12px}
+
+/* ═══ 对比表 ═══ */
+.cmp-table{width:100%;border-collapse:collapse;font-size:11px;margin:12px 0}
+.cmp-table th{background:#1a1c21;padding:6px 8px;text-align:left;font-weight:500;color:#888;border-bottom:1px solid #202225}
+.cmp-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.03)}
+.cmp-table .win{color:#00b96b;font-weight:600}
+.cmp-table .lose{color:#FF4051}
+.cmp-table .mid{color:#F1A100}
+</style></head><body>
+
+<h1>风控按钮 — 位置与交互设计方案对比</h1>
+<div class="sub">三个候选方案，直观对比。推荐方案已标注。</div>
+
+<!-- ════════════════════════════════════════ -->
+<h2>方案 A：顶栏常驻（推荐 ⭐）</h2>
+<div class="desc">顶部导航栏右侧，始终可见。点击展开下拉面板。所有页面统一。</div>
+
+<div class="panel">
+  <div class="badge-rec">⭐ 推荐</div>
+  <div class="topbar">
+    <div class="logo">🐉 潜龙</div>
+    <div class="nav"><span>选股</span> <span>因子</span> <span>ML信号</span> <span>交易</span></div>
+    <div style="flex:1"></div>
+    <div style="position:relative">
+      <div class="ks-btn ks-live" onclick="this.nextElementSibling.classList.toggle('show')">
+        <span class="ks-dot"></span>实盘🟢
+        <span style="font-size:9px;color:#666">▾</span>
+      </div>
+      <div class="ks-dropdown">
+        <div class="row"><span class="lbl">总闸</span><span class="val" style="color:#00b96b">🟢 开启</span></div>
+        <div class="row"><span class="lbl">QMT 快速通道</span><span class="val" style="color:#00b96b">🟢 自动</span></div>
+        <div class="row"><span class="lbl">AI 自动交易</span><span class="val" style="color:#888">🔴 关闭</span></div>
+        <div class="sep"></div>
+        <div class="row" style="color:#FF4051;cursor:pointer;font-weight:600">🚨 紧急停止 ▸</div>
+      </div>
+    </div>
+    <span class="ks-btn ks-halt" style="padding:5px 10px;font-size:10px">🚨</span>
+  </div>
+
+  <div class="mini-page" style="margin-top:8px">
+    <div style="font-size:10px;color:#666;margin-bottom:6px">点击展开下拉 → 看到三开关 + 紧急停止入口</div>
+    <div class="mini-kpi">
+      <div>📊 信号<b>68</b></div>
+      <div>🔥 共振<b>1</b></div>
+      <div>⭐ 均分<b>64</b></div>
+      <div>🕐 更新<b>09:26</b></div>
+    </div>
+    <div class="mini-table">信号表区域 (60s自刷)</div>
+  </div>
+</div>
+
+<div style="font-size:10px;color:#888;margin:-8px 0 16px 0">
+  ✅ 始终可见 · 不占空间 · 合拢只有一个小点 · 点击展开全功能<br>
+  ✅ 红色紧急按钮独立一行，不误触 · 与导航同一行，视觉统一
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<h2>方案 B：独立操作台页面</h2>
+<div class="desc">单独的 /risk-panel 页面，全功能操作台。不在主页面显示。</div>
+
+<div class="panel">
+  <div class="topbar">
+    <div class="logo">🐉 潜龙</div>
+    <div class="nav"><span>选股</span> <span>因子</span> <span>ML信号</span> <span>风控</span></div>
+  </div>
+  <div class="mini-page" style="margin-top:8px">
+    <div style="text-align:center;padding:20px;color:#555">
+      <div style="font-size:24px;margin-bottom:8px">🛡️</div>
+      <div>此处为独立风控操作台页面</div>
+      <div style="font-size:10px;margin-top:4px">包含：总闸开关 / 三色灯 / 风控指标 / 告警流 / 审计日志</div>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:center">
+        <span class="ks-btn ks-live">🟢 总闸开启</span>
+        <span class="ks-btn ks-halt">🚨 紧急停止</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="font-size:10px;color:#888;margin:-8px 0 16px 0">
+  ✅ 功能全 · 不占用首页空间 · 专业感<br>
+  ❌ 紧急时需切页面 · 无法一眼看到当前状态 · 首页感受不到风控存在
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<h2>方案 C：首页底部浮条 + 顶栏指示灯</h2>
+<div class="desc">顶栏只有一个状态灯（不可操作），主力操作在首页底部红色浮条。</div>
+
+<div class="panel">
+  <div class="topbar">
+    <div class="logo">🐉 潜龙</div>
+    <div class="nav"><span>选股</span> <span>因子</span> <span>ML信号</span></div>
+    <div style="flex:1"></div>
+    <span class="ks-dot" style="background:#00b96b;width:8px;height:8px;border-radius:50%" title="实盘正常"></span>
+    <span style="font-size:10px;color:#888">实盘</span>
+  </div>
+  <div class="mini-page" style="margin-top:8px">
+    <div class="mini-kpi">
+      <div>📊 信号<b>68</b></div>
+      <div>🔥 共振<b>1</b></div>
+      <div>⭐ 均分<b>64</b></div>
+    </div>
+    <div class="mini-table">信号表区域</div>
+  </div>
+  <div class="float-bar">
+    <span class="ks-dot" style="background:#00b96b;width:8px;height:8px;border-radius:50%;box-shadow:0 0 6px rgba(0,185,107,.4)"></span>
+    <span style="color:#00b96b;font-weight:600;font-size:12px">实盘运行中</span>
+    <span style="color:#888;font-size:10px">日亏0.3% · 持仓3/5 · 交易0/5</span>
+    <div style="flex:1"></div>
+    <span class="ks-btn ks-halt" style="font-size:10px">关闭实盘</span>
+    <span class="ks-btn ks-emergency" style="font-size:10px;padding:5px 14px">🚨 紧急</span>
+  </div>
+</div>
+
+<div style="font-size:10px;color:#888;margin:-8px 0 16px 0">
+  ✅ 首页可见 · 不占顶栏位置 · 信息密度合适<br>
+  ❌ 滚动时浮条可能被遮挡 · 不是全站统一 · 其他页面看不到
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<h2>三方案对比</h2>
+<table class="cmp-table">
+<tr><th>维度</th><th>方案 A 顶栏常驻</th><th>方案 B 独立页面</th><th>方案 C 底部浮条</th></tr>
+<tr><td>紧急可达性</td><td class="win">★★★★★ 即见即点</td><td class="lose">★★ 需切页</td><td class="mid">★★★★ 首页可见</td></tr>
+<tr><td>全站统一</td><td class="win">✅ 所有页面</td><td class="lose">❌ 仅风控页</td><td class="lose">❌ 仅首页</td></tr>
+<tr><td>防误触</td><td class="win">✅ 下拉+确认</td><td class="win">✅ 页面隔离</td><td class="mid">⚠️ 底部易误点</td></tr>
+<tr><td>信息可见性</td><td class="win">✅ 一眼看到状态</td><td class="lose">❌ 不切页看不到</td><td class="win">✅ 首页可见</td></tr>
+<tr><td>功能完整度</td><td class="mid">⚠️ 下拉紧凑</td><td class="win">✅ 全功能</td><td class="mid">⚠️ 空间有限</td></tr>
+<tr><td>实现难度</td><td class="win">轻量</td><td class="mid">中等</td><td class="mid">中等</td></tr>
+<tr style="background:rgba(0,185,107,.03)"><td><b>总分</b></td><td class="win"><b>A 最优</b></td><td>B</td><td>C</td></tr>
+</table>
+
+<!-- ════════════════════════════════════════ -->
+<h2>最佳实践：A+B 组合</h2>
+<div class="desc">方案 A（顶栏常驻）处理日常监控 + 紧急制动。方案 B（独立页面）处理深度分析 + 审计回溯。</div>
+
+<div class="panel" style="border-color:#00b96b">
+  <div class="label">最终方案</div>
+
+  <div style="display:flex;gap:16px;align-items:flex-start">
+    <div style="flex:1">
+      <div style="font-size:12px;font-weight:600;color:#e3e3e3;margin-bottom:8px">📍 顶栏常驻 — 每页都有</div>
+      <div class="topbar" style="margin:0">
+        <div class="logo">🐉</div>
+        <div class="nav"><span>选股</span><span>因子</span><span>ML</span></div>
+        <div style="flex:1"></div>
+        <div style="position:relative">
+          <div class="ks-btn ks-live" style="font-size:10px;padding:3px 10px">
+            <span class="ks-dot"></span>实盘
+          </div>
+        </div>
+        <span class="ks-btn ks-halt" style="font-size:10px;padding:3px 8px">🚨</span>
+      </div>
+      <div style="font-size:9px;color:#666;margin-top:4px">
+        点"实盘"→ 下拉面板 → 三开关 + 去风控台<br>
+        点"🚨"→ 5秒确认 → 全断
+      </div>
+    </div>
+
+    <div style="flex:1">
+      <div style="font-size:12px;font-weight:600;color:#e3e3e3;margin-bottom:8px">📊 独立风控台 — /risk-panel</div>
+      <div style="background:#0d0e10;border-radius:4px;padding:12px;font-size:10px;color:#555;text-align:center">
+        🛡️ 风控操作台<br>
+        <span style="color:#888">总闸 · 三色灯 · 告警 · 日志</span><br><br>
+        <span class="ks-btn ks-live" style="font-size:9px">🟢 实盘正常</span>
+        <span class="ks-btn ks-emergency" style="font-size:9px;padding:4px 10px">🚨</span>
+      </div>
+      <div style="font-size:9px;color:#666;margin-top:4px">
+        功能全 · 深度操作 · 审计回溯<br>
+        非紧急场景在这操作
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:24px;padding:12px;background:rgba(64,158,255,.05);border:1px solid rgba(64,158,255,.15);border-radius:4px;font-size:11px;color:#888">
+  <b style="color:#409eff">交互规则：</b><br>
+  ① 顶栏"🚨"= 紧急停止 → 5秒倒计时 → 确认 → 全断（模拟+实盘+QMT）<br>
+  ② 顶栏"实盘"下拉 → 看三开关状态，点切换 → 输入确认码 → 生效<br>
+  ③ 顶栏点"去风控台" → 跳转 /risk-panel 完整页面<br>
+  ④ 🟠 橙色时，顶栏 🚨 按钮开始脉冲闪烁<br>
+  ⑤ 🔴 红色时，顶栏背景变红，全局告警
+</div>
+
+</body></html>

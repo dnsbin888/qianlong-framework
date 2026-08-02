@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><title>策略交易统一面板 v2.0</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:#0d0e10;color:#c9d1d9;padding:20px}
+h2{color:#58a6ff;font-size:16px;margin:20px 0 10px}
+h3{font-size:13px;margin:12px 0 6px}
+.page{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:16px;margin-bottom:12px}
+.bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid #21262d;margin-bottom:8px}
+.btn{padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;border:1px solid #30363d;background:#1a1c22;color:#8b949e;white-space:nowrap}
+.btn.on{font-weight:600}
+.btn.ml{background:#58a6ff22;border-color:#58a6ff;color:#58a6ff}
+.btn.rev{border-color:#d29922;color:#d29922}
+.btn.rev.on{background:#d2992222;border-color:#d29922;color:#d29922}
+.btn.db{border-color:#f85149;color:#f85149}
+.btn.db.on{background:#f8514922;border-color:#f85149;color:#f85149}
+.btn.all{background:#7ee78722;border-color:#7ee787;color:#7ee787}
+.sep{width:1px;height:14px;background:#30363d;margin:0 4px}
+.sel{padding:4px 10px;border-radius:4px;font-size:11px;border:1px solid #30363d;background:#1a1c22;color:#e3e3e3;cursor:pointer}
+
+.row{display:flex;align-items:center;gap:8px;padding:4px 8px;font-size:11px;border-bottom:1px solid #161b22;cursor:pointer}
+.row:hover{background:#1c2128}
+.row .score{font-size:15px;font-weight:700;min-width:28px;text-align:right}
+.row .sym{font-weight:700;min-width:80px}
+.row .name{color:#8b949e;min-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .chg{font-weight:600;min-width:50px;text-align:right}
+.row .pos{font-weight:700;color:#58a6ff;min-width:30px;text-align:right}
+.up{color:#FF4051}.dn{color:#00b96b}
+
+.tag{padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;white-space:nowrap}
+.tag-ml{background:#58a6ff22;color:#58a6ff}
+.tag-rev{background:#d2992222;color:#d29922}
+.tag-db{background:#f8514922;color:#f85149}
+.tag-qmt{background:#7ee78722;color:#7ee787}
+
+.approve{font-size:10px;padding:2px 8px;border-radius:3px;cursor:pointer;border:1px solid #58a6ff;background:rgba(88,166,255,.12);color:#58a6ff;font-weight:600}
+.ignore{font-size:10px;padding:2px 8px;border-radius:3px;cursor:pointer;border:1px solid #30363d;background:transparent;color:#8b949e;margin-left:3px}
+.warn{font-size:9px;color:#d29922;font-weight:600;margin-left:2px}
+
+.note{font-size:10px;color:#484f58;margin-top:8px;padding:4px 0;border-top:1px solid #21262d}
+.solution{background:#0f1a1f;border:1px solid #58a6ff33;border-radius:6px;padding:12px;margin:12px 0}
+.solution h3{color:#58a6ff;margin-bottom:6px}
+.solution li{font-size:11px;color:#8b949e;margin:3px 0;list-style:inside}
+</style>
+</head>
+<body>
+
+<h1>📊 策略交易 · 统一面板方案 v2.0</h1>
+
+<!-- ═══ 现状问题 ═══ -->
+<div class="page">
+  <h3 style="color:#f85149">❌ 现状问题</h3>
+  <div class="row"><span class="tag tag-ml">ML</span> sh688120 华海清科 <b style="color:#F1A100">100</b> <span class="up">+8.1%</span> <span class="pos">3.0%</span> <button class="approve">批准</button><button class="ignore">拒绝</button></div>
+  <div class="row"><span class="tag tag-rev">反转</span> sh603629 XXX <b style="color:#F1A100">69</b> <span class="dn">-2.1%</span> <span class="pos">2.0%</span> <span style="color:#f85149;font-size:10px">❌ 被过滤器挡住, 不可见</span></div>
+  <div class="row"><span class="tag tag-db">打板</span> sz002208 XXX <b style="color:#F1A100">79</b> <span class="up">+10%</span> <span class="pos">1.5%</span> <span style="color:#f85149;font-size:10px">❌ 被过滤器挡住, 不可见</span></div>
+  <div class="note">问题: 反转/打板信号在数据里, 但被前端共识过滤器拦截, 用户完全看不到</div>
+</div>
+
+<!-- ═══ 解决方案 ═══ -->
+<div class="solution">
+  <h3>🔧 一行修复 (signal_card.js:138)</h3>
+  <li>过滤器加 <code>🔄|🎯</code> 通行规则 → 反转/打板信号立即出现在 ⚡盘中信号</li>
+  <li>所有策略统一显示、统一可交易</li>
+  <li>用策略标签(ML/反转/打板)区分类型</li>
+  <li>加策略下拉框可选只看某一类</li>
+</div>
+
+<!-- ═══ 效果预览 ═══ -->
+<h2>⚡ 盘中信号 — 修复后效果</h2>
+<div class="page">
+  <div class="bar">
+    <span class="btn ml">📡 QMT</span><span class="btn ml">🧠 ML</span>
+    <span class="sep"></span>
+    <span style="font-size:10px;color:#888">策略</span>
+    <select class="sel"><option>📊 全部 103</option><option>🤖 ML趋势 60</option><option>🔄 反转 15</option><option>🎯 打板 3</option><option>📡 QMT 5</option></select>
+    <span class="sep"></span>
+    <span class="btn all" style="font-size:10px">默认: 全部显示</span>
+  </div>
+
+  <div style="font-size:10px;color:#555;margin:4px 0">▎📡 QMT 实时信号</div>
+  <div class="row"><span class="tag tag-qmt">QMT</span> <span class="score" style="color:#58a6ff">📡</span> <span class="sym">sh600000</span> <span class="name">浦发银行</span> L3 <span>¥12.50</span> <span class="warn">⚠待确认</span> <button class="approve">批准实盘</button><button class="ignore">忽略</button></div>
+
+  <div style="font-size:10px;color:#555;margin:4px 0">▎🧠 ML 日线信号</div>
+  <div class="row"><span class="tag tag-ml">ML</span> <span class="score" style="color:#F1A100">100</span> <span class="sym">sh688120</span> <span class="name">华海清科</span> L5🔥 <span class="up">+8.1%</span> <span class="pos">3.0%</span> <button class="approve">批准</button><button class="ignore">拒绝</button></div>
+  <div class="row"><span class="tag tag-ml">ML</span> <span class="score" style="color:#e3e3e3">88</span> <span class="sym">sh605117</span> <span class="name">德业股份</span> L4 <span class="dn">-5.7%</span> <span class="pos">2.8%</span> <button class="approve">批准</button><button class="ignore">拒绝</button></div>
+  <div class="row"><span class="tag tag-rev">反转</span> <span class="score" style="color:#d29922">69</span> <span class="sym">sh603629</span> <span class="name">XXX</span> L3 <span class="dn">-2.1%</span> <span class="pos">2.0%</span> <button class="approve">批准</button><button class="ignore">拒绝</button></div>
+  <div class="row"><span class="tag tag-rev">反转</span> <span class="score" style="color:#d29922">65</span> <span class="sym">sh603257</span> <span class="name">XXX</span> L3 <span class="up">+1.5%</span> <span class="pos">2.1%</span> <button class="approve">批准</button><button class="ignore">拒绝</button></div>
+  <div class="row"><span class="tag tag-db">打板</span> <span class="score" style="color:#f85149">79</span> <span class="sym">sz002208</span> <span class="name">XXX</span> L4 <span class="up">+10%</span> <span class="pos">1.5%</span> <span class="warn">⚠需盘中确认</span> <button class="approve">批准</button><button class="ignore">拒绝</button></div>
+  <div class="row"><span class="tag tag-ml">ML</span> <span class="score" style="color:#e3e3e3">75</span> <span class="sym">sh688531</span> <span class="name">日联科技</span> L3 <span class="up">+5.7%</span> <span class="pos">2.5%</span> <button class="approve">批准</button><button class="ignore">拒绝</button></div>
+</div>
+
+<!-- ═══ 改动清单 ═══ -->
+<div class="page">
+  <h3 style="color:#7ee787">📋 改动清单</h3>
+  <table style="width:100%;font-size:11px;border-collapse:collapse">
+    <tr style="color:#8b949e"><th style="text-align:left;padding:4px">文件</th><th style="text-align:left;padding:4px">改动</th><th style="text-align:right;padding:4px">行数</th></tr>
+    <tr><td style="padding:3px">signal_card.js</td><td style="padding:3px">过滤器加 🔄🎯 通行规则</td><td style="text-align:right;padding:3px">1</td></tr>
+    <tr><td style="padding:3px">signal_card.js</td><td style="padding:3px">策略下拉框 + 过滤逻辑</td><td style="text-align:right;padding:3px">15</td></tr>
+    <tr><td style="padding:3px">terminal.html</td><td style="padding:3px">筛选栏加策略下拉</td><td style="text-align:right;padding:3px">3</td></tr>
+    <tr><td style="padding:3px;color:#7ee787;font-weight:600">总计</td><td style="padding:3px"></td><td style="text-align:right;padding:3px;color:#7ee787;font-weight:600">19</td></tr>
+  </table>
+</div>
+
+<div style="font-size:10px;color:#484f58;margin-top:8px">
+  改完后: 所有策略信号在 ⚡盘中信号 可见 · 带策略标签 · 可按策略筛选 · 全部可批准交易
+</div>
+
+</body>
+</html>

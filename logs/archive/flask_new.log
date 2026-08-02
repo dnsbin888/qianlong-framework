@@ -1,0 +1,120 @@
+[App] 数据目录已初始化: D:\quant_data\
+[Config] 路径配置加载成功
+
+[Trader] QMT XtQuant 交易通道可用
+[Trader] Loaded CONFIG overrides from d:\\quant_framework\\live_trader_config.json
+[Trader] EventBus 未启动, 配置同步仅文件模式
+[TradeKB] 34 hotkeys registered
+[PopupKiller] 启动成功（扫描间隔 2.0s）
+[Trader] 弹窗杀手已启动（2秒扫描间隔）
+[Trader] Auto-sync + Auto-trade started (30s interval, link_trader enabled)
+[App] 事件总线已启动
+[App] 统一调度器已就绪(灰度, 10个任务, 旧线程保底)
+[QMT-Bridge] xtdata.run() daemon 已启动
+[QMT-Bridge] 启动失败: 无法连接xtquant服务，请检查QMT-投研版或QMT-极简版是否开启 → 新浪轮询继续工作
+[App] QMT不可用, 仅新浪轮询
+[DingTalk-Events] ✓ 已订阅 signal/order/risk 事件
+[App] 钉钉事件监听已就绪 (signal/order/risk → 钉钉)
+[SSE] 桥接已就绪 — EventBus → SSE 队列
+[App] SSE 实时推送已就绪 (EventBus → 浏览器)
+[Realtime] 已加载缓存: 700只
+[Realtime] 初始股票池: 7570只A股, 取前1000只
+[Realtime] 后台缓存已启动 (3秒批量刷新)
+[TDXWatcher] Monitoring D:\通信达技术指标\六合一竞价擒龙（下载到电脑里解压）\六合一竞价擒龙（下载到电脑里解压）\T0002\tpool every 30s
+[App] 自动交易状态已恢复: auto=False
+[App] 统一交易循环已启动
+[App] SQLite每日备份 → UnifiedScheduler (无需独立线程)
+[App] IC自动更新 → UnifiedScheduler (周一08:00)
+[App] 策略自动熔断 → UnifiedScheduler (每5分钟)
+[App] 周检定时器 → UnifiedScheduler (周六09:00)
+[EventBus] 事件桥接已就绪(灰度)
+[Loop] 运行中 (#1) can_trade=False auto=False positions=0
+[DataLoader] 截断至最近120天 (2026-02-22 ~ 2026-06-22)
+[EventLoop] 灰度事件循环已启动
+[DataLoader] Parquet 缓存已加载: 8923 stocks × 120d, 191.8MB, 14.6s
+[Scheduler] Evolution scheduler started
+[App] Auto-evolve system loaded
+[App] Knowledge base API loaded
+[Startup] app.pid 已锁定 (PID=24284)
+[System] 上次关闭: shutdown: 2026-06-27 00:51:12.421512
+[HealthCheck] === 启动健康检查 ===
+  [✅] 日线数据: D:\quant_web\stock_data.parquet
+  [✅] 因子缓存: D:\quant_web\factor_cache.pkl
+  [✅] 价格缓存: D:\quant_web\..\quant_framework\price_cache.json
+  [✅] 股票名称: D:\quant_web\stock_names_full.csv
+  [✅] 交易配置: D:\quant_web\..\quant_framework\live_trader_config.json
+  [✅] 依赖: numpy
+  [✅] 依赖: pandas
+  [✅] 依赖: scipy
+  [✅] 依赖: flask
+  [✅] stock_data可读(parquet): 191.8MB (延迟加载,避免启动阻塞)
+[HealthCheck] 结果: 全部通过
+[PnL] 日频净值记录已启动 (每日15:30)
+============================================================
+  潜龙选股 Web 系统 v1.0
+  http://localhost:5002
+============================================================
+[Startup] Flask 服务已绑定 0.0.0.0:5002 (数据后台加载...)
+[Server] Waitress 启动 0.0.0.0:5002 (32 threads)
+[Cache] 已加载 200 条回测缓存
+[Startup] Watchdog PID file stale, cleaning up
+[Startup] Watchdog auto-started
+[Startup] Watchdog auto-started
+  + app.py
+  + app.py
+  + auto_evolve.py
+  + data_collector.py
+  + auto_evolve.py
+  + watchdog.py  + data_collector.py
+
+  + dingtalk_alerts.py
+  + watchdog.py
+  + dingtalk_alerts.py
+  + paper_engine.py
+  + risk_guard.py
+  + realtime_quotes.py
+  + paper_engine.py
+  + live_trader_config.json
+  + risk_guard.py
+  + realtime_quotes.py
+  + live_trader_config.json
+  + templates/ (60 files)
+  + quant_agent/ (6 files)
+
+📦 备份完成: backup_20260627_012144.zip (393KB)
+  + templates/ (60 files)
+  + quant_agent/ (6 files)
+
+📦 备份完成: backup_20260627_012144.zip (393KB)
+[Startup] 后台任务就绪（数据按需加载）
+[Startup] 日终报告 → UnifiedScheduler (15:05)
+[Startup] 盘前推送 → UnifiedScheduler (09:25)
+[Startup] 盘后因子更新 → UnifiedScheduler (15:30)
+[Startup] 日志清理 → UnifiedScheduler (03:00)
+[Startup] 每日备份已就绪
+[Startup] Ready! Open http://localhost:5002
+[Memory] 内存监控已启动 (5分钟间隔)
+[Health] 启动自检中...
+[Health] ✅ 纸引擎就绪
+[Health] ✅ 因子缓存存在
+[Health] ⚠ THS持仓文件缺失/为空
+[Health] 自检完成: 2通过 1警告
+[LinkTrader] DLL loaded: D:\联动精灵\第三方交易接口\Win64\linkorder.dll
+[LinkTrader] ⚠️ 联动精灵未运行, 请手动启动并登录
+[LinkTrader] ⚠️ 同花顺交易端未运行, 请手动启动并登录
+
+ℹ️ [INFO] ✅ 潜龙系统已就绪
+行情:700只 | 因子:0条 | DLL:已加载
+策略:3个在线 | 时间:01:22
+
+[Loop] 运行中 (#7) can_trade=False auto=False positions=0
+[Warmup] 启动预热...[Main] 保持主线程存活...
+
+[Loop] 运行中 (#13) can_trade=False auto=False positions=0
+[DataLoader] 截断至最近120天 (2026-02-22 ~ 2026-06-22)
+[Loop] 运行中 (#19) can_trade=False auto=False positions=0
+[DataLoader] Parquet 缓存已加载: 8923 stocks × 120d, 191.8MB, 19986.2s
+[Warmup] stock_data 加载: 8923 只, 19986.2s
+[Warmup] factor_cache 加载: 3500 条, 0.2s
+[Warmup] ✅ 预热完成, 总计 19986.4s
+[Loop] 运行中 (#25) can_trade=False auto=False positions=0

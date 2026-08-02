@@ -93,10 +93,17 @@ def get_compute_fn(name: str) -> Optional[Callable]:
         return None
 
 
-def get_all_compute_fns() -> dict[str, Callable]:
-    """获取所有 active 因子的计算函数字典。"""
+def get_all_compute_fns(exclude_ml: bool = True) -> dict[str, Callable]:
+    """获取所有 active 因子的计算函数字典。
+
+    Args:
+        exclude_ml: 默认True, 排除 ML模型 类别 (lgbm_score/xgb_score等),
+                    避免训练/IC计算时循环加载ML模型导致卡死。
+    """
     result = {}
     for f in get_active_factors():
+        if exclude_ml and f.get("category") == "ML模型":
+            continue
         try:
             result[f["name"]] = resolve_compute(f["compute"])
         except Exception:

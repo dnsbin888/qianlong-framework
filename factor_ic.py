@@ -3,6 +3,7 @@
 IC = 因子值与前N期收益的相关系数, 衡量因子预测能力
 """
 import numpy as np
+from scipy.stats import spearmanr
 from collections import defaultdict
 
 
@@ -28,7 +29,7 @@ def compute_ic_series(factor_values, forward_returns, periods=[1, 5, 20]):
             r_vals = np.array([fr[s].get(p, 0) for s in common])
             # Rank IC (Spearman)
             if np.std(f_vals) > 0 and np.std(r_vals) > 0:
-                ic = np.corrcoef(f_vals, r_vals)[0, 1]
+                ic = spearmanr(f_vals, r_vals)[0]
                 if not np.isnan(ic):
                     ic_series[p][date] = round(float(ic), 4)
 

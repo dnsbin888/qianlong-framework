@@ -1,0 +1,240 @@
+SQLAlchemy 未安装 (不影响 sqlite_persistence 运行). 如需 ORM 功能请执行: pip install sqlalchemy>=2.0
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:qmt_bridge:QMT 行情获取失败: 无法连接xtquant服务，请检查QMT-投研版或QMT-极简版是否开启
+WARNING:waitress.queue:Task queue depth is 1
+2026-06-22 23:22:40.023 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.024 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.944 "ui.sidebarWidth" is not a valid config option. If you previously had this config option set, it may have been removed.
+2026-06-22 23:22:40.945 
+  [33m[1mWarning:[0m to view this Streamlit app on a browser, run it with the following
+  command:
+
+    streamlit run D:\quant_web\app.py [ARGUMENTS]
+2026-06-22 23:22:40.946 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.946 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.954 No runtime found, using MemoryCacheStorageManager
+2026-06-22 23:22:40.956 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.956 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.956 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.956 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.956 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.957 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.957 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.957 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.958 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.958 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.958 Session state does not function when running a script without `streamlit run`
+2026-06-22 23:22:40.959 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.959 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.959 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.959 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.960 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.960 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.960 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.960 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.961 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:40.961 No runtime found, using MemoryCacheStorageManager
+2026-06-22 23:22:40.961 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.061 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.061 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.061 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.064 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.064 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.065 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.065 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.065 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.065 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.065 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.065 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.066 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.066 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.066 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.067 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.067 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.067 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.067 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.068 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.068 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.068 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.068 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.068 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.068 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.069 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.069 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.069 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.069 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.069 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.070 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.070 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.070 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.071 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.071 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.071 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.071 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.072 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.072 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.072 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.072 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.072 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.072 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.073 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.073 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.073 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.073 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.074 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.074 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.074 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.074 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.074 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.075 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.075 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.075 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.075 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.076 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.076 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.076 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.076 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.076 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.077 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.077 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.077 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.077 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.077 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.469 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.469 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.470 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.470 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.470 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.478 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.478 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.478 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.478 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.478 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.497 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.498 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.498 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.498 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.498 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.499 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.499 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.500 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.500 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.500 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-06-22 23:22:41.501 Thread 'waitress-2': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+WARNING:qmt_bridge:QMT 行情获取失败: 无法连接xtquant服务，请检查QMT-投研版或QMT-极简版是否开启
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:qmt_bridge:QMT 行情获取失败: 无法连接xtquant服务，请检查QMT-投研版或QMT-极简版是否开启
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 5
+WARNING:waitress.queue:Task queue depth is 6
+WARNING:waitress.queue:Task queue depth is 6
+WARNING:waitress.queue:Task queue depth is 7
+WARNING:waitress.queue:Task queue depth is 8
+WARNING:waitress.queue:Task queue depth is 8
+WARNING:waitress.queue:Task queue depth is 8
+WARNING:waitress.queue:Task queue depth is 9
+WARNING:waitress.queue:Task queue depth is 10
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:qmt_bridge:QMT 行情获取失败: 无法连接xtquant服务，请检查QMT-投研版或QMT-极简版是否开启
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:qmt_bridge:QMT 行情获取失败: 无法连接xtquant服务，请检查QMT-投研版或QMT-极简版是否开启
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 5
+WARNING:waitress.queue:Task queue depth is 6
+WARNING:waitress.queue:Task queue depth is 6
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:qmt_bridge:QMT 行情获取失败: 无法连接xtquant服务，请检查QMT-投研版或QMT-极简版是否开启
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+Exception in thread Thread-23 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Program Files\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 1601, in _readerthread
+    buffer.append(fh.read())
+                  ^^^^^^^^^
+  File "<frozen codecs>", line 322, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xd0 in position 0: invalid continuation byte
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1

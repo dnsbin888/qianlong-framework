@@ -526,7 +526,7 @@ class BacktestEngine:
                     unrealized_pnl_pct=pos.unrealized_pnl_pct,
                 )
 
-        market_value = sum(p.market_value for p in positions_info.values())
+        market_value = sum(p.market_value or 0 for p in positions_info.values())
         total_equity = self._cash + market_value
 
         ctx.portfolio = PortfolioSnapshot(

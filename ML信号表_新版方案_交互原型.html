@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>ML信号表 v4.0 — 新版方案原型</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:#0d0e10;color:#c9d1d9;min-height:100vh;padding:20px}
+h2{color:#58a6ff;margin:16px 0 8px;font-size:16px}
+.note{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:10px 14px;margin:8px 0;font-size:12px}
+.diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.col-old{background:#1a0f0f;border:1px solid #da363344;border-radius:8px;padding:12px}
+.col-new{background:#0f1a0f;border:1px solid #23863644;border-radius:8px;padding:12px}
+.col-old h4{color:#f85149;margin-bottom:8px}
+.col-new h4{color:#7ee787;margin-bottom:8px}
+
+table{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+th{background:#161b22;padding:6px 8px;text-align:left;font-weight:600;border-bottom:2px solid #30363d;color:#8b949e;font-size:11px}
+td{padding:5px 8px;border-bottom:1px solid #21262d}
+tr:hover td{background:#1c212833}
+.up{color:#FF4051}.dn{color:#00b96b}.gold{color:#F1A100}.purple{color:#e040fb}
+
+.badge{padding:2px 8px;border-radius:8px;font-size:10px;font-weight:bold}
+.badge-L{background:#58a6ff22;color:#58a6ff}.badge-X{background:#F1A10022;color:#F1A100}
+.badge-R{background:#e040fb22;color:#e040fb}.badge-LX{background:#7ee78722;color:#7ee787}
+
+.q-hi{color:#00b96b;font-weight:700}.q-mid{color:#F1A100}.q-lo{color:#f85149}
+
+.summary{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.kpi{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:10px 16px;text-align:center;min-width:90px}
+.kpi .n{font-size:20px;font-weight:bold}
+.kpi .l{font-size:10px;color:#8b949e;margin-top:2px}
+</style>
+</head>
+<body>
+
+<h1>📊 ML信号表 v4.0 — 新版方案</h1>
+
+<div class="summary">
+  <div class="kpi"><div class="n" style="color:#58a6ff">98</div><div class="l">总信号</div></div>
+  <div class="kpi"><div class="n" style="color:#7ee787">10</div><div class="l">2模型共振</div></div>
+  <div class="kpi"><div class="n" style="color:#e040fb">30</div><div class="l">Ridge入选</div></div>
+  <div class="kpi"><div class="n" style="color:#F1A100">32</div><div class="l">超卖</div></div>
+</div>
+
+<!-- ═══ 问题→方案对照 ═══ -->
+<div class="diff-grid">
+  <div class="col-old">
+    <h4>❌ 现版问题</h4>
+    <table><tr><th>#</th><th>问题</th></tr>
+    <tr><td>1</td><td>质量列显示旧 _quality 条状图（无意义）</td></tr>
+    <tr><td>2</td><td>无 Ridge 列</td></tr>
+    <tr><td>3</td><td>CB 列全空（已禁用）</td></tr>
+    <tr><td>4</td><td>过滤按钮含 CB 无 Ridge</td></tr>
+    <tr><td>5</td><td>共识列永远 1/3</td></tr>
+    <tr><td>6</td><td>三维评分挤 100</td></tr>
+    </table>
+  </div>
+  <div class="col-new">
+    <h4>✅ 新版修复</h4>
+    <table><tr><th>#</th><th>修复</th></tr>
+    <tr><td>1</td><td>质量列 = 数值 18-70 + 颜色 (绿≥65/黄≥45/红&lt45)</td></tr>
+    <tr><td>2</td><td><b>新增 Ridge 列</b> (紫色)</td></tr>
+    <tr><td>3</td><td>CB 列移除，换 Ridge</td></tr>
+    <tr><td>4</td><td>过滤: LGBM / XGB / <b>Ridge</b></td></tr>
+    <tr><td>5</td><td>共识列 = 模型名 (L / X / R / X+R)</td></tr>
+    <tr><td>6</td><td>高斯化 N(50,15)，不再挤 100</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ 新版表格 ═══ -->
+<h2>📋 新版信号表（真实数据）</h2>
+<div class="note">💡 列顺序：识别→行情→<span style="color:#7ee787">评分(质量+Ridge+共识)</span>→综合→风控→操作</div>
+
+<div id="tableContainer"></div>
+
+<script>
+// 加载真实数据
+fetch('/api/signal-table').then(r=>r.json()).then(data=>{
+  render(data.slice(0,30));
+}).catch(()=>{
+  // 离线模式: 用内嵌样本
+  render([{symbol:"sh688120",name:"华海清科",industry:"电子",close:297.79,change_pct:0.95,
+    combined_score:100,quality_score:60,lgbm_score:"",xgb_score:18.1,ridge_score:25.3,
+    consensus:"X+R",n_models:2,position_pct:2.4,hold_days:2,stop_loss:281.41,decision:"📊 XGB"},
+  {symbol:"sh688017",name:"绿的谐波",industry:"机械设备",close:396,change_pct:1.3,
+    combined_score:100,quality_score:55,lgbm_score:36.5,xgb_score:"",ridge_score:"",
+    consensus:"L",n_models:1,position_pct:2.4,hold_days:2,stop_loss:374.22,decision:"📊 LGBM"},
+  {symbol:"sh603629",name:"XXX",industry:"电子",close:12.5,change_pct:-2.1,
+    combined_score:69,quality_score:51,lgbm_score:"",xgb_score:"",ridge_score:"",
+    consensus:"—",n_models:0,position_pct:2.0,hold_days:3,stop_loss:11.81,decision:"🔄 oversold_bounce"},
+  {symbol:"sz002208",name:"XXX",industry:"房地产",close:19.8,change_pct:10.0,
+    combined_score:79,quality_score:42,lgbm_score:"",xgb_score:"",ridge_score:"",
+    consensus:"—",n_models:0,position_pct:1.5,hold_days:1,stop_loss:18.81,decision:"🎯 daban"}]);
+});
+
+function render(rows){
+  var cols=[
+    ['#',8],['代码',10],['名称',8],['行业',8],
+    ['现价',8],['涨跌',7],
+    ['质量',6],['Ridge',6],['共识',6],
+    ['综合',6],['仓位',6],['天',4],['止损',8],['标签',15]
+  ];
+  var h='<table><thead><tr>';
+  cols.forEach(function(c){h+='<th>'+c[0]+'</th>'});
+  h+='</tr></thead><tbody>';
+
+  rows.forEach(function(r,i){
+    var q=r.quality_score||0;
+    var qCls=q>=65?'q-hi':q>=45?'q-mid':'q-lo';
+    var ridge=(r.ridge_score||0)>0?'<span class="purple">'+r.ridge_score.toFixed(0)+'</span>':'—';
+    var cons=r.consensus||'—';
+    var consHtml=cons.replace('L','<span class="badge badge-L">L</span>')
+                     .replace('X','<span class="badge badge-X">X</span>')
+                     .replace('R','<span class="badge badge-R">R</span>');
+    var cs=r.combined_score||0;
+    var csCls=cs>=80?'gold':cs>=60?'':'style="color:#888"';
+
+    h+='<tr>';
+    h+='<td style="color:#555">'+(i+1)+'</td>';
+    h+='<td>'+r.symbol+'</td>';
+    h+='<td>'+r.name+'</td>';
+    h+='<td>'+r.industry+'</td>';
+    h+='<td>'+(r.close||0).toFixed(2)+'</td>';
+    h+='<td class="'+(r.change_pct>=0?'up':'dn')+'">'+(r.change_pct>0?'+':'')+(r.change_pct||0).toFixed(1)+'%</td>';
+    h+='<td class="'+qCls+'">'+(q||0)+'</td>';
+    h+='<td>'+ridge+'</td>';
+    h+='<td>'+consHtml+'</td>';
+    h+='<td '+csCls+'>'+Math.round(cs)+'</td>';
+    h+='<td>'+(r.position_pct||0).toFixed(1)+'%</td>';
+    h+='<td>'+(r.hold_days||'—')+'</td>';
+    h+='<td>'+(r.stop_loss?r.stop_loss.toFixed(2):'—')+'</td>';
+    h+='<td style="font-size:10px">'+(r.decision||'')+'</td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('tableContainer').innerHTML=h;
+}
+</script>
+
+<div style="margin-top:16px;font-size:11px;color:#484f58">
+  <b>需要替换的文件</b>: templates/ml_signals.html 第255行 refresh() 函数<br>
+  <b>改动量</b>: 列定义 + 行渲染 ~20行 | <b>改完重启Flask</b>
+</div>
+
+</body>
+</html>

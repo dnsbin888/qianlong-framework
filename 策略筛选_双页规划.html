@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><title>策略筛选双页规划 v1.0</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:#0d0e10;color:#c9d1d9;padding:20px}
+h2{color:#58a6ff;font-size:15px;margin:20px 0 10px}
+.page{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:16px;margin-bottom:16px}
+.page h3{font-size:14px;color:#e3e3e3;margin-bottom:8px}
+.bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid #21262d;margin-bottom:8px}
+.btn{padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;border:1px solid #30363d;background:#1a1c22;color:#8b949e;white-space:nowrap}
+.btn.on{background:#58a6ff22;border-color:#58a6ff;color:#58a6ff;font-weight:600}
+.btn.rev{background:#d2992222;border-color:#d29922;color:#d29922}
+.btn.db{background:#f8514922;border-color:#f85149;color:#f85149}
+.btn.all{background:#7ee78722;border-color:#7ee787;color:#7ee787}
+.sep{width:1px;height:14px;background:#30363d;margin:0 4px}
+.sel{padding:4px 10px;border-radius:4px;font-size:11px;border:1px solid #30363d;background:#1a1c22;color:#e3e3e3;cursor:pointer}
+.opt{padding:3px 8px;background:#1a1c22;color:#8b949e;font-size:11px}
+.row{display:flex;align-items:center;gap:8px;padding:3px 6px;font-size:11px;border-bottom:1px solid #161b22}
+.row:hover{background:#1c2128}
+.tag{padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;white-space:nowrap}
+.tag-ml{background:#58a6ff22;color:#58a6ff}
+.tag-rev{background:#d2992222;color:#d29922}
+.tag-db{background:#f8514922;color:#f85149}
+.note{font-size:10px;color:#484f58;margin-top:6px;padding:4px 0}
+.highlight{background:#d2992215;border-left:3px solid #d29922;padding:8px 12px;margin:8px 0;border-radius:0 4px 4px 0;font-size:11px}
+</style></head>
+<body>
+
+<h1>📊 策略筛选 — 双页规划图</h1>
+
+<!-- ═══ 页面1 ═══ -->
+<div class="page">
+  <h3>📋 页面1: /ml-signals (ML信号表) — Tab 切换</h3>
+  <div class="bar">
+    <span class="btn all on">📊 全部 98</span>
+    <span class="btn">🤖 ML趋势 60</span>
+    <span class="btn rev">🔄 反转 15</span>
+    <span class="btn db">🎯 打板 3</span>
+    <span class="sep"></span>
+    <span style="font-size:10px;color:#555">点击Tab过滤 · 默认显示全部</span>
+  </div>
+  <div class="row">
+    <span class="tag tag-ml">ML</span> sh688120 华海清科 <b style="color:#F1A100">100</b> <span style="color:#FF4051">+8.1%</span> Q60 <span style="color:#888">X+R</span>
+  </div>
+  <div class="row">
+    <span class="tag tag-ml">ML</span> sh605117 德业股份 <b style="color:#e3e3e3">100</b> <span style="color:#00b96b">-5.7%</span> Q55 <span style="color:#888">L</span>
+  </div>
+  <div class="row">
+    <span class="tag tag-rev">反转</span> sh603629 XXX <b style="color:#F1A100">69</b> <span style="color:#00b96b">-2.1%</span> Q51 <span style="color:#888">—</span>
+  </div>
+  <div class="row">
+    <span class="tag tag-db">打板</span> sz002208 XXX <b style="color:#F1A100">79</b> <span style="color:#FF4051">+10%</span> Q42 <span style="color:#888">—</span>
+  </div>
+  <div class="note">💡 改动: ml_signals.html → getFiltered() 加策略过滤 + Tab UI (15行)</div>
+</div>
+
+<!-- ═══ 页面2 ═══ -->
+<div class="page">
+  <h3>⚡ 页面2: /terminal (盘中信号) — 下拉框</h3>
+  <div class="bar">
+    <span class="btn on">📈 个股</span><span class="btn">📊 ETF</span>
+    <span class="sep"></span>
+    <span class="btn on">📡 QMT</span><span class="btn on">🧠 ML</span>
+    <span class="sep"></span>
+    <span class="btn on">✅ 共振</span><span class="btn on">✓ LGBM</span>
+    <span class="sep"></span>
+    <span style="font-size:10px;color:#888">策略</span>
+    <select class="sel">
+      <option>📊 全部</option>
+      <option>🤖 ML趋势</option>
+      <option>🔄 反转</option>
+      <option>🎯 打板</option>
+    </select>
+  </div>
+  <div class="row">
+    <span style="color:#58a6ff;font-size:10px">📡 QMT</span> sh600000 浦发银行 L3 <span>¥12.50</span> <span class="tag tag-db">打板</span>
+  </div>
+  <div class="row">
+    <span style="color:#888;font-size:10px">🧠 ML</span> sh688120 华海清科 L5 🔥 <span style="color:#FF4051">+8.1%</span> <span class="tag tag-ml">ML</span>
+  </div>
+  <div class="row">
+    <span style="color:#888;font-size:10px">🧠 ML</span> sh603629 XXX L3 <span style="color:#00b96b">-2.1%</span> <span class="tag tag-rev">反转</span>
+  </div>
+  <div class="note">💡 改动: signal_card.js → renderSigCard() 加策略下拉 + 过滤逻辑 (15行)</div>
+</div>
+
+<div class="highlight">
+  <b>🎯 改动量</b><br>
+  signal_card.js: +15行 (公共逻辑, 两页共用)<br>
+  ml_signals.html: +15行 (Tab UI)<br>
+  signal_card.js 改后 ml-signals 和 terminal 同时生效 — 同一个渲染函数
+</div>
+
+<div style="font-size:10px;color:#484f58;margin-top:12px">
+  数据源: decision字段 (✅=ML, 🔄=反转, 🎯=打板) | 过滤条件: strategy_id 字段
+</div>
+
+</body>
+</html>

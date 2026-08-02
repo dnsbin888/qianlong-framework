@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><title>策略架构 · 独立评分方案 v4.0</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:#0a0c10;color:#c9d1d9;padding:20px;line-height:1.6}
+h2{color:#58a6ff;font-size:16px;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid #21262d}
+h3{font-size:13px;margin:12px 0 6px}
+.code{background:#161b22;border:1px solid #21262d;border-radius:6px;padding:14px 18px;font-size:12px;font-family:'SF Mono',Consolas,monospace;line-height:1.7;margin:8px 0;overflow-x:auto}
+.code .kw{color:#ff7b72}.code .str{color:#a5d6ff}.code .cm{color:#484f58}.code .fn{color:#d2a8ff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0}
+.card{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:14px}
+.card h4{font-size:13px;margin-bottom:6px}
+.card .file{color:#58a6ff;font-size:10px;font-family:'SF Mono',Consolas,monospace}
+.card p{font-size:11px;color:#8b949e;line-height:1.5;margin:2px 0}
+.tbl{width:100%;border-collapse:collapse;font-size:11px;margin:8px 0}
+.tbl th{background:#0d1117;padding:6px 10px;text-align:left;font-weight:600;color:#8b949e;border-bottom:2px solid #21262d}
+.tbl td{padding:5px 10px;border-bottom:1px solid #161b22}
+.tbl td.file{font-family:'SF Mono',Consolas,monospace;font-size:10px;color:#58a6ff}
+.tag{padding:2px 8px;border-radius:8px;font-size:9px;font-weight:700}
+.tag-new{background:rgba(0,185,107,.12);color:#00b96b}
+.tag-have{background:rgba(88,166,255,.12);color:#58a6ff}
+.tag-todo{background:rgba(210,153,34,.12);color:#d29922}
+</style></head>
+<body>
+
+<h1>📐 策略架构 · 独立评分方案 v4.0</h1>
+<div style="font-size:11px;color:#8b949e;margin-bottom:16px">原则: 每个策略日线+实时两套独立评分 | Flask调日线 | QMT调实时 | 共享权重常量</div>
+
+<!-- 文件结构 -->
+<h2>📁 文件结构</h2>
+<div class="code">
+<span class="cm"># 每个策略一个目录，含 3 个文件:</span>
+signals/
+├── ml/
+│   ├── <span class="fn">daily.py</span>        <span class="cm"># LGBM+XGB+Ridge 日线评分 (已有)</span>
+│   └── <span class="fn">weights.py</span>      <span class="cm"># 模型权重</span>
+│
+├── reversal/
+│   ├── <span class="fn">daily.py</span>        <span class="cm"># Connors RSI + Z-score 日线粗筛 (已有)</span>
+│   ├── <span class="fn">realtime.py</span>     <span class="cm"># 盘中: 开盘强度 + 量比确认 (新建)</span>
+│   └── <span class="fn">weights.py</span>      <span class="cm"># 共享阈值: RSI<15, Z<-1.5σ, 量比>1.2</span>
+│
+├── daban/
+│   ├── <span class="fn">daily.py</span>        <span class="cm"># 封板质量评分 日线粗筛 (已有)</span>
+│   ├── <span class="fn">realtime.py</span>     <span class="cm"># 封板确认 实时精判 (新建)</span>
+│   └── <span class="fn">weights.py</span>      <span class="cm"># 共享权重: 时间1.0/封单3%/炸板0.7/回封1.5x</span>
+│
+├── tdx/
+│   └── <span class="fn">daily.py</span>        <span class="cm"># TDX公式信号 (已有)</span>
+│
+└── <span class="fn">__init__.py</span>          <span class="cm"># 统一导出: get_strategy(sid) → daily_fn, realtime_fn</span>
+</div>
+
+<!-- 策略矩阵 -->
+<h2>📊 策略矩阵</h2>
+<table class="tbl">
+<tr><th>策略</th><th>日线 (Flask)</th><th>实时 (QMT)</th><th>QMT 可下单?</th></tr>
+<tr><td>📊 ML趋势</td><td class="file">ml/daily.py <span class="tag tag-have">已有</span></td><td>不需要 (L1)</td><td>✅ 次日开盘</td></tr>
+<tr><td>🔄 超跌反弹</td><td class="file">reversal/daily.py <span class="tag tag-have">已有</span></td><td class="file">reversal/realtime.py <span class="tag tag-todo">新建</span></td><td>✅ 盘中实时</td></tr>
+<tr><td>🔄 弱转强</td><td class="file">reversal/daily.py <span class="tag tag-have">已有</span></td><td class="file">reversal/realtime.py <span class="tag tag-todo">新建</span></td><td>✅ 盘中实时</td></tr>
+<tr><td>🎯 打板</td><td class="file">daban/daily.py <span class="tag tag-have">已有</span></td><td class="file">daban/realtime.py <span class="tag tag-todo">新建</span></td><td>✅ 盘中实时</td></tr>
+<tr><td>📡 TDX公式</td><td class="file">tdx/daily.py <span class="tag tag-have">已有</span></td><td>QMT 已有</td><td>✅ 盘中</td></tr>
+</table>
+
+<!-- 数据流 -->
+<h2>🔄 数据流</h2>
+<div class="grid2">
+  <div class="card">
+    <h4>日线路径 (Flask 批处理)</h4>
+    <div class="code" style="font-size:10px">
+<span class="cm"># generate_signal_table.py</span>
+<span class="kw">from</span> signals.reversal.daily <span class="kw">import</span> score_oversold
+<span class="kw">from</span> signals.daban.daily <span class="kw">import</span> score_board
+
+<span class="kw">for</span> sym <span class="kw">in</span> all_stocks:
+    rev_score = score_oversold(df)     <span class="cm"># → 超跌评分 0-100</span>
+    dab_score = score_board(df)        <span class="cm"># → 封板评分 0-100</span>
+    <span class="kw">if</span> rev_score > 50: add_to_signals()
+    <span class="kw">if</span> dab_score > 30: add_to_plan()   <span class="cm"># → QMT 候选池</span>
+    </div>
+  </div>
+  <div class="card">
+    <h4>实时路径 (QMT handle_bar)</h4>
+    <div class="code" style="font-size:10px">
+<span class="cm"># qmt_full_strategy.py</span>
+<span class="kw">from</span> signals.reversal.realtime <span class="kw">import</span> confirm_oversold
+<span class="kw">from</span> signals.daban.realtime <span class="kw">import</span> confirm_board
+
+<span class="kw">def</span> <span class="fn">handle_bar</span>(self, ...):
+    <span class="kw">if</span> sym <span class="kw">in</span> candidate_pool:
+        <span class="kw">if</span> confirm_oversold(tick):      <span class="cm"># → True/False</span>
+            passorder(...)
+        <span class="kw">if</span> confirm_board(tick):         <span class="cm"># → True/False</span>
+            passorder(...)
+    </div>
+  </div>
+</div>
+
+<!-- 与蓝图对齐 -->
+<h2>🎯 与蓝图对齐</h2>
+<table class="tbl">
+<tr><th>蓝图要求</th><th>此方案</th><th>状态</th></tr>
+<tr><td>策略注册表</td><td class="file">strategy_registry.json</td><td>✅ 已有 4 条策略</td></tr>
+<tr><td>统一信号格式</td><td>同一 format: symbol/strategy_id/score/action</td><td>✅</td></tr>
+<tr><td>策略独立</td><td>每个策略独立目录, 日线+实时分离</td><td>✅</td></tr>
+<tr><td>QMT 只做执行</td><td>QMT import realtime → 判断 True/False → passorder</td><td>✅</td></tr>
+<tr><td>回测可复用</td><td>回测引擎 import daily → 跑历史数据</td><td>✅</td></tr>
+</table>
+
+<!-- 实施步骤 -->
+<h2>📋 实施步骤</h2>
+<table class="tbl">
+<tr><th>#</th><th>做什么</th><th>文件</th><th>行</th></tr>
+<tr><td>1</td><td>创建 signals/ 目录结构</td><td class="file">signals/__init__.py</td><td>20</td></tr>
+<tr><td>2</td><td>迁移 reversal 日线评分</td><td class="file">signals/reversal/daily.py</td><td>已有→移</td></tr>
+<tr><td>3</td><td>迁移 daban 日线评分</td><td class="file">signals/daban/daily.py</td><td>已有→移</td></tr>
+<tr><td>4</td><td>新建 reversal 实时评分</td><td class="file">signals/reversal/realtime.py</td><td>40</td></tr>
+<tr><td>5</td><td>新建 daban 实时评分</td><td class="file">signals/daban/realtime.py</td><td>50</td></tr>
+<tr><td>6</td><td>QMT import 实时评分</td><td class="file">qmt_full_strategy.py</td><td>15</td></tr>
+<tr><td>7</td><td>Flask 改用 signals/ 导入</td><td class="file">generate_signal_table.py</td><td>10</td></tr>
+<tr style="font-weight:700;color:#00b96b"><td></td><td>总计</td><td></td><td>~175</td></tr>
+</table>
+
+<div style="font-size:11px;color:#8b949e;margin-top:12px">
+  ⚡ QMT 只做执行: import → 调函数 → True/False → passorder。不评分、不计算、不决策。<br>
+  🧠 Flask 做思考: 日线评分 → 信号表 → 候选池 → plan。<br>
+  📐 一份权重文件 (weights.py): 日线和实时共用阈值和参数 → 改一处两处生效。
+</div>
+
+</body>
+</html>

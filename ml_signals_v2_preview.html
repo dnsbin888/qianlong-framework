@@ -1,0 +1,166 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><title>ML信号页 v3 效果预览</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0e10;color:#b4b6b8;font-family:"PingFang SC","Microsoft YaHei",sans-serif;height:100vh;overflow:hidden}
+.sc-wrap{display:flex;height:100vh;overflow:hidden}
+.sc-side{width:260px;min-width:260px;background:#141619;border-right:1px solid #2a2c30;padding:14px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;position:relative;transition:width 0.2s,min-width 0.2s,padding 0.2s}
+.sc-side.collapsed{width:44px;min-width:44px;padding:8px 6px;overflow:hidden}
+.sc-side.collapsed>*{display:none}
+.sc-side.collapsed .sc-collapse-btn{display:flex}
+.sc-collapse-btn{position:absolute;top:10px;right:8px;width:24px;height:34px;background:#1d1f23;border:1px solid #2a2c30;border-radius:3px;cursor:pointer;font-size:15px;color:#888;display:flex;align-items:center;justify-content:center;z-index:10}
+.sc-side-title{font-size:14px;font-weight:600;color:#e3e3e3;margin-bottom:2px}
+.sc-side-label{font-size:11px;color:#999;margin-top:8px;font-weight:500}
+.sc-main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#0d0e10}
+.sc-top{padding:10px 14px 4px;flex-shrink:0}
+.sc-table-area{flex:1;overflow:hidden;padding:0 14px 10px;display:flex;flex-direction:column}
+.sc-tbl-wrap{border:1px solid #2a2c30;border-radius:4px;background:#141619;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.sc-tbl-scroll{flex:1;overflow:auto}
+.sc-tbl{width:100%;border-collapse:collapse;font-size:11px}
+.sc-tbl thead{position:sticky;top:0;z-index:5}
+.sc-tbl th{background:#1d1f23;padding:5px 7px;text-align:left;font-weight:500;border-bottom:2px solid #2a2c30;white-space:nowrap;color:#888;font-size:11px}
+.sc-tbl td{padding:4px 7px;border-bottom:1px solid rgba(255,255,255,.03);white-space:nowrap}
+.sc-tbl tr:hover td{background:rgba(64,158,255,.04)}
+.sc-tbl tr.high-quality td{background:rgba(0,185,107,.03)}
+.sc-tbl tr.low-quality td{background:rgba(255,64,81,.02)}
+.card{background:#1a1c20;border:1px solid #2a2c30;border-radius:4px;padding:10px 12px}
+.card-title{font-size:12px;font-weight:600;color:#e3e3e3;margin-bottom:6px}
+.up{color:#FF4051}.dn{color:#00b96b}.gold{color:#F1A100}.blue{color:#409eff}.green{color:#00b96b}.red{color:#FF4051}
+.score-gold{color:#F1A100;font-weight:700}.score-white{color:#e3e3e3}.score-gray{color:#888}
+.tag{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:600;display:inline-block}
+.tag-bull{background:rgba(255,64,81,.12);color:#FF4051}.tag-side{background:rgba(241,161,0,.12);color:#F1A100}.tag-bear{background:rgba(0,185,107,.12);color:#00b96b}
+.market-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0}
+.factor-row{display:flex;justify-content:space-between;padding:3px 0;font-size:11px;border-bottom:1px solid #1a1c20;cursor:pointer}
+.factor-row:hover{background:rgba(64,158,255,.06)}
+.factor-row .ic{color:#00b96b;font-weight:600;font-size:12px}
+.sector-row{font-size:10px;margin:2px 0;cursor:pointer}
+.sector-row:hover{color:#e3e3e3}
+.sector-bar{height:14px;background:#1d1f23;border-radius:3px;margin:2px 0 4px;overflow:hidden}
+.sector-bar div{height:100%;float:left;border-radius:3px}
+.q-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;cursor:pointer}
+.q-row:hover{color:#e3e3e3}
+.stat-row{display:flex;gap:12px;font-size:12px;flex-wrap:wrap}
+.stat-row .v{color:#e3e3e3;font-weight:700}
+.ql-kpi-card{background:#1a1c20;border:1px solid #2a2c30;border-radius:4px;padding:8px 12px;text-align:center}
+.ql-kpi-l{font-size:10px;color:#888;margin-bottom:2px}
+.ql-kpi-v{font-size:18px;font-weight:700}
+.btn{font-size:10px;padding:2px 8px;border-radius:3px;cursor:pointer;border:1px solid #2a2c30;background:#1d1f23;color:#888}
+.btn.on{background:rgba(64,158,255,.12);color:#409eff;border-color:#409eff}
+.btn.quick{background:rgba(0,185,107,.08);color:#00b96b;border-color:rgba(0,185,107,.2);margin-left:4px}
+.check-item{display:flex;align-items:center;gap:4px;font-size:11px;color:#b4b6b8;padding:3px 4px;cursor:pointer}
+.check-item input{accent-color:#409eff}
+.trend-up{color:#FF4051}.trend-down{color:#00b96b}.trend-flat{color:#888}
+.divider{height:1px;background:#2a2c30;margin:4px 0}
+</style>
+</head>
+<body>
+
+<div class="sc-wrap">
+<!-- ═══ 左侧栏 ═══ -->
+<aside class="sc-side" id="sideBar">
+  <div class="sc-collapse-btn" onclick="var s=document.getElementById('sideBar');s.classList.toggle('collapsed');this.textContent=s.classList.contains('collapsed')?'»':'«'" style="display:flex">«</div>
+  <div class="sc-side-title">🤖 ML 信号复盘</div>
+
+  <!-- 市场状态 -->
+  <div class="card">
+    <div class="card-title">📊 市场状态 <span style="font-size:9px;color:#888;float:right">2分钟前</span></div>
+    <div class="market-row"><span>方向</span><span class="gold" style="font-size:15px;font-weight:800">📊 震荡</span><span class="tag tag-side">70%仓位</span></div>
+    <div class="market-row"><span>趋势得分</span><span style="color:#e3e3e3">0.60</span><span class="trend-flat">→</span></div>
+    <div class="market-row"><span>波动率</span><span style="color:#e3e3e3">2.1%</span><span class="trend-down">↓0.3%</span></div>
+    <div class="market-row"><span>市场宽度</span><span style="color:#e3e3e3">52%</span><span class="trend-up">↑8%</span></div>
+    <div class="divider"></div>
+    <div style="font-size:10px;color:#666">基于: MA60+量价+宽度+波动 四因子模型</div>
+  </div>
+
+  <!-- 快速筛选 -->
+  <div class="sc-side-label" style="cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">🔍 快速筛选 <span style="float:right">▾</span></div>
+  <div class="sc-drop-checks" style="display:flex;flex-direction:column;gap:2px">
+    <div class="q-row" style="cursor:pointer"><span>🟢 优质信号 (>100%)</span><b style="color:#00b96b">8只</b></div>
+    <div class="q-row" style="cursor:pointer"><span>🔥 三模型共振</span><b style="color:#F1A100">1只</b></div>
+    <div class="q-row" style="cursor:pointer"><span>⚡ 自动启用</span><b style="color:#409eff">68只</b></div>
+    <div class="q-row" style="cursor:pointer"><span>⚠️ 需审批</span><b style="color:#888">0只</b></div>
+  </div>
+
+  <!-- 因子贡献 -->
+  <div class="card">
+    <div class="card-title">🔥 因子贡献 Top5 <span style="font-size:9px;color:#888;float:right">5日IC</span></div>
+    <div class="factor-row"><span>1. size_score 市值</span><span class="ic">+0.04</span></div>
+    <div class="factor-row"><span>2. vol_enhanced 波动</span><span class="ic">+0.03</span></div>
+    <div class="factor-row"><span>3. chip_v2 筹码</span><span class="ic">+0.05</span></div>
+    <div class="factor-row"><span>4. reversal 反转</span><span class="ic">+0.02</span></div>
+    <div class="factor-row"><span>5. qmt_composite</span><span class="ic">+0.07</span></div>
+    <div style="font-size:9px;color:#666;margin-top:4px">点击因子名 → 跳转因子详情</div>
+  </div>
+
+  <!-- 板块分布 -->
+  <div class="card">
+    <div class="card-title">🏭 板块集中度 <span style="font-size:9px;color:#888;float:right">上限30%</span></div>
+    <div class="sector-row">银行 <b style="color:#e3e3e3">12只</b> (18%) <span style="color:#00b96b">✓</span></div>
+    <div class="sector-bar"><div style="width:18%;background:#409eff"></div></div>
+    <div class="sector-row">交通运输 <b style="color:#e3e3e3">8只</b> (12%)</div>
+    <div class="sector-bar"><div style="width:12%;background:#00b96b"></div></div>
+    <div class="sector-row">基础化工 <b style="color:#e3e3e3">7只</b> (10%)</div>
+    <div class="sector-bar"><div style="width:10%;background:#F1A100"></div></div>
+    <div class="sector-row">电子 <b style="color:#e3e3e3">5只</b> (7%)</div>
+    <div class="sector-bar"><div style="width:7%;background:#e040fb"></div></div>
+    <div style="font-size:10px;color:#666;margin-top:6px">✅ 无板块超限 · 点击板块→过滤信号表</div>
+  </div>
+
+  <!-- 操作 -->
+  <div class="divider"></div>
+  <button class="btn on" style="width:100%;font-size:11px;padding:6px">📥 一键批准全部优质信号</button>
+  <button class="btn" style="width:100%;font-size:10px;margin-top:3px;padding:6px">📤 导出CSV</button>
+</aside>
+
+<!-- ═══ 右侧主区 ═══ -->
+<main class="sc-main">
+  <div class="sc-top">
+    <!-- KPI卡片 -->
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <div class="ql-kpi-card" style="flex:1"><div class="ql-kpi-l">📊 信号总数</div><div class="ql-kpi-v" style="color:#409eff">68</div></div>
+      <div class="ql-kpi-card" style="flex:1"><div class="ql-kpi-l">🔥 共振</div><div class="ql-kpi-v" style="color:#F1A100">1</div></div>
+      <div class="ql-kpi-card" style="flex:1"><div class="ql-kpi-l">⚡ 自动启用</div><div class="ql-kpi-v" style="color:#00b96b">68</div></div>
+      <div class="ql-kpi-card" style="flex:1"><div class="ql-kpi-l">⭐ 均分</div><div class="ql-kpi-v" style="color:#e3e3e3">64</div></div>
+      <div class="ql-kpi-card" style="flex:1"><div class="ql-kpi-l">🕐 更新</div><div class="ql-kpi-v" style="color:#888;font-size:13px">06:46</div></div>
+    </div>
+
+    <!-- 筛选行 -->
+    <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;flex-wrap:wrap">
+      <span style="font-size:10px;color:#888">品种:</span>
+      <span class="btn on">全部</span><span class="btn">个股</span><span class="btn">ETF</span>
+      <span style="font-size:10px;color:#888;margin-left:8px">模型:</span>
+      <label class="check-item"><input type="checkbox" checked>LGBM</label>
+      <label class="check-item"><input type="checkbox" checked>XGB</label>
+      <label class="check-item"><input type="checkbox" checked>CB</label>
+      <span style="font-size:10px;color:#888;margin-left:8px">模式:</span>
+      <span class="btn on">OR</span><span class="btn">AND</span>
+      <span style="margin-left:auto;font-size:10px;color:#888">💡 LGBM=25因子 | 共识=●绿有效●红无效</span>
+    </div>
+  </div>
+
+  <div class="sc-table-area">
+  <div class="sc-tbl-wrap">
+  <div class="sc-tbl-scroll">
+  <table class="sc-tbl">
+  <thead><tr>
+    <th>#</th><th>评分</th><th>代码</th><th>名称</th><th>行业</th><th>现价</th><th>涨跌</th><th>共识</th><th>等级</th><th>质量</th><th>仓位</th><th>持仓天</th><th>操作</th>
+  </tr></thead>
+  <tbody>
+  <tr class="high-quality"><td>1</td><td><span class="score-gold">100</span></td><td>sh600030</td><td>中信证券</td><td>非银金融</td><td>28.45</td><td class="dn">-2.7%</td><td><span class="green">●●●</span></td><td>L5🔥</td><td class="green">97%</td><td>7.8%</td><td>7天</td><td><span class="btn on">批准</span></td></tr>
+  <tr><td>2</td><td><span class="score-gold">100</span></td><td>sh600396</td><td>华电辽能</td><td>公用事业</td><td>12.35</td><td class="dn">-2.5%</td><td><span class="green">●●●</span></td><td>L5🔥</td><td class="gold">70%</td><td>5.6%</td><td>3天</td><td><span class="btn on">批准</span></td></tr>
+  <tr class="high-quality"><td>3</td><td><span class="score-white">97</span></td><td>sh600000</td><td>浦发银行</td><td>银行</td><td>8.89</td><td class="dn">-0.3%</td><td><span class="green">●●●</span></td><td>L5🔥</td><td class="green">88%</td><td>7.0%</td><td>7天</td><td><span class="btn on">批准</span></td></tr>
+  <tr class="high-quality"><td>4</td><td><span class="score-white">87</span></td><td>sh600015</td><td>华夏银行</td><td>银行</td><td>6.76</td><td class="dn">-0.4%</td><td><span class="green">●●●</span></td><td>L4</td><td class="green">92%</td><td>6.4%</td><td>8天</td><td><span class="btn on">批准</span></td></tr>
+  <tr class="low-quality"><td>5</td><td><span class="score-white">96</span></td><td>sh600160</td><td>巨化股份</td><td>基础化工</td><td>46.58</td><td class="dn">-5.0%</td><td><span class="green">●●●</span></td><td>L5🔥</td><td class="gold">70%</td><td>5.6%</td><td>3天</td><td><span class="btn on">批准</span></td></tr>
+  <tr><td colspan="13" style="text-align:center;color:#555;padding:12px;font-size:11px">... 共68条 | 点击侧栏板块/质量可快速过滤 | 表头粘性滚动</td></tr>
+  </tbody>
+  </table>
+  </div>
+  </div>
+  </div>
+</main>
+</div>
+
+<div style="position:fixed;bottom:8px;right:16px;font-size:10px;color:#555">
+  ⚡ v3 效果预览 — 侧栏折叠 + KPI卡片 + 快速筛选 + 行颜色 + 粘性表头
+</div>
+</body>
+</html>

@@ -1,0 +1,171 @@
+{
+  "version": "2.0",
+  "updated": "2026-07-16 23:18",
+  "description": "潜龙策略注册表 — 四态生命周期(draft→backtested→paper→live) + 分层指标体系(trend/reversal/pattern/signal)",
+  "_lifecycle_states": {
+    "draft": "未验证, 代码已完成但未跑回测",
+    "backtested": "回测通过门控, 待模拟盘验证",
+    "paper_trading": "模拟盘中, 积累实盘数据",
+    "live": "实盘运行中, QMT可执行",
+    "degraded": "连续表现差, 降权观察",
+    "retired": "永久关闭"
+  },
+  "strategies": [
+    {
+      "id": "ml_daily",
+      "name": "ML日线选股",
+      "type": "trend",
+      "layer": "L1",
+      "enabled": true,
+      "lifecycle": "live",
+      "metrics_profile": "trend",
+      "signal_func": "signals.ml.daily.generate",
+      "hold_days": 7,
+      "max_positions": 3,
+      "market_filter": [
+        "bull",
+        "sideways",
+        "bear"
+      ],
+      "weight": 50,
+      "confirm_required": false,
+      "description": "LGBM+XGB+Ridge三模型高斯化秩平均, 行业市值中性化",
+      "validation": {
+        "last_backtest": "2026-07-16 20:50",
+        "period": "2024-07-01→2026-07-15",
+        "sharpe": -18.23,
+        "calmar": -0.92,
+        "profit_factor": 0.26,
+        "win_rate_pct": 29.1,
+        "n_trades": 890,
+        "total_return_pct": -99.4,
+        "max_drawdown_pct": -99.4,
+        "oos_sharpe": 0,
+        "oos_decay_pct": 0,
+        "avg_win_pct": 0.49,
+        "avg_loss_pct": 1.89,
+        "max_consecutive_losses": 25,
+        "next_day_positive_rate": 0.29
+      }
+    },
+    {
+      "id": "oversold_bounce",
+      "name": "超跌反弹",
+      "type": "reversal",
+      "layer": "L1",
+      "enabled": true,
+      "lifecycle": "draft",
+      "metrics_profile": "reversal",
+      "signal_func": "reversal_strategy.generate_oversold_bounce",
+      "hold_days": 3,
+      "max_positions": 2,
+      "market_filter": [
+        "bear",
+        "sideways"
+      ],
+      "weight": 20,
+      "confirm_required": false,
+      "description": "Connors RSI超卖+Z-score跌幅+企稳确认, 次日开盘买入, 持有2-5天",
+      "validation": {
+        "last_backtest": "2026-07-15 22:47",
+        "period": "2024-07-01→2026-07-15",
+        "sharpe": -21.53,
+        "calmar": -0.77,
+        "profit_factor": 0.21,
+        "win_rate_pct": 23.9,
+        "n_trades": 941,
+        "total_return_pct": -91.82,
+        "max_drawdown_pct": -91.82,
+        "oos_sharpe": 0,
+        "oos_decay_pct": 0,
+        "avg_win_pct": 0.39,
+        "avg_loss_pct": 1.92,
+        "max_consecutive_losses": 31,
+        "next_day_positive_rate": 0.24
+      }
+    },
+    {
+      "id": "weak_to_strong",
+      "name": "弱转强",
+      "type": "reversal",
+      "layer": "L2",
+      "enabled": true,
+      "lifecycle": "draft",
+      "metrics_profile": "reversal",
+      "signal_func": "reversal_strategy.generate_weak_to_strong",
+      "hold_days": 2,
+      "max_positions": 1,
+      "market_filter": [
+        "bull",
+        "sideways"
+      ],
+      "weight": 15,
+      "confirm_required": true,
+      "confirm_steps": [
+        "竞价量>阈值",
+        "开盘强度确认"
+      ],
+      "description": "日线扫描昨日分歧票→次日竞价+开盘确认转强→持2天",
+      "validation": {
+        "last_backtest": "2026-07-16 23:18",
+        "period": "2024-07-01→2026-07-15",
+        "sharpe": -1.87,
+        "calmar": -0.44,
+        "profit_factor": 0.83,
+        "win_rate_pct": 50.0,
+        "n_trades": 250,
+        "total_return_pct": -14.5,
+        "max_drawdown_pct": -16.74,
+        "oos_sharpe": 0,
+        "oos_decay_pct": 0,
+        "avg_win_pct": 3.56,
+        "avg_loss_pct": 4.29,
+        "max_consecutive_losses": 10,
+        "next_day_positive_rate": 0.52
+      }
+    },
+    {
+      "id": "daban",
+      "name": "打板策略",
+      "type": "pattern",
+      "layer": "L2",
+      "enabled": true,
+      "lifecycle": "draft",
+      "metrics_profile": "pattern",
+      "signal_func": "daban_quality.generate_daban_candidates",
+      "hold_days": 1,
+      "max_positions": 1,
+      "market_filter": [
+        "bull"
+      ],
+      "weight": 15,
+      "confirm_required": true,
+      "confirm_steps": [
+        "高开>2%",
+        "10点前封板",
+        "封单量确认",
+        "30分钟回封检测"
+      ],
+      "description": "日线封板质量评分→次日盘中实时确认→扫板买入",
+      "validation": {
+        "last_backtest": "2026-07-15 23:01",
+        "period": "2024-07-01→2026-07-15",
+        "sharpe": -18.19,
+        "calmar": -0.77,
+        "profit_factor": 0.82,
+        "win_rate_pct": 9.8,
+        "n_trades": 246,
+        "total_return_pct": -91.7,
+        "max_drawdown_pct": -91.7,
+        "oos_sharpe": 0,
+        "oos_decay_pct": 0,
+        "avg_win_pct": 6.6,
+        "avg_loss_pct": 8.08,
+        "max_consecutive_losses": 36,
+        "next_day_positive_rate": 0.09
+      }
+    }
+  ],
+  "_last_validator_run": "2026-07-14 08:51",
+  "_last_backtest": "2026-07-16 23:18"
+}

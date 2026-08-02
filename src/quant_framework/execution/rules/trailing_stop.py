@@ -11,18 +11,11 @@ from quant_framework.execution.rules.base import BaseRule, RuleAction
 
 
 class AutoTrailingStopRule(BaseRule):
-    """双层移动止盈规则。
+    """三层移动止盈规则。
 
-    Tier 1 (轻仓止盈): 涨幅达到 profit_pct 后，从峰值回落 trail_pct 触发部分卖出
-    Tier 2 (重仓止盈): 涨幅达到 profit_pct 后，从峰值回落 trail_pct 触发部分卖出
-
-    Attributes:
-        tier: 止盈层级 (1 或 2)
-        profit_pct: 触发移动止盈的涨幅阈值 (如 0.05 = 5%)
-        trail_pct: 从峰值回落的触发比例 (如 0.01 = 1%)
-        sell_ratio: 卖出比例 (如 0.33 = 卖出33%)
-        stop_loss: 该层级的止损线 (如 -0.03 = -3%)
-        peak_tracker: 外部峰值追踪器 dict {symbol: peak_pnl_pct}
+    T1 (轻仓): 涨幅达到 profit_pct → 回落 trail_pct → 部分卖出
+    T2 (重仓): 同上, 更高阈值
+    T3 (涨停): 仅涨停封板→炸板回落触发 (非通用涨10%, 而是检测是否触及涨停价)
     """
 
     def __init__(
@@ -38,7 +31,14 @@ class AutoTrailingStopRule(BaseRule):
         self.trail_pct = abs(trail_pct)
         self.sell_ratio = sell_ratio
         self.stop_loss = stop_loss
-        self._peaks: dict[str, float] = {}  # symbol → peak pnl_pct
+        self._peaks: dict[str, float] = {}
+
+    def _get_limit_pct(self, sym: str) -> float:
+        """获取涨停幅度: 主板10%, 科创/创业20%, 北交30%"""
+        c = sym.replace('sh','').replace('sz','').replace('bj','')
+        if c.startswith(('30','688')): return 0.20
+        if c.startswith(('8','4')): return 0.30
+        return 0.10
 
     def check(self, position: dict | None, market_data: dict, context: dict) -> Optional[RuleAction]:
         if position is None:
@@ -48,28 +48,47 @@ class AutoTrailingStopRule(BaseRule):
         avg_cost = position.get("avg_cost", 0)
         qty = position.get("qty", 0)
         price = market_data.get("price", position.get("last_price", 0))
-        if avg_cost <= 0 or price <= 0 or qty <= 0:
+        if price <= 0 or qty <= 0:
             return None
 
-        pnl_pct = (price / avg_cost - 1)
+        prev_close = market_data.get("prev_close", avg_cost)
+        base = prev_close if prev_close > 0 else avg_cost
+        if base <= 0:
+            return None
+        pnl_pct = (price / base - 1)
+        # T3专用: 涨停价 = 昨收×(1+涨停幅度)
+        limit_up_price = round(base * (1 + self._get_limit_pct(sym)), 2)
 
         # 更新峰值
         if sym not in self._peaks or pnl_pct > self._peaks[sym]:
             self._peaks[sym] = pnl_pct
         peak = self._peaks.get(sym, pnl_pct)
 
-        # 触发条件: 峰值曾达 profit_pct 阈值 且 从峰值回落 ≥ trail_pct
-        if peak >= self.profit_pct and pnl_pct <= peak - self.trail_pct:
+        # 触发判断
+        should_sell = False
+        reason_prefix = "移动止盈"
+        if self.tier == 3:
+            # T3: 必须是涨停封板→炸板 (峰值触及涨停价 + 回落)
+            peak_price = base * (1 + peak)
+            hit_limit = peak_price >= limit_up_price * 0.995
+            if hit_limit and pnl_pct <= peak - self.trail_pct:
+                should_sell = True
+                reason_prefix = "炸板T3"
+        else:
+            # T1/T2: 通用移动止盈 (峰值达到阈值 + 回落)
+            if peak >= self.profit_pct and pnl_pct <= peak - self.trail_pct:
+                should_sell = True
+
+        if should_sell:
             sell_qty = max(100, int(qty * self.sell_ratio) // 100 * 100)
             if sell_qty >= 100:
-                # 清理峰值记录
                 self._peaks.pop(sym, None)
                 return RuleAction(
                     action="sell",
                     symbol=sym,
                     qty=sell_qty,
                     price=price,
-                    reason=f"移动止盈T{self.tier}(盈{pnl_pct*100:.1f}% 回落≥{self.trail_pct*100:.0f}%)",
+                    reason=f"{reason_prefix}T{self.tier}(盈{pnl_pct*100:.1f}% 回落≥{self.trail_pct*100:.0f}%)",
                     meta={
                         "stop_loss_check": True,
                         "stop_loss_threshold": self.stop_loss,
@@ -77,7 +96,7 @@ class AutoTrailingStopRule(BaseRule):
                     },
                 )
 
-        # 附加: 该层级的止损检查
+        # 该层级的止损兜底
         if pnl_pct <= self.stop_loss:
             self._peaks.pop(sym, None)
             return RuleAction(

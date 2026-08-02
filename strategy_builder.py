@@ -100,8 +100,9 @@ def run_backtest(name: str, days: int = 90, sample: int = 300, walk_forward: boo
     try:
         import numpy as np, pandas as pd, sys
         sys.path.insert(0, r"D:\quant_web")
-        from data_loader import load_stock_data_from_cache
-        stock_data = load_stock_data_from_cache()
+        sys.path.insert(0, r"D:\quant_framework")
+        from data_loader import load_stock_data_cache
+        stock_data = load_stock_data_cache(r"D:\quant_web\stock_data.parquet", keep_days=days)
         if not stock_data:
             # 兜底: 旧路径
             import gzip, pickle
@@ -111,10 +112,11 @@ def run_backtest(name: str, days: int = 90, sample: int = 300, walk_forward: boo
     except Exception as e:
         return {"success": False, "message": f"数据加载失败: {e}"}
 
-    all_syms = sorted(stock_data.keys())
     import random as _rnd; _rnd.seed(42)
+    all_syms = sorted(stock_data.keys()); _rnd.shuffle(all_syms)
     best_df = max(stock_data.values(), key=lambda df: len(df) if isinstance(df, pd.DataFrame) else 0)
     all_dates = sorted(set(str(ts)[:10] for ts in best_df.index))[-days:]
+    all_dates = all_dates[20:]  # skip first 20 (no history)
     print(f"[BT] stocks={len(stock_data)}, all_syms={len(all_syms)}, dates={len(all_dates)}, sample={sample}")
     if len(all_dates) < 30:
         return {"success": False, "message": f"交易日不足 ({len(all_dates)}天), 请检查数据"}
@@ -129,6 +131,7 @@ def run_backtest(name: str, days: int = 90, sample: int = 300, walk_forward: boo
                     try: stock_data[s].index.get_loc(pd.Timestamp(date_str)); pool.append(s)
                     except KeyError: continue
                 if len(pool) >= sample: break
+            if di==0: print(f"[BT] {date_str} pool={len(pool)}")
             if len(pool) < 30: continue
             scores = []; checked = 0; passed = 0
             for sym in pool:
@@ -149,7 +152,7 @@ def run_backtest(name: str, days: int = 90, sample: int = 300, walk_forward: boo
                     total_score += val * w
                     valid_count += 1
                 checked += 1
-                if valid_count < 2: continue
+                if valid_count < 1: continue
                 if total_weight > 0:
                     total_score = total_score / total_weight
                 if total_score < trigger_min: continue
@@ -161,6 +164,7 @@ def run_backtest(name: str, days: int = 90, sample: int = 300, walk_forward: boo
                 scores.append(fwd); passed += 1
             checked += 1
             if di == 0: print(f"[BT] date={date_str} pool={len(pool)} checked={checked} passed={passed}")
+            if di==0: print(f"[BT] {date_str} pool={len(pool)} checked={checked} passed={passed}")
             if scores: daily.append(float(np.mean(scores)))
         return daily
 

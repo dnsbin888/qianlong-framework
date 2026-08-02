@@ -160,6 +160,42 @@ def get_technical_score(symbols):
 # E56: 限速保护 — westock调用最小间隔（避免被封）
 _last_westock_call = 0
 
+# 资金流向缓存 (盘中实时刷新)
+_fund_flow_cache = {}
+_fund_flow_cache_time = 0
+
+
+def factor_westock(df) -> float | None:
+    """westock资金流向因子 (注册到factor_registry)
+
+    实时读取westock资金流向，返回主力净流入评分(-10~10)。
+    正=主力净流入，负=主力净流出。df参数不使用。
+
+    用法: 注册到factor_registry.json → LGBM/XGBoost自动学习
+    """
+    global _fund_flow_cache, _fund_flow_cache_time
+    import time as _t
+    now = _t.time()
+    # 缓存60秒，避免频繁API调用
+    if now - _fund_flow_cache_time < 60 and _fund_flow_cache:
+        scores = list(_fund_flow_cache.values())
+        return round(float(np.mean(scores) if scores else 0), 2)
+
+    try:
+        import json, os as _os
+        # 从westock实时数据读取
+        p = _os.path.join(_os.path.dirname(__file__), "..", "quant_web", "data", "westock_scores.json")
+        if _os.path.exists(p):
+            data = json.load(open(p, encoding="utf-8"))
+            if isinstance(data, dict):
+                _fund_flow_cache = {k: v for k, v in data.items() if isinstance(v, (int, float))}
+                _fund_flow_cache_time = now
+                if _fund_flow_cache:
+                    return round(float(np.mean(list(_fund_flow_cache.values()))), 2)
+    except Exception:
+        pass
+    return None
+
 
 def get_quote(symbol):
     """获取单只股票实时行情（quote 命令），返回解析后的字典或 None。
@@ -174,6 +210,21 @@ def get_quote(symbol):
         return None  # 限速中，回退到缓存
     _last_westock_call = now
     return _run_westock(f"quote {symbol}")
+
+
+def get_realtime_quotes(symbols):
+    """批量获取实时行情 (realtime_quotes.py 兜底接口)
+    返回 {symbol: price} 或空dict
+    """
+    result = {}
+    for sym in symbols[:20]:  # 限20只防超时
+        try:
+            q = get_quote(sym)
+            if q and q.get('price'):
+                result[sym] = q['price']
+        except Exception:
+            pass
+    return result
 
 
 def enrich_factors(stock_symbols):

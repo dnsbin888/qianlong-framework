@@ -1,0 +1,1094 @@
+{
+  "generated_at": "2026-07-10 11:33:30",
+  "mode": "L4",
+  "global_limits": {
+    "max_daily_trades": 5,
+    "max_daily_loss_pct": 5,
+    "circuit_breaker": false,
+    "qmt_fast_enabled": false,
+    "ai_auto_enabled": false,
+    "kill_updated_at": "2026-07-10 13:46:02"
+  },
+  "stocks": {
+    "sh600246": {
+      "enabled": false,
+      "auto_reason": "熊市双模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 18.63,
+      "take_profit": 21.57,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "万通发展",
+      "close": 19.61
+    },
+    "sh688403": {
+      "enabled": false,
+      "auto_reason": "熊市双模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 35.43,
+      "take_profit": 41.03,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "汇成股份",
+      "close": 37.3
+    },
+    "sh688386": {
+      "enabled": false,
+      "auto_reason": "熊市双模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 72.58,
+      "take_profit": 84.04,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "泛亚微透",
+      "close": 76.4
+    },
+    "sh688191": {
+      "enabled": false,
+      "auto_reason": "熊市双模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 25.72,
+      "take_profit": 29.78,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "智洋创新",
+      "close": 27.07
+    },
+    "sh688557": {
+      "enabled": false,
+      "auto_reason": "熊市双模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 20.14,
+      "take_profit": 23.32,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "兰剑智能",
+      "close": 21.2
+    },
+    "sh688603": {
+      "enabled": false,
+      "auto_reason": "熊市双模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 138.1,
+      "take_profit": 159.91,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "天承科技",
+      "close": 145.37
+    },
+    "sh600584": {
+      "enabled": false,
+      "auto_reason": "熊市双模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 91.73,
+      "take_profit": 106.22,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "长电科技",
+      "close": 96.56
+    },
+    "sh600548": {
+      "enabled": false,
+      "auto_reason": "熊市双模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 8.47,
+      "take_profit": 9.13,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "深高速",
+      "close": 8.69
+    },
+    "sz300567": {
+      "enabled": false,
+      "auto_reason": "熊市双模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 282.25,
+      "take_profit": 326.81,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "精测电子",
+      "close": 297.1
+    },
+    "sh688123": {
+      "enabled": false,
+      "auto_reason": "熊市双模 待审批",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 187.54,
+      "take_profit": 217.15,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "聚辰股份",
+      "close": 197.41
+    },
+    "sh688766": {
+      "enabled": false,
+      "auto_reason": "ML=83 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 735.31,
+      "take_profit": 851.41,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "普冉股份",
+      "close": 774.01
+    },
+    "sh688707": {
+      "enabled": false,
+      "auto_reason": "ML=81 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 10.45,
+      "take_profit": 11.8,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "振华新材",
+      "close": 10.9
+    },
+    "sz000066": {
+      "enabled": false,
+      "auto_reason": "ML=81 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 18.11,
+      "take_profit": 20.97,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "中国长城",
+      "close": 19.06
+    },
+    "sh688328": {
+      "enabled": false,
+      "auto_reason": "ML=80 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 87.39,
+      "take_profit": 101.19,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "深科达",
+      "close": 91.99
+    },
+    "sh688581": {
+      "enabled": false,
+      "auto_reason": "ML=79 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 50.97,
+      "take_profit": 56.92,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "安杰思",
+      "close": 52.95
+    },
+    "sh603688": {
+      "enabled": false,
+      "auto_reason": "ML=76 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 59.38,
+      "take_profit": 68.76,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "石英股份",
+      "close": 62.51
+    },
+    "sh688608": {
+      "enabled": false,
+      "auto_reason": "ML=75 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 107.3,
+      "take_profit": 124.25,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "恒玄科技",
+      "close": 112.95
+    },
+    "sh600418": {
+      "enabled": false,
+      "auto_reason": "ML=74 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 21.34,
+      "take_profit": 24.28,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "江淮汽车",
+      "close": 22.32
+    },
+    "sh688592": {
+      "enabled": false,
+      "auto_reason": "ML=73 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 24.49,
+      "take_profit": 28.36,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "司南导航",
+      "close": 25.78
+    },
+    "sh688409": {
+      "enabled": false,
+      "auto_reason": "ML=72 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 249.93,
+      "take_profit": 289.39,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "富创精密",
+      "close": 263.08
+    },
+    "sh688630": {
+      "enabled": false,
+      "auto_reason": "ML=72 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 457.29,
+      "take_profit": 529.5,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "芯碁微装",
+      "close": 481.36
+    },
+    "sz002536": {
+      "enabled": false,
+      "auto_reason": "ML=72 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 47.58,
+      "take_profit": 55.09,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "飞龙股份",
+      "close": 50.08
+    },
+    "sh600028": {
+      "enabled": false,
+      "auto_reason": "ML=68 pos=3%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 4.71,
+      "take_profit": 5.11,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "中国石化",
+      "close": 4.84
+    },
+    "sh688019": {
+      "enabled": false,
+      "auto_reason": "ML=67 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 302.6,
+      "take_profit": 350.38,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "安集科技",
+      "close": 318.53
+    },
+    "sh688702": {
+      "enabled": false,
+      "auto_reason": "ML=62 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 381.82,
+      "take_profit": 442.11,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "盛科通信",
+      "close": 401.92
+    },
+    "sh688184": {
+      "enabled": false,
+      "auto_reason": "ML=61 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 10.69,
+      "take_profit": 12.13,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "ST帕瓦",
+      "close": 11.17
+    },
+    "sh688623": {
+      "enabled": false,
+      "auto_reason": "ML=57 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 63.67,
+      "take_profit": 73.72,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "双元科技",
+      "close": 67.02
+    },
+    "sz301321": {
+      "enabled": false,
+      "auto_reason": "ML=54 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 47.31,
+      "take_profit": 54.78,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "翰博高新",
+      "close": 49.8
+    },
+    "sh688082": {
+      "enabled": false,
+      "auto_reason": "ML=52 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 380.02,
+      "take_profit": 440.02,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "盛美上海",
+      "close": 400.02
+    },
+    "sh688159": {
+      "enabled": false,
+      "auto_reason": "ML=51 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 35.49,
+      "take_profit": 41.1,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "有方科技",
+      "close": 37.36
+    },
+    "sh600520": {
+      "enabled": false,
+      "auto_reason": "ML=50 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 36.28,
+      "take_profit": 42.01,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "三佳科技",
+      "close": 38.19
+    },
+    "sh688179": {
+      "enabled": false,
+      "auto_reason": "ML=50 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 24.99,
+      "take_profit": 28.94,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "阿拉丁",
+      "close": 26.31
+    },
+    "sh688361": {
+      "enabled": false,
+      "auto_reason": "ML=48 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 396.93,
+      "take_profit": 459.6,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "中科飞测",
+      "close": 417.82
+    },
+    "sh603097": {
+      "enabled": false,
+      "auto_reason": "ML=46 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 15.78,
+      "take_profit": 18.27,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "江苏华辰",
+      "close": 16.61
+    },
+    "sh603799": {
+      "enabled": false,
+      "auto_reason": "ML=45 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 39.57,
+      "take_profit": 45.82,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "华友钴业",
+      "close": 41.65
+    },
+    "sh688037": {
+      "enabled": false,
+      "auto_reason": "ML=42 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 377.15,
+      "take_profit": 436.7,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "芯源微",
+      "close": 397.0
+    },
+    "sz300540": {
+      "enabled": false,
+      "auto_reason": "ML=40 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 41.7,
+      "take_profit": 48.29,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "蜀道装备",
+      "close": 43.9
+    },
+    "sh688419": {
+      "enabled": false,
+      "auto_reason": "ML=34 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 67.45,
+      "take_profit": 78.1,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "耐科装备",
+      "close": 71.0
+    },
+    "sh688141": {
+      "enabled": false,
+      "auto_reason": "ML=32 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 162.54,
+      "take_profit": 188.21,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "杰华特",
+      "close": 171.1
+    },
+    "sz000811": {
+      "enabled": false,
+      "auto_reason": "ML=32 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 48.87,
+      "take_profit": 56.58,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "冰轮环境",
+      "close": 51.44
+    },
+    "sh600207": {
+      "enabled": false,
+      "auto_reason": "ML=31 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 4.33,
+      "take_profit": 5.02,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "安彩高科",
+      "close": 4.56
+    },
+    "sh603499": {
+      "enabled": false,
+      "auto_reason": "ML=31 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 12.24,
+      "take_profit": 14.17,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "翔港科技",
+      "close": 12.88
+    },
+    "sh688120": {
+      "enabled": false,
+      "auto_reason": "ML=28 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 282.9,
+      "take_profit": 327.57,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "华海清科",
+      "close": 297.79
+    },
+    "sh603065": {
+      "enabled": false,
+      "auto_reason": "ML=26 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 19.61,
+      "take_profit": 22.7,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "宿迁联盛",
+      "close": 20.64
+    },
+    "sh600543": {
+      "enabled": false,
+      "auto_reason": "ML=25 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 3.71,
+      "take_profit": 4.2,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "莫高股份",
+      "close": 3.87
+    },
+    "sh688569": {
+      "enabled": false,
+      "auto_reason": "ML=25 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 16.05,
+      "take_profit": 17.69,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "铁科轨道",
+      "close": 16.6
+    },
+    "sh603992": {
+      "enabled": false,
+      "auto_reason": "ML=25 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 25.45,
+      "take_profit": 29.47,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "松霖科技",
+      "close": 26.79
+    },
+    "sh600330": {
+      "enabled": false,
+      "auto_reason": "ML=22 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 22.98,
+      "take_profit": 26.61,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "天通股份",
+      "close": 24.19
+    },
+    "sh603601": {
+      "enabled": false,
+      "auto_reason": "ML=21 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 9.58,
+      "take_profit": 11.09,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "再升科技",
+      "close": 10.08
+    },
+    "sh603878": {
+      "enabled": false,
+      "auto_reason": "ML=20 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 4.66,
+      "take_profit": 5.28,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "武进不锈",
+      "close": 4.87
+    },
+    "sh600381": {
+      "enabled": false,
+      "auto_reason": "ML=19 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 4.15,
+      "take_profit": 4.81,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "*ST春天",
+      "close": 4.37
+    },
+    "sh688347": {
+      "enabled": false,
+      "auto_reason": "ML=18 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 348.64,
+      "take_profit": 403.69,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "华虹公司",
+      "close": 366.99
+    },
+    "sz300068": {
+      "enabled": false,
+      "auto_reason": "ML=15 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 4.46,
+      "take_profit": 5.16,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "南都电源",
+      "close": 4.69
+    },
+    "sh688627": {
+      "enabled": false,
+      "auto_reason": "ML=12 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 577.6,
+      "take_profit": 668.8,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "精智达",
+      "close": 608.0
+    },
+    "sh688172": {
+      "enabled": false,
+      "auto_reason": "ML=12 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 76.16,
+      "take_profit": 88.19,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "燕东微",
+      "close": 80.17
+    },
+    "sh688200": {
+      "enabled": false,
+      "auto_reason": "ML=7 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 483.49,
+      "take_profit": 559.83,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "华峰测控",
+      "close": 508.94
+    },
+    "sh605589": {
+      "enabled": false,
+      "auto_reason": "ML=2 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 51.3,
+      "take_profit": 59.4,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "圣泉集团",
+      "close": 54.0
+    },
+    "sh688432": {
+      "enabled": false,
+      "auto_reason": "ML=2 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 48.35,
+      "take_profit": 55.98,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "有研硅",
+      "close": 50.89
+    },
+    "sh688147": {
+      "enabled": false,
+      "auto_reason": "ML=2 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 141.91,
+      "take_profit": 164.32,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "微导纳米",
+      "close": 149.38
+    },
+    "sh688337": {
+      "enabled": false,
+      "auto_reason": "ML=-1 pos=2%",
+      "max_position_pct": 0,
+      "min_ml_score": 85,
+      "stop_loss": 53.16,
+      "take_profit": 61.56,
+      "signal_types": [
+        "竞价抢筹",
+        "打板追封",
+        "盘中突破",
+        "尾盘急拉"
+      ],
+      "max_order_qty": 0,
+      "approved_at": "",
+      "name": "普源精电",
+      "close": 55.96
+    }
+  }
+}

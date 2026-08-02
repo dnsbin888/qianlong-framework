@@ -1,0 +1,866 @@
+[Config] 路径配置加载成功
+[Trader] Loaded CONFIG overrides from d:\\quant_framework\\live_trader_config.json
+[TradeKB] 34 hotkeys registered
+[Trader] Auto-sync + Auto-trade started (30s interval, link_trader enabled)
+[Realtime] 已加载缓存: 593只
+[Realtime] 初始股票池: 4468只A股, 取前1000只
+[Realtime] 后台缓存已启动 (3秒批量刷新)
+[TDXWatcher] Monitoring D:\通信达技术指标\六合一竞价擒龙（下载到电脑里解压）\六合一竞价擒龙（下载到电脑里解压）\T0002\tpool every 30s
+[App] 自动交易状态已恢复: auto=True
+[App] Paper auto-trade loop started
+[Scheduler] Evolution scheduler started
+[App] Auto-evolve system loaded
+[App] Knowledge base API loaded
+[System] 上次关闭: shutdown: 2026-06-22 21:20:25.579955
+[HealthCheck] === 启动健康检查 ===
+  [✅] 日线数据: D:\quant_web\stock_data.pkl.gz
+  [✅] 因子缓存: D:\quant_web\factor_cache.pkl
+  [✅] 价格缓存: D:\quant_web\..\quant_framework\price_cache.json
+  [✅] 股票名称: D:\quant_web\stock_names_full.csv
+  [✅] 交易配置: D:\quant_web\..\quant_framework\live_trader_config.json
+  [✅] 依赖: numpy
+  [✅] 依赖: pandas
+  [✅] 依赖: scipy
+  [✅] 依赖: flask
+  [✅] stock_data可读: 5860只
+[HealthCheck] 结果: 全部通过
+[PnL] 日频净值记录已启动 (每日15:30)
+============================================================
+  潜龙选股 Web 系统 v1.0
+  http://localhost:5002
+============================================================
+[Cache] 已加载 200 条回测缓存[Startup] Watchdog PID file stale, cleaning up
+
+[Init] Loading names...
+[Startup] Watchdog auto-started
+[Names] Loaded 5525 names from CSV
+[Names] Builtin: 394 names
+[Names] Full CSV loaded: 5525 names, total: 5633
+  + app.py
+  + auto_evolve.py
+  + data_collector.py
+  + watchdog.py
+  + dingtalk_alerts.py
+  + paper_engine.py
+  + risk_guard.py
+  + realtime_quotes.py
+  + live_trader_config.json
+  + templates/ (43 files)
+  + quant_agent/ (6 files)
+
+📦 备份完成: backup_20260622_212147.zip (282KB)
+[Startup] 日终报告已就绪 (每日15:05)
+[Startup] 盘前推送已就绪 (每日09:25)
+[Startup] 盘后因子更新已就绪 (每日15:30)
+[Startup] 日志清理已就绪 (每日)
+[Startup] 每日备份已就绪
+[Startup] Ready! Open http://localhost:5002
+[Memory] 内存监控已启动 (5分钟间隔)
+[Health] 启动自检中...
+[Health] ✅ 纸引擎就绪
+[Health] ✅ 因子缓存存在
+[Health] ⚠ THS持仓文件缺失/为空
+[Health] 自检完成: 2通过 1警告
+[2026-06-22 21:21:47] ==================================================
+[2026-06-22 21:21:47]   潜龙 Flask 看门狗 v3.0
+[2026-06-22 21:21:47]   检测: http://localhost:5002/api/paper-trade/v2
+[2026-06-22 21:21:47]   间隔: 60s  容错: 2次
+[2026-06-22 21:21:47]   重启上限: 5次/小时
+[2026-06-22 21:21:47]   PID: 33284
+[2026-06-22 21:21:47] ==================================================
+[2026-06-22 21:21:49] 心跳💓 Flask=OK
+[Names] Ready: 5633 names
+[LinkTrader] DLL loaded: D:\联动精灵\第三方交易接口\Win64\linkorder.dll
+
+ℹ️ [INFO] ✅ 潜龙系统已就绪
+行情:593只 | 因子:0条 | DLL:已加载
+策略:3个在线 | 时间:21:21
+
+[Industry] Ready: 5509 mappings
+[Names] Total: 5633 names
+[Init] Sector indices loaded: 110, source=📡 westock实时 (市场指数)
+[Init] 缓存版本匹配: 20260618_v2
+[Init] Factor cache loaded: 3500 items, patched=0, s0.signal_date=2026-06-22
+[Init] CACHE HIT: 5860 stocks + 3500 factors (instant!)
+[Paper] _load: cash=1035065.5549999999 (from file=1035065.5549999999), positions=0, trades=8, auto=True
+[Startup] Price cache: 5860 symbols
+[Startup] 每日自动进化已启用 (02:00)
+  + app.py
+  + auto_evolve.py
+  + data_collector.py
+  + watchdog.py
+  + dingtalk_alerts.py
+  + paper_engine.py
+  + risk_guard.py
+  + realtime_quotes.py
+  + live_trader_config.json
+  + templates/ (43 files)
+  + quant_agent/ (6 files)
+
+📦 备份完成: backup_20260622_212156.zip (282KB)
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 21:26:59] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 21:32:09] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 21:37:19] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[Trader] focus_ths异常: Error code from Windows: 0 - 操作成功完成。
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 21:42:30] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 21:47:40] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 21:52:50] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 21:58:01] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 22:03:11] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 22:08:21] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 22:13:31] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 22:18:41] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 22:23:52] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 22:29:02] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 22:34:12] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 22:39:22] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 22:44:33] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 22:49:43] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 22:54:53] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 23:00:03] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 23:05:14] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[ICIR] 权重已更新: 22个因子
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[Strategy] 已注册: 因子评分 (权重=40%)
+[Strategy] 已注册: 动量突破 (权重=30%)
+[Strategy] 已注册: 反转策略 (权重=30%)
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[SLOW] GET /api/auto-evolve/xgb-importance 16.7s
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[SLOW] GET /api/auto-evolve/xgb-importance 16.6s
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[SLOW] GET /api/screener/top_stocks 41.4s
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 23:10:24] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 23:15:34] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 23:20:44] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[SLOW] GET /api/auto-evolve/xgb-importance 15.5s
+[SLOW] GET /api/screener/top_stocks 19.2s
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+[2026-06-22 23:24:00] Flask 无响应 (1/2)
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[SLOW] GET /api/auto-evolve/xgb-importance 39.3s
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[SLOW] GET /api/auto-evolve/xgb-importance 37.0s
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[SLOW] GET /api/auto-evolve/xgb-importance 30.6s
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 23:25:03] Flask 已恢复 ✅
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 23:26:05] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[SLOW] GET /api/auto-evolve/xgb-importance 17.5s
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 23:31:15] 心跳💓 Flask=OK
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[SLOW] GET /api/auto-evolve/xgb-importance 17.2s
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[SLOW] GET /api/auto-evolve/xgb-importance 31.1s
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[SLOW] GET /api/auto-evolve/xgb-importance 30.6s
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[SLOW] GET /api/auto-evolve/xgb-importance 15.3s
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[SLOW] GET /api/auto-evolve/xgb-importance 15.5s
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+
+⚠️ [WARNING] ⚠️ 实盘持仓归零
+THS文件+跟踪文件均无持仓数据，请检查联动精灵是否正常导出
+
+[DirectRead] ⚠️ 实盘持仓归零，已推送告警
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[SLOW] GET /api/auto-evolve/xgb-importance 14.9s
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%
+[2026-06-22 23:36:28] 心跳💓 Flask=OK
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (65): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'lhb_days', 'limit_up', 'low', 'low_suction_score', 'ma_bull_score', 'ma_position', 'macd_score', 'main_force_net', 'main_force_ratio', 'main_up', 'mom_multi_score', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-22'
+[XGB-API]   .entry_time = '2026-06-22'
+[XGB-API]   .close = 19341.8
+[XGB-API]   .symbol = 'sh111001'[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh111001', 'sh113589', 'sh113618', 'sh113624', 'sh113632'][XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003'][SLOW] GET /api/auto-evolve/xgb-importance 18.3s
+
+[XGB]   'sh111001' in stock_data? True
+[XGB]   'sh113589' in stock_data? True
+[XGB]   'sh113618' in stock_data? True
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[SLOW] GET /api/auto-evolve/xgb-importance 31.2s
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[XGB-API] 权重已写入: D:\quant_web\data\factor_weights.json
+[SLOW] GET /api/auto-evolve/xgb-importance 27.8s
+[App] E259修复：从trade_log.csv重新计算胜率: 41笔交易, 胜率56.1%

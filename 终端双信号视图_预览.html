@@ -1,0 +1,33 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><title>终端双信号视图预览</title>
+<style>
+body{background:#0d0e10;color:#b4b6b8;font-family:sans-serif;padding:16px;max-width:640px;margin:0 auto}
+h2{color:#e3e3e3;font-size:15px;margin:16px 0 8px;border-bottom:1px solid #1d1f24;padding-bottom:4px}
+.card{background:#141619;border-radius:4px;padding:6px 10px;margin:4px 0;display:flex;align-items:center;gap:6px;font-size:11px}
+.card.live{border-left:3px solid #409eff}
+.score{font-weight:700;min-width:28px}.sym{font-weight:600;min-width:68px}.name{color:#888;font-size:10px;min-width:48px}
+.lv{font-weight:600;min-width:32px}.chg{min-width:44px}.cts{font-size:10px;color:#666}.pos{min-width:24px;color:#888;font-size:10px}
+.tag{min-width:36px;text-align:center;font-size:10px;font-weight:600;border-radius:3px;padding:1px 4px}
+.auto{color:#00b96b;background:rgba(0,185,107,.1)}.manual{background:#00b96b;color:#fff;cursor:pointer;border:none}
+.qmt{background:#409eff;color:#fff;cursor:pointer;border:none}.qmt-auto{color:#409eff;background:rgba(64,158,255,.1)}
+.qbar{display:flex;border-top:1px solid #1d1f24;margin-top:16px;padding:8px 0;gap:8px;font-size:10px;color:#888}
+.qbar b{color:#e3e3e3}
+</style></head><body>
+
+<h2>⚡ QMT 盘中实时信号</h2>
+<div style="color:#888;font-size:10px;margin-bottom:4px">QMT handlebar 每分钟检测，形态触发即推，独立于ML评分</div>
+<div class="card live"><span class="sym">sh600519</span><span class="name">贵州茅台</span><span style="color:#F1A100">盘中突破</span><span style="color:#FF4051">+3.2%</span><span class="pos" style="color:#409eff">1.5%</span><button class="tag qmt">⚡ 自动</button></div>
+<div class="card live"><span class="sym">sz000858</span><span class="name">五粮液</span><span style="color:#F1A100">竞价抢筹</span><span style="color:#FF4051">+2.1%</span><span class="pos" style="color:#409eff">1.5%</span><button class="tag qmt">⚡ 自动</button></div>
+<div class="card live"><span class="sym">sh600246</span><span class="name">万通发展</span><span style="color:#F1A100">板后接力</span><span style="color:#FF4051">-1.2%</span><span class="pos" style="color:#409eff">1.0%</span><button class="tag qmt">⚡ 自动</button></div>
+<div style="color:#888;font-size:9px;margin-top:2px">QMT形态信号走快速通道，不需要人工审批</div>
+
+<h2>📊 ML 日线信号</h2>
+<div style="color:#888;font-size:10px;margin-bottom:4px">09:30生成，60条，按市场状态自动/手动分流</div>
+<div class="card"><span class="score" style="color:#F1A100">102</span><span class="sym">sh600246</span><span class="name">万通发展</span><span class="lv" style="color:#F1A100">L5</span><span class="chg" style="color:#FF4051">+0.56%</span><span class="cts">🟢🟢🔴</span><span class="pos">4%</span><button class="tag manual">💰审</button></div>
+<div class="card"><span class="score" style="color:#F1A100">95</span><span class="sym">sh600519</span><span class="name">贵州茅台</span><span class="lv" style="color:#F1A100">L5</span><span class="chg" style="color:#FF4051">+2.1%</span><span class="cts">🟢🟢🟢</span><span class="pos">8%</span><span class="tag auto">⚡自动</span></div>
+<div class="card"><span class="score" style="color:#e3e3e3">78</span><span class="sym">sz000001</span><span class="name">平安银行</span><span class="lv">L3</span><span class="chg" style="color:#FF4051">+0.8%</span><span class="cts">🟢🟢🔴</span><span class="pos">3%</span><button class="tag manual">💰审</button></div>
+
+<div class="qbar">
+  <b>审批规则：</b> QMT形态信号→全自动⚡ | ML信号→熊市全手动💰 | 震荡双模自动 | 牛市全自动
+</div>
+
+</body></html>

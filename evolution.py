@@ -49,7 +49,7 @@ parser.add_argument("--mutation-rate", type=float, default=0.15)
 parser.add_argument("--elite-count", type=int, default=5)     # E1-1: 3→5
 parser.add_argument("--metric", choices=["sharpe","total_return","profit_factor","win_rate","pareto"], default="pareto")
 parser.add_argument("--start", default="2022-01-01")
-parser.add_argument("--end", default="2025-06-01")
+parser.add_argument("--end", default="2026-06-30")
 parser.add_argument("--strategy", default="tdx_resonance")
 parser.add_argument("--parallel", type=int, default=3)
 parser.add_argument("--output", default=r"d:\quant_framework\evolution_result.json")

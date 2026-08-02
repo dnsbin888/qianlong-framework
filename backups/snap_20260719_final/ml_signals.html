@@ -1,0 +1,283 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>ML信号复盘 — 潜龙</title>
+<link rel="stylesheet" href="/static/css/unified.css?v=9">
+<link rel="stylesheet" href="/static/css/style.css?v=3">
+<link rel="stylesheet" href="/static/css/kill-switch.css?v=1">
+<script src="/static/js/select_stock.js?v=9"></script>
+<style>
+/* ═══════════════════════════════════════════════════════════
+   ML信号页 v3 — 融合治理铁律+行业最佳实践
+   设计依据:
+   - 铁律#11: 字段顺序(识别→行情→评分→决策) | A股红涨绿跌 | 品种+模型筛选
+   - 铁律#10: 代码+名称成对出现
+   - 铁律#12: GBDT三模型(LGBM+XGBoost+CB Meta裁判)
+   - 铁律#14: 参数三层治理, 市场三态自适应
+   - 宪法#2: 竞品对标(私募/QuantConnect/BigQuant)
+   - 行业标准: Regime Context First | Decision Chain Visible
+   - 行业标准: Multi-Model Ensemble | Attribution Aware
+   ═══════════════════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0e10;color:#b4b6b8;font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;height:100vh;overflow:hidden}
+
+/* ═══ 布局 ═══ */
+.sc-wrap{display:flex;height:100vh;overflow:hidden}
+
+/* ═══ 左侧栏 ═══ */
+.sc-side{width:266px;min-width:266px;background:#141619;border-right:1px solid #202225;padding:12px 10px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;position:relative;transition:width 0.2s,min-width 0.2s,padding 0.2s;z-index:10;scrollbar-width:thin;scrollbar-color:#2a2c30 transparent}
+.sc-side::-webkit-scrollbar{width:4px}
+.sc-side::-webkit-scrollbar-track{background:transparent}
+.sc-side::-webkit-scrollbar-thumb{background:#2a2c30;border-radius:2px}
+.sc-side::-webkit-scrollbar-thumb:hover{background:#3a3c40}
+.sc-side.collapsed{width:44px;min-width:44px;padding:6px;overflow:hidden}
+.sc-side.collapsed>*{display:none}
+.sc-side.collapsed .sc-collapse-btn{display:flex}
+.sc-collapse-btn{position:absolute;top:50%;transform:translateY(-50%);right:-12px;width:22px;height:56px;background:#1d1f23;border:1px solid #2a2c30;border-radius:3px;cursor:pointer;font-size:13px;color:#666;display:flex;align-items:center;justify-content:center;z-index:10;user-select:none}
+.sc-collapse-btn:hover{color:#e3e3e3;border-color:#409eff}
+.sc-side-header{display:flex;align-items:center;gap:6px;padding-right:28px}
+.sc-side-logo{font-size:18px}
+.sc-side-title{font-size:13px;font-weight:700;color:#e3e3e3;white-space:nowrap}
+.sc-side-subtitle{font-size:9px;color:#555;white-space:nowrap}
+
+/* ═══ 主区 ═══ */
+.sc-main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#0d0e10}
+.sc-top{padding:8px 12px 4px;flex-shrink:0}
+.sc-table-area{flex:1;overflow:hidden;padding:0 12px 8px;display:flex;flex-direction:column}
+.sc-tbl-wrap{border:1px solid #202225;border-radius:4px;background:#141619;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.sc-tbl-scroll{flex:1;overflow:auto}
+.sc-tbl{width:100%;border-collapse:collapse;font-size:11px;table-layout:auto}
+.sc-tbl thead{position:sticky;top:0;z-index:5}
+.sc-tbl th{background:#1a1c21;padding:6px 8px;text-align:left;font-weight:500;border-bottom:2px solid #202225;white-space:nowrap;color:#777;font-size:10.5px;cursor:pointer;user-select:none;transition:color .15s}
+.sc-tbl th:hover{color:#e3e3e3}
+.sc-tbl th .sort-arrow{font-size:9px;margin-left:1px;color:#555}
+.sc-tbl td{padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.025);white-space:nowrap;font-size:11px;user-select:text;-webkit-user-select:text}
+.sc-tbl td::selection{background:rgba(64,158,255,.35);color:#fff}
+.sc-tbl tr:hover td{background:rgba(64,158,255,.05)}
+
+.sc-tbl tr.q-high td{background:rgba(255,20,147,.06)}
+.sc-tbl tr.q-high:hover td{background:rgba(224,64,251,.08)}
+.sc-tbl tr.q-resonance td{background:rgba(241,161,0,.03)}
+.sc-tbl tr.q-resonance:hover td{background:rgba(241,161,0,.07)}
+.sc-tbl tr.q-low td{background:rgba(0,185,107,.03)}
+
+.card{background:#16181d;border:1px solid #1d1f24;border-radius:4px;padding:9px 10px;transition:border-color .15s}
+.card:hover{border-color:#25282e}
+.card-title{font-size:11px;font-weight:600;color:#c0c2c6;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.card-hint{font-size:9px;color:#555;margin-top:3px;line-height:1.4}
+
+.up,.red{color:#FF4051}.dn,.green{color:#00b96b}
+.gold{color:#F1A100}.blue{color:#409eff}.purple{color:#e040fb}
+
+.score-s{color:#F1A100;font-weight:700;font-size:13px}
+.score-a{color:#e3e3e3;font-weight:600}
+.score-b{color:#b4b6b8}
+.score-c{color:#888}
+
+.tag{font-size:9px;padding:1px 6px;border-radius:2px;font-weight:600;display:inline-block;line-height:1.5}
+.tag-bull{background:rgba(255,64,81,.12);color:#FF4051}
+.tag-bear{background:rgba(0,185,107,.10);color:#00b96b}
+.tag-ml{background:rgba(64,158,255,.10);color:#409eff}
+.tag-side{background:rgba(241,161,0,.10);color:#F1A100}
+
+.dot-on-l{color:#00b96b}.dot-on-x{color:#409eff}.dot-on-c{color:#F1A100}
+.dot-off{color:#333}
+
+.cb-tag{font-size:9px;font-weight:700;margin-left:2px}
+.cb-ok{color:#F1A100}.cb-warn{color:#888}.cb-no{color:#FF4051}
+
+.lv-badge{padding:1px 6px;border-radius:2px;font-size:10px;font-weight:700;display:inline-block}
+.lv5{background:rgba(255,64,81,.12);color:#FF4051}
+.lv4{background:rgba(241,161,0,.10);color:#F1A100}
+.lv3{background:rgba(64,158,255,.10);color:#409eff}
+.lv2{background:rgba(136,136,136,.1);color:#999}
+.lv1{background:rgba(85,85,85,.06);color:#666}
+
+.ql-bar-wrap{display:inline-flex;align-items:center;gap:4px}
+.ql-bar{width:36px;height:5px;background:#1d1f23;border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle}
+.ql-bar div{height:100%;border-radius:3px;transition:width .3s}
+
+.kpi-card{background:#16181d;border:1px solid #1d1f24;border-radius:4px;padding:7px 10px;text-align:center;cursor:pointer;transition:border-color .15s;flex:1;min-width:70px}
+.kpi-card:hover{border-color:#409eff}
+.kpi-card.clickable:hover{border-color:#F1A100}
+.kpi-l{font-size:10px;color:#777;margin-bottom:1px}
+.kpi-v{font-size:18px;font-weight:700}
+.kpi-sub{font-size:9px;color:#555;margin-top:1px}
+
+.btn{font-size:10px;padding:2px 8px;border-radius:3px;cursor:pointer;border:1px solid #2a2c30;background:#1d1f23;color:#777;transition:all .12s;white-space:nowrap;font-family:inherit}
+.btn:hover{color:#e3e3e3;border-color:#555}
+.btn.on,.btn.active{background:rgba(64,158,255,.1);color:#409eff;border-color:rgba(64,158,255,.3)}
+.btn.ap{background:rgba(64,158,255,.1);color:#409eff;border-color:rgba(64,158,255,.3);font-weight:600;padding:3px 10px;font-size:10px}
+.btn.ap:hover{background:rgba(64,158,255,.18)}
+.btn.rj{color:#555;border-color:transparent;background:transparent;padding:3px 6px;font-size:10px}
+.btn.rj:hover{color:#FF4051}
+.btn.ok{background:rgba(0,185,107,.08);color:#00b96b;border-color:rgba(0,185,107,.2)}
+.btn.warn{background:rgba(241,161,0,.08);color:#F1A100;border-color:rgba(241,161,0,.2)}
+.btn.primary{width:100%;font-size:11px;padding:7px;background:rgba(64,158,255,.1);color:#409eff;border:1px solid rgba(64,158,255,.25);border-radius:3px;cursor:pointer;font-family:inherit;font-weight:600}
+.btn.primary:hover{background:rgba(64,158,255,.18)}
+.btn.alt{width:100%;font-size:10px;margin-top:3px;padding:5px;background:#1d1f23;color:#777;border:1px solid #2a2c30;border-radius:3px;cursor:pointer;font-family:inherit}
+.btn.alt:hover{color:#e3e3e3}
+
+.ck-row{display:flex;align-items:center;gap:4px;font-size:10.5px;color:#b4b6b8;padding:2px 4px;cursor:pointer;white-space:nowrap;border-radius:2px}
+.ck-row:hover{background:rgba(64,158,255,.04)}
+.ck-row input{accent-color:#409eff;width:13px;height:13px}
+
+.market-row{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;padding:1.5px 0}
+.factor-row{display:flex;justify-content:space-between;padding:2.5px 4px;font-size:10.5px;border-bottom:1px solid #15171c;cursor:pointer;border-radius:2px;transition:background .1s}
+.factor-row:hover{background:rgba(64,158,255,.05)}
+.factor-row .ic{font-weight:600;font-size:11px}
+.sector-row{font-size:10px;margin:1px 0;cursor:pointer;padding:1px 2px;border-radius:2px}
+.sector-row:hover{color:#e3e3e3;background:rgba(64,158,255,.04)}
+.sector-bar{height:12px;background:#1a1c21;border-radius:2px;margin:1px 0 3px;overflow:hidden}
+.sector-bar div{height:100%;float:left;border-radius:2px;min-width:2px}
+.q-row{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;padding:2.5px 4px;cursor:pointer;border-radius:2px;transition:background .1s}
+.q-row:hover{background:rgba(64,158,255,.04);color:#e3e3e3}
+.heat-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle;flex-shrink:0}
+
+.divider{height:1px;background:#1d1f24;margin:2px 0}
+.muted{color:#555;font-size:9px}
+.mono{font-family:"Cascadia Code","Fira Code","Consolas",monospace;font-size:10.5px}
+
+.empty-state{text-align:center;padding:40px;color:#444}
+.empty-state .icon{font-size:36px;margin-bottom:8px}
+.empty-state .msg{font-size:12px}
+
+@media(max-width:1000px){.sc-side{width:220px;min-width:220px}.sc-side.collapsed{width:36px;min-width:36px}}
+@media(max-width:700px){.sc-side{display:none}.sc-top{padding:6px}.sc-table-area{padding:0 4px 6px}}
+</style>
+</head>
+<body>
+
+{% include '_topbar.html' %}
+
+<div class="sc-wrap" style="height:calc(100vh - 44px)">
+<aside class="sc-side collapsed" id="sideBar">
+  <div class="sc-collapse-btn" onclick="toggleSidebar()" title="展开侧栏" style="display:flex">»</div>
+  <div class="sc-side-header">
+    <span class="sc-side-logo">🧠</span>
+    <div><div class="sc-side-title">ML 选股排序</div><div class="sc-side-subtitle">LGBM+XGBoost+Ridge</div></div>
+  </div>
+
+  <div class="card" id="regimeCard">
+    <div class="card-title">📊 市场 <span class="muted" id="marketAge" style="float:right">--</span></div>
+    <div id="regimeContent" style="font-size:10px;color:#888">加载中...</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:1px;margin-top:2px" id="quickFilters">
+    <div class="q-row" onclick="quickFilter('auto_full')"><span>🔥 自动交易</span><b class="gold" id="qfFull">--</b><span class="muted" id="qfFullDetail" style="float:none">≥门槛</span></div>
+    <div class="q-row" onclick="quickFilter('auto_half')"><span>⚡ 单模型</span><b class="blue" id="qfHalf">--</b><span class="muted" id="qfHalfDetail" style="float:none">1模型</span></div>
+    <div class="q-row" onclick="quickFilter('review')"><span>👁 待审核</span><b style="color:#888" id="qfReview">--</b><span class="muted" style="float:none">低于门槛</span></div>
+    <div class="q-row" onclick="quickFilter('blocked')"><span>🚫 已拦截</span><b style="color:#FF4051" id="qfBlocked">--</b><span class="muted" style="float:none">分歧/拦截</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔥 因子贡献 <span class="muted" style="float:right">IC</span></div>
+    <div id="factorList"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🏭 板块集中度 <span id="sectorWarn" style="font-size:9px;float:right"></span></div>
+    <div id="sectorList"></div>
+  </div>
+
+  <div class="divider"></div>
+  <button class="btn primary" onclick="approveAllQuality()">📥 批准全部优质</button>
+  <button class="btn alt" onclick="exportCSV()">📤 导出CSV</button>
+</aside>
+
+<main class="sc-main">
+  <div class="sc-top">
+    <div style="display:flex;gap:5px;margin-bottom:5px;flex-wrap:wrap" id="kpiRow">
+      <div class="kpi-card"><div class="kpi-l">📊 信号</div><div class="kpi-v blue" id="kpiTotal">--</div></div>
+      <div class="kpi-card clickable" onclick="quickFilter('auto_full')" title="点击过滤"><div class="kpi-l">🔥 自动</div><div class="kpi-v gold" id="kpiResonance">--</div></div>
+      <div class="kpi-card clickable" onclick="quickFilter('auto_half')" title="点击过滤"><div class="kpi-l">⚡ 单模型</div><div class="kpi-v green" id="kpiAuto">--</div></div>
+      <div class="kpi-card"><div class="kpi-l">⭐ 均分</div><div class="kpi-v" style="color:#e3e3e3" id="kpiAvg">--</div></div>
+      <div class="kpi-card" onclick="loadAll()" title="点击刷新"><div class="kpi-l">🕐 更新</div><div class="kpi-v" style="color:#888;font-size:13px" id="kpiTime">--</div></div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;flex-wrap:wrap">
+      <span class="muted" style="font-size:10px">品种</span>
+      <span class="btn on" data-type="all" onclick="setType(this)">全部</span>
+      <span class="btn" data-type="STOCK" onclick="setType(this)">个股</span>
+      <span class="btn" data-type="ETF" onclick="setType(this)">ETF</span>
+      <span class="btn" data-type="INDEX" onclick="setType(this)">指数</span>
+      <span class="btn" data-type="BOND" onclick="setType(this)">转债</span>
+
+      <span class="muted" style="font-size:10px;margin-left:8px">模型</span>
+      <label class="ck-row"><input type="checkbox" id="chkLGBM" checked onchange="onFilterChange()">LGBM <span class="muted" id="cntLGBM"></span></label>
+      <label class="ck-row"><input type="checkbox" id="chkXGB" checked onchange="onFilterChange()">XGB <span class="muted" id="cntXGB"></span></label>
+      <label class="ck-row"><input type="checkbox" id="chkRidge" checked onchange="onFilterChange()">Ridge <span class="muted" id="cntRidge"></span></label>
+
+      <span class="muted" style="font-size:10px;margin-left:8px">策略</span>
+      <span class="btn on" data-signal="ML" onclick="toggleSignal(this)">ML</span>
+      <span class="btn on" data-signal="打板" onclick="toggleSignal(this)">打板</span>
+      <span class="btn on" data-signal="反转" onclick="toggleSignal(this)">反转</span>
+
+      <span class="muted" style="font-size:10px;margin-left:8px">模式</span>
+      <span class="btn on" data-mode="or" onclick="setMode(this)">OR (任一)</span>
+      <span class="btn" data-mode="and" onclick="setMode(this)">AND (全部)</span>
+
+      <span style="font-size:9.5px;color:#555;white-space:nowrap">📋 <span style="color:#409eff">L=排序分</span> <span style="color:#666">(主力)</span> ▸ <span style="color:#00b96b">X=参考</span> <span style="color:#666">(待CSRank)</span> ▸ <span style="color:#e040fb">R=校准</span> ▸ 🎯策略终判</span>
+      <span style="font-size:9px;color:#444;margin:0 6px">|</span>
+      <span style="margin-left:auto;font-size:10px;color:#444">点击表头排序 | Ctrl+B侧栏 | 策略筛选: 全部 ML 打板 反转</span>
+      <button class="btn" onclick="loadAll()" style="margin-left:4px" title="手动刷新">🔄</button>
+    </div>
+  </div>
+
+  <div class="sc-table-area">
+  <div class="sc-tbl-wrap">
+  <div class="sc-tbl-scroll" id="tableContainer">
+    <div class="empty-state"><div class="icon">⏳</div><div class="msg">加载中...</div></div>
+  </div>
+  </div>
+  </div>
+</main>
+</div>
+
+<div style="position:fixed;bottom:6px;right:14px;font-size:9px;color:#444;pointer-events:none">
+  ML信号 v3 | LGBM+XGBoost+Ridge 排序 | 数据源: signal_table.json | 自动刷新 60s
+</div>
+
+<script>
+var ALL=[], FILTER={type:'all',models:{LGBM:true,XGB:true,Ridge:true},mode:'or',signal:{ML:true,打板:true,反转:true},quick:null}, SORT={field:'combined_score',asc:false}, MARKET=null, APPROVED={};
+function savePrefs(){try{localStorage.setItem('ml_v3_prefs',JSON.stringify({type:FILTER.type,mode:FILTER.mode,sort:SORT}))}catch(e){}}
+function loadPrefs(){try{var p=JSON.parse(localStorage.getItem('ml_v3_prefs'));if(p){FILTER.type=p.type||'all';FILTER.mode=p.mode||'or';if(p.sort)SORT=p.sort}}catch(e){}}
+loadPrefs();
+function classify(sym){var s=sym.toLowerCase();if(/^(sh51|sh58|sh56|sh15|sz15|sz16|sh50|sz159)/.test(s))return'ETF';if(/^(sh000|sz399|sz98|bj8|bj9)/.test(s))return'INDEX';if(/^(sh11|sh12|sh13|sh14|sz11|sz12|sz13|sz18)/.test(s))return'BOND';return'STOCK'}
+
+function loadAll(){
+  fetch('/api/market-regime').then(function(r){return r.json()}).then(function(d){if(d.code===200){MARKET=d;renderRegime()}}).catch(function(){});
+  fetch('/api/factor/xgb-status').then(function(r){return r.json()}).then(function(d){var facts=(d&&d.factors&&d.factors.list)||[];renderFactors(facts)}).catch(function(){});
+  fetch('/api/signal-table').then(function(r){return r.json()}).then(function(D){ALL=Array.isArray(D)?D:(D.data||[]);refresh();renderSectors();renderQualityDist()}).catch(function(){});
+}
+
+function renderRegime(){if(!MARKET||MARKET.code!==200)return;var m=MARKET,lb={bull:['🐂 牛市','放宽','#FF4051'],sideways:['📊 震荡','收紧','#F1A100'],bear:['🐻 熊市','收缩','#00b96b'],unknown:['❓ 未知','--','#888']},r=lb[m.regime]||lb.unknown,ps=m.position_scale||0.5,mp=m.max_positions||3,h='';h+='<div style="font-size:15px;font-weight:800;color:'+r[2]+';margin-bottom:4px">'+r[0]+' <span style="font-size:11px;font-weight:500">· 仓位'+r[1]+'</span></div>';h+='<div class="market-row"><span>单票</span><span style="color:#e3e3e3">≤'+Math.round((ps*15))+'%</span></div>';h+='<div class="market-row"><span>最多</span><span style="color:#e3e3e3">'+mp+'只</span></div>';h+='<div class="card-hint">四因子: 趋势+量价+宽度+波动</div>';document.getElementById('regimeContent').innerHTML=h;document.getElementById('marketAge').textContent='实时';var regime=m.regime||'sideways',cfg2={bull:{ml:65,pos:15,n2:'可'},sideways:{ml:75,pos:10,n2:'可'},bear:{ml:85,pos:5,n2:'否'}},c2=cfg2[regime]||cfg2.sideways;document.getElementById('qfFullDetail').textContent='综合>'+c2.ml+' pos≤'+c2.pos+'%';document.getElementById('qfHalfDetail').textContent='1模型 半仓';document.getElementById('qfReview').nextElementSibling.textContent='综合<'+c2.ml+' 待审';window._REGIME_CFG=c2}
+
+function renderFactors(facts){var el=document.getElementById('factorList');if(!facts.length){el.innerHTML='<div class="muted">暂无IC数据</div>';return}facts.sort(function(a,b){return Math.abs(b.ic_5d||0)-Math.abs(a.ic_5d||0)});var colors=['#409eff','#00b96b','#F1A100','#e040fb','#FF4051'];el.innerHTML=facts.slice(0,5).map(function(f,i){var ic=f.ic_5d||0,sign=ic>=0?'+':'';return'<div class="factor-row" title="'+(f.display||f.name)+'"><span style="color:'+(colors[i]||'#e3e3e3')+'">'+(i+1)+'. '+(f.display||f.name)+'</span><span class="ic" style="color:'+(ic>0?'#00b96b':'#FF4051')+'">'+sign+ic.toFixed(3)+'</span></div>'}).join('')}
+
+function renderSectors(){var sects={},sectStocks={};ALL.forEach(function(r){if(r.industry){sects[r.industry]=(sects[r.industry]||0)+(r.position_pct||0);sectStocks[r.industry]=(sectStocks[r.industry]||0)+1}});var sorted=Object.entries(sects).sort(function(a,b){return b[1]-a[1]}).slice(0,6),el=document.getElementById('sectorList');if(!sorted.length){el.innerHTML='<div class="muted">暂无数据</div>';return}var maxN=sorted[0][1],total=sorted.reduce(function(s,x){return s+x[1]},0)||1,over30=sorted.filter(function(s){return s[1]/total*100>30});document.getElementById('sectorWarn').textContent=over30.length?'⚠ '+over30.length+'超限':'✅ 安全';var barColors=['#409eff','#00b96b','#F1A100','#e040fb','#FF4051','#00bcd4'];el.innerHTML=sorted.map(function(s,i){var pct=(s[1]/total*100).toFixed(0),cnt=sectStocks[s[0]]||0;return'<div class="sector-row" onclick="filterSector(\''+s[0].replace(/'/g,"\\'")+'\')">'+s[0]+' <b style="color:#e3e3e3">'+cnt+'只</b> ('+pct+'%)'+(pct>30?' <span style="color:#FF4051">⚠</span>':'')+'</div><div class="sector-bar"><div style="width:'+(s[1]/maxN*100).toFixed(0)+'%;background:'+(barColors[i]||'#888')+'"></div></div>'}).join('')}
+
+function renderQualityDist(){var cfg4=window._REGIME_CFG||{ml:75,pos:10},ML_MIN=cfg4.ml,POS_MAX=cfg4.pos;document.getElementById('qfFull').textContent=ALL.filter(function(r){return(r.combined_score||0)>ML_MIN&&(r.position_pct||0)<=POS_MAX&&r.auto_enabled}).length+'只';document.getElementById('qfHalf').textContent=ALL.filter(function(r){return(r.combined_score||0)>ML_MIN&&(r.position_pct||0)<=POS_MAX&&r.n_models===1}).length+'只';document.getElementById('qfReview').textContent=ALL.filter(function(r){return(r.combined_score||0)<=ML_MIN&&(r.combined_score||0)>=50&&!r.auto_enabled}).length+'只';document.getElementById('qfBlocked').textContent=ALL.filter(function(r){var d=r.decision||'';return d.indexOf('🚫')>=0||d.indexOf('⏸️')>=0||d.indexOf('⚠️')>=0}).length+'只'}
+
+function getFiltered(){var rows=ALL.slice();if(FILTER.type!=='all'){rows=rows.filter(function(r){return(r.type||classify(r.symbol))===FILTER.type})}rows=rows.filter(function(r){var c=r.consensus||'';if(!FILTER.signal.ML&&c!=='打板'&&c!=='反转')return false;if(!FILTER.signal.打板&&c==='打板')return false;if(!FILTER.signal.反转&&c==='反转')return false;return true});var active=[];if(FILTER.models.LGBM)active.push('LGBM');if(FILTER.models.XGB)active.push('XGB');if(FILTER.models.Ridge)active.push('Ridge');if(active.length===0)return[];rows=rows.filter(function(r){var hasL=!!(r.lgbm_score),hasX=!!(r.xgb_score),hasR=!!(r.ridge_score),nonML=(r.consensus||'')==='打板'||(r.consensus||'')==='反转';if(nonML)return true;if(FILTER.mode==='or'){return(FILTER.models.LGBM&&hasL)||(FILTER.models.XGB&&hasX)||(FILTER.models.Ridge&&hasR)}else{return(!FILTER.models.LGBM||hasL)&&(!FILTER.models.XGB||hasX)&&(!FILTER.models.Ridge||hasR)}});var cfg3=window._REGIME_CFG||{ml:75,pos:10},ML_MIN=cfg3.ml,POS_MAX=cfg3.pos;if(FILTER.quick==='auto_full')rows=rows.filter(function(r){return(r.combined_score||0)>ML_MIN&&(r.position_pct||0)<=POS_MAX&&r.auto_enabled});else if(FILTER.quick==='auto_half')rows=rows.filter(function(r){return(r.combined_score||0)>ML_MIN&&(r.position_pct||0)<=POS_MAX&&r.n_models===1});else if(FILTER.quick==='review')rows=rows.filter(function(r){return(r.combined_score||0)<=ML_MIN&&(r.combined_score||0)>=50&&!r.auto_enabled});else if(FILTER.quick==='blocked')rows=rows.filter(function(r){var d=r.decision||'';return d.indexOf('🚫')>=0||d.indexOf('⏸️')>=0||d.indexOf('⚠️')>=0});rows.forEach(function(r){r._actionSort=r.auto_enabled?1:APPROVED[r.symbol]==='done'?2:(r.decision||'').indexOf('🚫')>=0?4:3;var sh=window._sectorHeat&&window._sectorHeat[r.industry];r._indRank=sh?sh.rank:999;r._sourceSort=(r.consensus||'')==='打板'?0:(r.consensus||'')==='反转'?1:2;r._lvSort=(r.signal||'').match(/Lv(\d)/)?parseInt((r.signal||'').match(/Lv(\d)/)[1]):0});rows.sort(function(a,b){var va=SORT.field==='action'?a._actionSort:SORT.field==='industry'?a._indRank:SORT.field==='source'?a._sourceSort:SORT.field==='buy_signal'?a._lvSort:a[SORT.field],vb=SORT.field==='action'?b._actionSort:SORT.field==='industry'?b._indRank:SORT.field==='source'?b._sourceSort:SORT.field==='buy_signal'?b._lvSort:b[SORT.field];if(va==null)va=typeof vb==='string'?'':0;if(vb==null)vb=typeof va==='string'?'':0;if(typeof va==='string')va=va.toLowerCase();if(typeof vb==='string')vb=vb.toLowerCase();if(va<vb)return SORT.asc?-1:1;if(va>vb)return SORT.asc?1:-1;return 0});return rows}
+
+function refresh(){savePrefs();var rows=getFiltered();var cfg5=window._REGIME_CFG||{ml:75,pos:10},ML_MIN=cfg5.ml,POS_MAX=cfg5.pos,autoOK=rows.filter(function(r){return(r.combined_score||0)>ML_MIN&&(r.position_pct||0)<=POS_MAX&&r.auto_enabled}).length,singleModel=rows.filter(function(r){return(r.combined_score||0)>ML_MIN&&(r.position_pct||0)<=POS_MAX&&r.n_models===1}).length,avgScore=rows.length?Math.round(rows.reduce(function(s,r){return s+(r.combined_score||0)},0)/rows.length):0,genTime=ALL.length&&ALL[0]._generated_at?ALL[0]._generated_at:'--';document.getElementById('kpiTotal').textContent=rows.length;document.getElementById('kpiResonance').textContent=autoOK;document.getElementById('kpiAuto').textContent=singleModel;document.getElementById('kpiAvg').textContent=avgScore;document.getElementById('kpiTime').textContent=genTime;document.getElementById('cntLGBM').textContent='('+ALL.filter(function(r){return!!r.lgbm_score}).length+')';document.getElementById('cntXGB').textContent='('+ALL.filter(function(r){return!!r.xgb_score}).length+')';document.getElementById('cntRidge').textContent='('+ALL.filter(function(r){return!!r.ridge_score}).length+')';var html='<table class="sc-tbl"><thead><tr>';var cols=[['#','idx',30],['代码','symbol',70],['名称','name',72],['行业','industry',72],['来源','source',38],['现价','current_price',55],['涨跌','current_change_pct',55],['L','lgbm_score',40],['X','xgb_score',40],['R','ridge_score',40],['综合','combined_score',46],['等级','buy_signal',42],['仓位','position_pct',46],['止损','stop_loss',50],['操作','action',80]];cols.forEach(function(c){var arrow=(c[1]&&c[1]===SORT.field)?(' <span class="sort-arrow">'+(SORT.asc?'▲':'▼')+'</span>'):'';html+='<th onclick="toggleSort(\''+c[1]+'\')" style="min-width:'+c[2]+'px">'+c[0]+arrow+'</th>'});html+='</tr></thead><tbody>';(function(){var sects={};ALL.forEach(function(r){if(!r.industry)return;var c=(r.current_change_pct||r.change_pct||0);if(!sects[r.industry])sects[r.industry]={sum:0,n:0,up:0};sects[r.industry].sum+=c;sects[r.industry].n++;if(c>0)sects[r.industry].up++});var heat=[];for(var ind in sects){var s=sects[ind];heat.push({ind:ind,avg:s.sum/s.n,upR:s.up/s.n,n:s.n})}heat.sort(function(a,b){return b.avg-a.avg});window._sectorHeat={};heat.forEach(function(h,i){window._sectorHeat[h.ind]={avg:h.avg,upR:h.upR,n:h.n,rank:i,hot:i<3||h.avg>2}})})();if(!rows.length){html+='<tr><td colspan="16"><div class="empty-state"><div class="icon">📭</div><div class="msg">无匹配信号 — 调整筛选条件</div></div></td></tr>'}else{rows.forEach(function(r,i){var sc=r.combined_score||0,scCls=sc>=90?'score-s':sc>=80?'score-a':sc>=60?'score-b':'score-c',chg=(r.current_change_pct||r.change_pct||0);var sh=window._sectorHeat&&window._sectorHeat[r.industry];var hColor='#555';if(sh&&sh.hot)hColor='#FF4051';else if(sh&&sh.avg>1)hColor='#FF6D3F';else if(sh&&sh.avg>0)hColor='#F1A100';else if(sh&&sh.avg>-1)hColor='#888';else if(sh)hColor='#00b96b';var indHtml=r.industry?('<span class="heat-dot" style="background:'+hColor+'" title="板块均涨'+(sh?sh.avg.toFixed(1):'?')+'% '+ (sh?sh.n:0)+'只"></span>'+r.industry):'--';var src='';if((r.consensus||'')==='打板')src='<span class="tag tag-bull">打板</span>';else if((r.consensus||'')==='反转')src='<span class="tag tag-bear">反转</span>';else{var nL=!!r.lgbm_score,nX=!!r.xgb_score,nR=!!r.ridge_score;if(nL&&nX&&nR)src='<span class="tag tag-ml">L+X+R</span>';else if(nL&&nX)src='<span class="tag tag-ml">L+X</span>';else if(nL)src='<span style="color:#409eff;font-size:10px;font-weight:600">LGBM</span>';else if(nX)src='<span style="color:#00b96b;font-size:10px;font-weight:600">XGB</span>';else src='<span class="tag tag-side">因子</span>'};var lS=(r.lgbm_score||0)>0?'<span style="color:#409eff;font-weight:600">'+(r.lgbm_score||0).toFixed(0)+'</span>':'<span style="color:#333">--</span>',xS=(r.xgb_score||0)>0?'<span style="color:#00b96b;font-weight:600">'+(r.xgb_score||0).toFixed(0)+'</span>':'<span style="color:#333">--</span>',rS=(r.ridge_score||0)>0?'<span style="color:#e040fb;font-weight:600">'+(r.ridge_score||0).toFixed(0)+'</span>':'<span style="color:#333">--</span>';var signal=r.signal||'',lv=1,m=signal.match(/Lv(\d)/);if(m)lv=parseInt(m[1]);else if((r.combined_score||0)>80)lv=5;else if((r.combined_score||0)>60)lv=3;else lv=2;var lvLabel=lv>=5?'L5 🔥':'L'+lv,apd=APPROVED[r.symbol];var blocked=r.decision&&(r.decision.indexOf('🚫')>=0||r.decision.indexOf('⏸️')>=0||r.decision.indexOf('⚠️')>=0);if(apd==='done')apHtml='<span class="btn ok" style="cursor:default">✓ 已批</span>';else if(apd==='sending')apHtml='<span style="color:#F1A100;font-size:10px">⏳</span>';else if(r.auto_enabled)apHtml='<span class="btn ok" style="cursor:default">自动</span>';else if(blocked)apHtml='<span style="color:#888;font-size:10px">'+r.decision+'</span>';else apHtml='<button class="btn ap" onclick="doApprove(\''+r.symbol+'\','+(r.position_pct||0)+','+(r.close||0)+',\''+(r.decision||'').replace(/'/g,"\\'")+'\')">批准</button><button class="btn rj" onclick="doReject(\''+r.symbol+'\')" title="拒绝">✕</button>',rowCls='';if(r.auto_enabled)rowCls='q-resonance';var decision=r.decision||'',decIcon='';if(decision.indexOf('共振')>=0)decIcon=' ✅';else if(decision.indexOf('分歧')>=0)decIcon=' ⚠️';else if(decision.indexOf('降级')>=0)decIcon=' ⏸️';html+='<tr class="'+rowCls+'"><td style="color:#555">'+(i+1)+'</td><td class="mono">'+r.symbol+'</td><td>'+(r.name||r.symbol)+decIcon+'</td><td>'+indHtml+'</td><td>'+src+'</td><td class="mono">¥'+((r.current_price||r.close||0)).toFixed(2)+'</td><td class="'+(chg>=0?'up':'dn')+'">'+(chg>=0?'+':'')+chg.toFixed(1)+'%</td><td>'+lS+'</td><td>'+xS+'</td><td>'+rS+'</td><td><span class="'+scCls+'">'+Math.round(sc)+'</span></td><td><span class="lv-badge lv'+lv+'">'+lvLabel+'</span></td><td>'+((r.position_pct||0)).toFixed(1)+'%</td><td class="mono">'+(r.stop_loss?'¥'+r.stop_loss.toFixed(2):'--')+'</td><td>'+apHtml+'</td></tr>'})}html+='</tbody></table>';document.getElementById('tableContainer').innerHTML=html}
+
+function toggleSidebar(){var s=document.getElementById('sideBar');s.classList.toggle('collapsed');s.querySelector('.sc-collapse-btn').textContent=s.classList.contains('collapsed')?'»':'«'}
+function toggleSort(field){if(!field)return;if(SORT.field===field)SORT.asc=!SORT.asc;else{SORT.field=field;SORT.asc=false}refresh()}
+function setType(el){document.querySelectorAll('[data-type]').forEach(function(b){b.classList.remove('on')});el.classList.add('on');FILTER.type=el.dataset.type;FILTER.quick=null;refresh()}
+function setMode(el){document.querySelectorAll('[data-mode]').forEach(function(b){b.classList.remove('on')});el.classList.add('on');FILTER.mode=el.dataset.mode;refresh()}
+function toggleSignal(el){el.classList.toggle('on');FILTER.signal[el.dataset.signal]=el.classList.contains('on');refresh()}
+function onFilterChange(){FILTER.models.LGBM=document.getElementById('chkLGBM').checked;FILTER.models.XGB=document.getElementById('chkXGB').checked;FILTER.models.Ridge=document.getElementById('chkRidge').checked;refresh()}
+function quickFilter(type){FILTER.quick=FILTER.quick===type?null:type;refresh()}
+function filterSector(name){var orig=ALL;ALL=orig.filter(function(r){return r.industry===name});FILTER.type='all';FILTER.quick=null;document.querySelectorAll('[data-type]').forEach(function(b){b.classList.remove('on')});var allBtn=document.querySelector('[data-type="all"]');if(allBtn)allBtn.classList.add('on');refresh();ALL=orig}
+function doApprove(sym,posPct,close,decision){APPROVED[sym]='sending';refresh();fetch('/api/signal/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({symbol:sym,position_pct:posPct||0,close:close||0,decision:decision||'',source:'ml'})}).then(function(r){return r.json()}).then(function(d){APPROVED[sym]=d.code===200?'done':false;refresh()}).catch(function(){APPROVED[sym]=false;refresh()})}
+function doReject(sym){ALL=ALL.filter(function(r){return r.symbol!==sym});refresh();fetch('/api/signal/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({symbol:sym,decision:''})}).catch(function(){})}
+function approveAllQuality(){var quality=ALL.filter(function(r){return(r.quality_score||0)>=65&&!APPROVED[r.symbol]});if(!quality.length){alert('无待批准的优质信号');return}if(!confirm('一键批准 '+quality.length+' 只优质信号 (质量≥100%)?\n将通过模拟盘执行，position_pct计算仓位'))return;var done=0,total=quality.length;function next(){if(done>=total){alert('✅ 已提交 '+total+' 只');refresh();return}var s=quality[done++];APPROVED[s.symbol]='sending';fetch('/api/signal/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({symbol:s.symbol,position_pct:s.position_pct||0,close:s.close||0,decision:s.decision||'',source:'ml'})}).then(function(r){return r.json()}).then(function(d){APPROVED[s.symbol]=d.code===200?'done':false;next()}).catch(function(){next()})}next()}
+function exportCSV(){var rows=getFiltered();if(!rows.length){alert('无数据可导出');return}var csv='代码,名称,行业,现价,涨跌%,综合评分,共识,LGBM分,XGB分,Ridge分,质量,仓位%,持仓天,止损,等级\n';rows.forEach(function(r){csv+=[r.symbol,(r.name||''),(r.industry||''),r.close,r.change_pct,r.combined_score,r.n_models,r.lgbm_score,r.xgb_score,r.ridge_score,(r.quality_score||0),r.position_pct,r.hold_days,r.stop_loss,(r.signal||'')].join(',')+'\n'});var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ml_signals_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(a.href)}
+
+try{renderNav();initClock()}catch(e){}
+loadAll();
+setInterval(function(){if(!document.hidden)loadAll()},60000);
+document.addEventListener('keydown',function(e){if(e.ctrlKey&&e.key==='b'){e.preventDefault();toggleSidebar()}if(e.key==='Escape'){FILTER.quick=null;refresh()}});
+</script>
+<div class="ks-overlay" id="emOverlay"><div class="ks-dialog"><h3>🚨 确认紧急停止</h3><p style="color:#888;font-size:11px;margin:0 0 16px;line-height:1.6">将立即关闭所有交易通道<br>模拟盘+实盘+QMT全部停止<br>减仓/止损单不受影响</p><div class="ks-countdown" id="emCount">5</div><p style="font-size:9px;color:#555;margin:0 0 16px">秒后可确认</p><button onclick="KS.hideEmergency()" style="padding:8px 20px;border-radius:4px;font-size:12px;background:transparent;color:#888;border:1px solid #444;cursor:pointer;margin-right:8px">取消</button><button id="emConfirm" disabled onclick="KS.doEmergency()" style="padding:8px 20px;border-radius:4px;font-size:12px;font-weight:600;background:#444;color:#888;border:none;cursor:pointer">确认紧急停止</button></div></div>
+<script src="/static/js/kill-switch.js?v=2"></script></body>
+</html>

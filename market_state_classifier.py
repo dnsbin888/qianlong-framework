@@ -19,8 +19,18 @@ CONF = {
     "confirm_days": 3,         # 状态切换确认天数
 }
 
-# 状态缓存 (避免频繁切换)
+# 状态缓存 (避免频繁切换) — E349: 持久化,重启不丢
+import os as _os_ms, json as _json_ms
+_STATE_HISTORY_FILE = r"D:\quant_web\data\market_state.json"
 _state_history: list[str] = []
+try:
+    if _os_ms.path.exists(_STATE_HISTORY_FILE):
+        _d = _json_ms.load(open(_STATE_HISTORY_FILE, "r"))
+        _h = _d.get("_state_history", [])
+        if isinstance(_h, list) and _h:
+            _state_history = _h[-10:]  # 最多保留10条
+except Exception:
+    pass
 
 
 def classify_market_state(quote_cache: dict = None, index_history: list = None) -> str:
@@ -85,6 +95,21 @@ def classify_market_state(quote_cache: dict = None, index_history: list = None) 
     _state_history.append(state)
     if len(_state_history) > CONF["confirm_days"]:
         _state_history.pop(0)
+    # E349: 持久化历史 (重启不丢确认缓冲)
+    try:
+        _existing = {}
+        if _os_ms.path.exists(_STATE_HISTORY_FILE):
+            try:
+                with open(_STATE_HISTORY_FILE, "r") as _f:
+                    _existing = _json_ms.load(_f)
+            except Exception: pass
+        _existing["_state_history"] = _state_history
+        _tmp = _STATE_HISTORY_FILE + ".tmp"
+        with open(_tmp, "w") as _f:
+            _json_ms.dump(_existing, _f)
+        _os_ms.replace(_tmp, _STATE_HISTORY_FILE)
+    except Exception: pass
+
     if len(set(_state_history[-CONF["confirm_days"]:])) == 1:
         return state
     # 未确认 → 返回最近多数状态

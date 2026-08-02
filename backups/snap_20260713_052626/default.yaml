@@ -1,0 +1,66 @@
+# =============================================================================
+# Quant Framework — Default Global Configuration
+# =============================================================================
+
+framework:
+  mode: paper                # live | paper | backtest
+  engine: polling            # polling | event_driven
+  log_level: INFO
+  log_dir: ./logs
+  data_dir: ./data
+
+data:
+  provider: ths              # ths | tushare | akshare | xtquant | csv
+  store:
+    type: sqlite             # sqlite | parquet | csv
+    db_path: ./data/market.db
+    bar_cache_days: 365
+
+risk:
+  enabled: true
+  max_drawdown_pct: 0.20
+  max_daily_loss_pct: 0.03        # 日亏损限制: 权益的3% (推荐3-5%)
+  max_daily_loss: 50000.0          # 已废弃, 保留兼容; 当 max_daily_loss_pct 存在时忽略
+  max_single_position_pct: 0.30
+  max_total_positions: 10
+  order_cooldown_seconds: 5
+  single_order_max_pct: 0.10      # 单笔金额: 不超过权益的10%
+  max_daily_trades: 100            # 每日最大交易次数
+  blacklist: []
+
+execution:
+  broker: ths                # ths | xtquant | simulated
+  default_slippage: 0.001    # 0.1%
+  commission_rate: 0.0003    # 万三
+  min_commission: 5.0        # 最低佣金
+
+backtest:
+  initial_cash: 1000000.0
+  commission_rate: 0.0003
+  slippage_model: fixed      # fixed | proportional | normal
+  slippage_value: 0.001
+  benchmark: "000300"        # 沪深300作为基准
+  risk_free_rate: 0.03       # 无风险利率
+
+monitor:
+  log_format: json           # json | console
+  trade_recorder:
+    type: sqlite
+    db_path: ./data/trades.db
+  notifications:
+    dingtalk:
+      enabled: false
+      webhook_url: ""
+    wecom:
+      enabled: false
+      webhook_url: ""
+    feishu:
+      enabled: false
+      webhook_url: ""
+    email:
+      enabled: false
+      smtp_host: ""
+      smtp_port: 587
+      username: ""
+      password: ""
+      recipients: []

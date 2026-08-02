@@ -36,14 +36,20 @@ class AutoStopLossRule(BaseRule):
 
         pnl_pct = (price / avg_cost - 1)
         if pnl_pct <= self.threshold:
+            # 软止损只触发一次: 卖半后标记, 等硬止损清仓
+            if self.sell_ratio < 1 and position.get("_soft_triggered"):
+                return None
             total_qty = position.get("qty", 0)
             sell_qty = max(100, int(total_qty * self.sell_ratio) // 100 * 100) if self.sell_ratio < 1 else total_qty
             label = f"卖{self.sell_ratio*100:.0f}%" if self.sell_ratio < 1 else "清仓"
-            return RuleAction(
+            action = RuleAction(
                 action="sell",
                 symbol=position.get("symbol", ""),
                 qty=sell_qty,
                 price=price,
                 reason=f"止损{label}({pnl_pct*100:.1f}%≤{self.threshold*100:.0f}%)",
             )
+            if self.sell_ratio < 1:
+                action.meta = {"soft_triggered": True}
+            return action
         return None

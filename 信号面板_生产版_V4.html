@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><title>潜龙 · 信号面板 V4 (生产版)</title>
+<style>
+:root{--bg:#141619;--blue:#58a6ff;--gold:#d29922;--red:#f85149;--green:#00b96b;--purple:#e040fb;--dim:#8b949e;--faint:#484f58}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:var(--bg);color:#c9d1d9;padding:12px;font-size:12px}
+.panel{background:var(--bg);border:2px solid var(--gold);border-radius:6px;overflow:hidden}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:rgba(241,161,0,.08);border-bottom:1px solid rgba(241,161,0,.2)}
+.panel-head .title{font-size:13px;font-weight:700;color:#e3e3e3}
+.panel-head .count{font-size:11px;color:var(--gold);font-weight:400}
+
+/* 控制条 */
+.ctrl{display:flex;gap:4px;align-items:center;padding:4px 8px;border-bottom:1px solid #2a2c30;flex-wrap:wrap;font-size:10px}
+.ctrl .sep{width:1px;height:12px;background:#2a2c30;margin:0 3px}
+.fbtn{padding:2px 8px;border-radius:3px;cursor:pointer;color:var(--dim);border:1px solid transparent;white-space:nowrap;user-select:none;background:transparent}
+.fbtn.on{color:var(--blue);background:rgba(64,158,255,.12);font-weight:600;border-color:var(--blue)}
+.fbtn.on.qmt{color:var(--green);border-color:var(--green);background:rgba(0,185,107,.1)}
+.fbtn.on.res{color:var(--green);border-color:var(--green);background:rgba(0,185,107,.1)}
+.fbtn.on.lgbm{color:var(--blue);border-color:var(--blue);background:rgba(64,158,255,.1)}
+.sel{padding:2px 6px;border-radius:3px;font-size:10px;border:1px solid #2a2c30;background:#1a1c22;color:var(--dim);cursor:pointer;outline:none}
+
+/* 信号列表 */
+.slist{max-height:340px;overflow-y:auto}
+.srow{display:flex;align-items:center;gap:6px;padding:3px 8px;border-bottom:1px solid rgba(255,255,255,.015);cursor:pointer;transition:background .1s;font-size:11px}
+.srow:hover{background:rgba(64,158,255,.03)}
+.srow.qmt{border-left:3px solid var(--green);padding-left:5px}
+.srow.ml{border-left:3px solid var(--blue);padding-left:5px}
+.srow.rev{border-left:3px solid var(--gold);padding-left:5px}
+.srow.dab{border-left:3px solid var(--red);padding-left:5px}
+
+/* 各列 */
+.col-score{font-size:14px;font-weight:700;min-width:26px;text-align:right;font-family:Consolas,monospace}
+.col-sym{font-weight:700;min-width:72px;font-family:Consolas,monospace;font-size:11px}
+.col-name{color:var(--dim);min-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+.col-lv{font-size:9px;font-weight:600;min-width:22px;text-align:center}
+.col-chg{font-weight:600;min-width:52px;text-align:right;font-size:10px}
+.col-pos{font-weight:700;color:var(--blue);min-width:28px;text-align:right;font-size:11px}
+.col-q{font-weight:700;font-size:10px;min-width:20px;text-align:center}
+.up{color:var(--red)}.dn{color:var(--green)}
+
+/* 标签 */
+.tag{padding:0 5px;border-radius:6px;font-size:8px;font-weight:700;white-space:nowrap;line-height:16px;display:inline-block}
+.tag-ml{background:rgba(88,166,255,.12);color:var(--blue)}
+.tag-rev{background:rgba(210,153,34,.12);color:var(--gold)}
+.tag-dab{background:rgba(248,81,73,.12);color:var(--red)}
+.tag-qmt{background:rgba(0,185,107,.12);color:var(--green)}
+.tag-l2{font-size:7px;margin-left:1px;background:rgba(210,153,34,.08);color:var(--gold)}
+
+/* 来源分隔 */
+.src-label{font-size:7px;color:var(--faint);text-transform:uppercase;letter-spacing:1px;padding:3px 8px 1px}
+
+/* 按钮 */
+.btn-ap{padding:1px 8px;border-radius:3px;font-size:9px;cursor:pointer;border:1px solid var(--blue);background:rgba(88,166,255,.1);color:var(--blue);font-weight:600;font-family:inherit}
+.btn-ap:hover{background:var(--blue);color:#fff}
+.btn-rj{padding:1px 6px;border-radius:3px;font-size:9px;cursor:pointer;border:1px solid #333;background:transparent;color:var(--dim);font-family:inherit;margin-left:2px}
+.btn-ok{padding:1px 8px;border-radius:3px;font-size:9px;border:1px solid var(--green);background:rgba(0,185,107,.08);color:var(--green);font-weight:600}
+.wait{font-size:8px;color:var(--gold);font-weight:600}
+
+/* 统计小点 */
+.stats{display:flex;gap:6px;font-size:9px;color:var(--dim);margin-left:auto}
+.stats span{padding:1px 6px;border-radius:8px}
+.s-ml{background:rgba(88,166,255,.1);color:var(--blue)}
+.s-rev{background:rgba(210,153,34,.1);color:var(--gold)}
+.s-dab{background:rgba(248,81,73,.1);color:var(--red)}
+.s-qmt{background:rgba(0,185,107,.1);color:var(--green)}
+
+.empty{text-align:center;color:var(--faint);padding:20px;font-size:11px}
+</style></head>
+<body>
+
+<!-- 这就是替换终端 ⚡盘中信号 的最终版 -->
+<div class="panel">
+  <div class="panel-head">
+    <span class="title">⚡ 盘中信号</span>
+    <span class="count">· 103只</span>
+  </div>
+
+  <!-- 控制栏 — 替换现有筛选栏 -->
+  <div class="ctrl">
+    <span style="color:var(--faint)">品种</span>
+    <span class="fbtn on">📈 个股</span><span class="fbtn">📊 ETF</span>
+    <span class="sep"></span>
+    <span style="color:var(--faint)">来源</span>
+    <span class="fbtn on qmt">📡 QMT</span><span class="fbtn on">🧠 ML</span>
+    <span class="sep"></span>
+    <span style="color:var(--faint)">策略</span>
+    <select class="sel">
+      <option>📊 全部 (103)</option>
+      <option>🤖 ML趋势 (60)</option>
+      <option>🔄 超跌反弹 (15)</option>
+      <option>🔄 弱转强 (0)</option>
+      <option>🎯 打板 (3)</option>
+      <option>📡 QMT (5)</option>
+    </select>
+    <div class="stats">
+      <span class="s-ml">ML 60</span><span class="s-rev">反转 15</span><span class="s-dab">打板 3</span><span class="s-qmt">QMT 5</span>
+    </div>
+  </div>
+
+  <!-- 信号列表 -->
+  <div class="slist">
+    <!-- QMT 分组 -->
+    <div class="src-label">▎📡 QMT 实时</div>
+    <div class="srow qmt">
+      <span class="tag tag-qmt">QMT</span>
+      <span class="col-score" style="color:var(--green)">📡</span>
+      <span class="col-sym">sh600000</span><span class="col-name">浦发银行</span>
+      <span class="col-lv" style="color:var(--dim)">L3</span>
+      <span class="col-chg">¥12.50</span>
+      <span style="flex:1"></span>
+      <span class="wait">⏳待确认</span>
+      <button class="btn-ap">批准实盘</button><button class="btn-rj">忽略</button>
+    </div>
+
+    <!-- ML 分组 -->
+    <div class="src-label">▎🧠 日线信号</div>
+
+    <div class="srow ml">
+      <span class="tag tag-ml">ML</span>
+      <span class="col-score" style="color:var(--gold)">100</span>
+      <span class="col-sym">sh688120</span><span class="col-name">华海清科</span>
+      <span class="col-lv" style="color:var(--gold)">L5🔥</span>
+      <span class="col-chg up">¥321.80<small style="font-size:8px"> +8.1%</small></span>
+      <span class="col-q" style="color:var(--purple)">60</span>
+      <span class="col-pos">3.0%</span>
+      <span style="flex:1"></span>
+      <button class="btn-ap">批准</button><button class="btn-rj">拒绝</button>
+    </div>
+
+    <div class="srow ml">
+      <span class="tag tag-ml">ML</span>
+      <span class="col-score" style="color:var(--gold)">97</span>
+      <span class="col-sym">sh605117</span><span class="col-name">德业股份</span>
+      <span class="col-lv" style="color:#e3e3e3">L4</span>
+      <span class="col-chg dn">¥84.43<small style="font-size:8px"> -5.7%</small></span>
+      <span class="col-q" style="color:var(--gold)">55</span>
+      <span class="col-pos">2.8%</span>
+      <span style="flex:1"></span>
+      <button class="btn-ap">批准</button><button class="btn-rj">拒绝</button>
+    </div>
+
+    <div class="srow rev">
+      <span class="tag tag-rev">反转</span>
+      <span class="col-score" style="color:var(--gold)">69</span>
+      <span class="col-sym">sh603629</span><span class="col-name">XXX</span>
+      <span class="col-lv" style="color:#888">L3</span>
+      <span class="col-chg dn">¥12.50<small style="font-size:8px"> -2.1%</small></span>
+      <span class="col-q" style="color:var(--gold)">51</span>
+      <span class="col-pos">2.0%</span>
+      <span style="flex:1"></span>
+      <button class="btn-ap">批准</button><button class="btn-rj">拒绝</button>
+    </div>
+
+    <div class="srow rev">
+      <span class="tag tag-rev">反转</span>
+      <span class="col-score" style="color:#e3e3e3">65</span>
+      <span class="col-sym">sh603257</span><span class="col-name">XXX</span>
+      <span class="col-lv" style="color:#888">L3</span>
+      <span class="col-chg up">¥13.20<small style="font-size:8px"> +1.5%</small></span>
+      <span class="col-q" style="color:var(--gold)">48</span>
+      <span class="col-pos">2.1%</span>
+      <span style="flex:1"></span>
+      <button class="btn-ap">批准</button><button class="btn-rj">拒绝</button>
+    </div>
+
+    <div class="srow dab">
+      <span class="tag tag-dab">打板</span><span class="tag tag-l2">L2</span>
+      <span class="col-score" style="color:var(--red)">79</span>
+      <span class="col-sym">sz002208</span><span class="col-name">XXX</span>
+      <span class="col-lv" style="color:#e3e3e3">L4</span>
+      <span class="col-chg up">¥19.80<small style="font-size:8px"> +10%</small></span>
+      <span class="col-q" style="color:var(--red)">42</span>
+      <span class="col-pos">1.5%</span>
+      <span style="flex:1"></span>
+      <span class="wait">⚠需确认</span>
+      <button class="btn-ap">批准</button><button class="btn-rj">拒绝</button>
+    </div>
+  </div>
+</div>
+
+<!-- 改动说明 -->
+<div style="margin-top:8px;padding:8px 12px;background:#1a1c22;border-radius:4px;font-size:9px;color:var(--dim)">
+  <b>替换位置</b>: terminal.html → ⚡ 盘中信号 区块 (class="col" id="sigCardBody")<br>
+  <b>改动</b>: signal_card.js +15行(策略下拉+过滤) + terminal.html +3行(select控件)<br>
+  <b>新增</b>: 策略标签列 · 策略下拉框 · L2确认标记 · 边栏来源色
+</div>
+
+</body>
+</html>

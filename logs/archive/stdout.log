@@ -1,0 +1,84 @@
+[Config] 路径配置加载成功
+[Trader] Loaded CONFIG overrides from d:\\quant_framework\\live_trader_config.json
+[TradeKB] 34 hotkeys registered
+[PopupKiller] 启动成功（扫描间隔 2.0s）
+[Trader] 弹窗杀手已启动（2秒扫描间隔）
+[Trader] Auto-sync + Auto-trade started (30s interval, link_trader enabled)
+[Realtime] 已加载缓存: 568只
+[Realtime] 后台缓存已启动 (3秒批量刷新)
+[TDXWatcher] Monitoring D:\通信达技术指标\六合一竞价擒龙（下载到电脑里解压）\六合一竞价擒龙（下载到电脑里解压）\T0002\tpool every 30s
+[App] 自动交易状态已恢复: auto=True
+[App] Paper auto-trade loop started
+[Scheduler] Evolution scheduler started
+[App] Auto-evolve system loaded
+[App] Knowledge base API loaded
+[System] 上次关闭: shutdown: 2026-06-23 11:31:35.821964
+[HealthCheck] === 启动健康检查 ===
+  [❌] 日线数据: D:\quant_web\stock_data.pkl.gz
+  [❌] 因子缓存: D:\quant_web\factor_cache.pkl
+  [✅] 价格缓存: D:\quant_web\..\quant_framework\price_cache.json
+  [✅] 股票名称: D:\quant_web\stock_names_full.csv
+  [✅] 交易配置: D:\quant_web\..\quant_framework\live_trader_config.json
+  [✅] 依赖: numpy
+  [✅] 依赖: pandas
+  [✅] 依赖: scipy
+  [✅] 依赖: flask
+  [❌] stock_data损坏: [Errno 2] No such file or directory: 'D:\\quant_web\\stock_data.pkl.gz'
+[HealthCheck] 结果: 有失败项
+[PnL] 日频净值记录已启动 (每日15:30)
+============================================================
+  潜龙选股 Web 系统 v1.0
+  http://localhost:5002
+============================================================
+[Startup] Watchdog PID file stale, cleaning up
+[Startup] Watchdog auto-started
+[Startup] Watchdog auto-started
+[Cache] 已加载 200 条回测缓存
+[Init] Loading names...
+[Names] Loaded 5525 names from CSV
+[Names] Builtin: 394 names
+[Names] Full CSV loaded: 5525 names, total: 5633
+  + app.py
+  + auto_evolve.py
+  + data_collector.py
+  + watchdog.py
+  + dingtalk_alerts.py
+  + paper_engine.py
+  + risk_guard.py
+  + realtime_quotes.py
+  + live_trader_config.json
+  + templates/ (44 files)
+  + quant_agent/ (6 files)
+
+📦 备份完成: backup_20260623_113200.zip (294KB)
+  🗑️ 清理旧备份: backup_20260616_111618.zip
+  🗑️ 清理旧备份: backup_20260616_112933.zip
+[Startup] 日终报告已就绪 (每日15:05)
+[Startup] 盘前推送已就绪 (每日09:25)
+[Startup] 盘后因子更新已就绪 (每日15:30)
+[Startup] 日志清理已就绪 (每日)
+[Startup] 每日备份已就绪
+[Startup] Ready! Open http://localhost:5002
+[Memory] 内存监控已启动 (5分钟间隔)
+[Health] 启动自检中...
+[Health] ✅ 纸引擎就绪
+[Health] ✅ 因子缓存存在
+[Health] ⚠ THS持仓文件缺失/为空
+[Health] 自检完成: 2通过 1警告
+[Names] Ready: 5633 names
+[Industry] Ready: 5509 mappings
+[Names] Total: 5633 names
+[LinkTrader] DLL loaded: D:\联动精灵\第三方交易接口\Win64\linkorder.dll
+[LinkTrader] ⚠️ 联动精灵未运行, 请手动启动并登录
+[LinkTrader] ⚠️ 同花顺交易端未运行, 请手动启动并登录
+
+ℹ️ [INFO] ✅ 潜龙系统已就绪
+行情:568只 | 因子:0条 | DLL:已加载
+策略:3个在线 | 时间:11:32
+
+[Init] Sector indices loaded: 110, source=📡 westock实时 (市场指数)
+[Init] Loading data from: D:\通信达技术指标\六合一竞价擒龙（下载到电脑里解压）\六合一竞价擒龙（下载到电脑里解压）\vipdoc
+[Init] Loading names...
+
+[Init] Sector indices loaded: 110, source=📡 westock实时 (市场指数)
+[Init] Loading data from: D:\通信达技术指标\六合一竞价擒龙（下载到电脑里解压）\六合一竞价擒龙（下载到电脑里解压）\vipdoc

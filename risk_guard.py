@@ -1,6 +1,7 @@
 """
-事前风控检查器 + 持仓相关性分析
-报单前验证: 资金/仓位/涨跌停/自成交/集中度/相关性
+事前风控检查器 + 持仓相关性分析 (E371重构 v2)
+报单前验证: 资金/仓位/涨跌停/T+1/信号ID去重/乌龙指/集中度/相关性
+返回值: (action, reason, adjusted_qty) — APPROVE/REJECT/REDUCE/QUEUE
 """
 import numpy as np
 from datetime import datetime
@@ -8,9 +9,14 @@ from collections import defaultdict
 
 
 class PreTradeChecker:
-    """报单前风控检查 — 返回 (通过, 拒绝原因)"""
+    """报单前风控检查 — E371 v2: 四元返回值 + 信号ID去重(行业标准)"""
 
-    def __init__(self, config=None, positions=None, cash=0, total_equity=0, factor_cache=None, stock_data=None):
+    _executed_signals: dict = {}  # E371 v2: {date: {signal_id, ...}} 每日自动清
+
+    _audit_file = r"D:\quant_web\data\audit_log.jsonl"  # E372: 审计日志
+
+    def __init__(self, config=None, positions=None, cash=0, total_equity=0,
+                 factor_cache=None, stock_data=None):
         self.config = config or {}
         self.positions = positions or {}
         self.cash = cash
@@ -18,83 +24,153 @@ class PreTradeChecker:
         self.factor_cache = factor_cache or []
         self.stock_data = stock_data or {}
 
-    def check_buy(self, symbol, price, qty, industry='', signal_level=3):
-        """买入前检查"""
+    def check_buy(self, symbol, price, qty, industry='', signal_level=3,
+                  live_mode=False, daily_trades=0, signal_id=''):
+        """买入前检查 (v2.1: 1000万阈值)"""
         if price is None or price <= 0:
-            return False, f"价格无效: {price}"
+            return ("REJECT", f"价格无效: {price}", 0)
         cost = price * qty
 
-        # 1. 资金检查
-        if cost > self.cash:
-            return False, f"资金不足: 需¥{cost:,.0f} 可用¥{self.cash:,.0f}"
+        # 1. 信号ID去重 (E371 v2: 对齐QuantConnect idempotency key)
+        if signal_id:
+            _today = datetime.now().strftime("%Y%m%d")
+            if _today not in PreTradeChecker._executed_signals:
+                PreTradeChecker._executed_signals = {_today: set()}  # 新的一天, 清空
+            if signal_id in PreTradeChecker._executed_signals.get(_today, set()):
+                return ("REJECT", f"信号{signal_id}今日已执行", 0)
 
-        # 2. 单票仓位上限
+        # 2. 乌龙指防护
+        max_order_value = self.config.get("max_order_value", 1_000_000)
+        if cost > max_order_value:
+            return ("REJECT", f"单笔{cost:,.0f}超上限{max_order_value:,.0f}", 0)
+
+        # 3. 日交易笔数
+        max_daily = self.config.get("max_daily_trades", 5)
+        if daily_trades >= max_daily:
+            return ("REJECT", f"日交易{daily_trades}笔已达上限{max_daily}", 0)
+
+        # 4. 涨跌停 (实盘允许排队)
+        if self._is_limit_up(symbol):
+            if live_mode:
+                return ("QUEUE", "涨停排队挂单", qty)
+            return ("REJECT", "涨停板不追买", 0)
+
+        # 5. 信号等级
+        min_sig = self.config.get("signal_min_strength", 3)
+        if signal_level < min_sig:
+            return ("REJECT", f"信号等级{signal_level}<最低{min_sig}", 0)
+
+        # 6. 仓位总数
+        if len(self.positions) >= self.config.get("max_positions_abs", 10):
+            return ("REJECT", f"持仓数已达上限{self.config.get('max_positions_abs',10)}只", 0)
+
+        # 7. 资金检查
+        if cost > self.cash:
+            return ("REJECT", f"资金不足: 需¥{cost:,.0f} 可用¥{self.cash:,.0f}", 0)
+
+        # 8. 单票集中度 — REDUCE
         max_single = self.config.get("max_single_position_pct", 20) / 100
         after_value = cost + sum(
             p.get('last_price', p.get('avg_cost', 0)) * p.get('qty', 0)
             for s, p in self.positions.items() if s == symbol
         )
         if self.total_equity > 0 and after_value / self.total_equity > max_single:
-            return False, f"单票仓位{after_value/self.total_equity*100:.0f}%超限{max_single*100:.0f}%"
+            reduced = max(100, int(qty * 0.5))
+            return ("REDUCE", f"集中度偏高,缩至{reduced}股", reduced)
 
-        # 3. 行业集中度
-        max_sector = self.config.get("max_sector_pct", 30) / 100
+        # 9. 行业集中度 — REDUCE
+        max_sector = self.config.get("max_sector_pct", 25) / 100  # E372: 25%
         sector_value = sum(
             p.get('last_price', p.get('avg_cost', 0)) * p.get('qty', 0)
             for s, p in self.positions.items() if p.get('industry', '') == industry
         ) + cost
         if industry and self.total_equity > 0 and sector_value / self.total_equity > max_sector:
-            return False, f"行业{industry}仓位{sector_value/self.total_equity*100:.0f}%超限{max_sector*100:.0f}%"
+            reduced = max(100, int(qty * 0.5))
+            return ("REDUCE", f"行业{industry}集中度偏高,缩至{reduced}股", reduced)
 
-        # 4. 信号等级检查
-        min_sig = self.config.get("signal_min_strength", 3)
-        if signal_level < min_sig:
-            return False, f"信号等级{signal_level}级<最低{min_sig}级"
+        # 10. 持仓相关性限制 (P2 — 2026-07-10)
+        # 同一行业已有≥2只持仓时拒绝再开, 防板块集中爆雷
+        same_sector_count = sum(
+            1 for s, p in self.positions.items()
+            if p.get('industry', '') == industry and industry
+        )
+        max_same_sector = self.config.get("max_same_sector_positions", 2)
+        if industry and same_sector_count >= max_same_sector:
+            return ("REJECT",
+                f"行业[{industry}]已有{same_sector_count}只持仓(上限{max_same_sector}), 过度集中",
+                0)
 
-        # 5. 日交易笔数
-        max_daily = self.config.get("max_daily_trades", 5)
-        # (由调用方传入当日已交易笔数)
+        # E372: 风险预算检查
+        _risk_budget_pct = self.config.get("daily_risk_budget_pct", 0.01)
+        _daily_pnl = sum(
+            (p.get('last_price',0) - p.get('avg_cost',0)) * p.get('qty',0)
+            for p in (self.positions or {}).values()
+        )
+        if self.total_equity > 0 and _daily_pnl / self.total_equity < -_risk_budget_pct:
+            return ("REJECT", f"日风险预算已用完(PnL={_daily_pnl/self.total_equity*100:.1f}%)", 0)
 
-        # 6. 涨跌停检查
-        if self._is_limit_up(symbol):
-            return False, "涨停板不追买"
+        # 流动性门槛: 从配置读取, 默认2000万 (对齐游资标准)
+        _min_amount = self.config.get("min_daily_amount", 20_000_000)
+        _avg_amt = self._get_avg_daily_amount(symbol)
+        if _avg_amt > 0 and _avg_amt < _min_amount:
+            return ("REJECT", f"日均成交额{_avg_amt/1e4:.0f}万<{_min_amount/1e4:.0f}万,流动性差", 0)
 
-        # 7. 仓位总数
-        if len(self.positions) >= self.config.get("max_positions_abs", 10):
-            return False, f"持仓数已达上限{self.config.get('max_positions_abs',10)}只"
+        # 记录信号 (通过后标记已执行)
+        if signal_id:
+            PreTradeChecker._executed_signals.setdefault(_today, set()).add(signal_id)
 
-        return True, "OK"
+        # E372: 审计日志
+        self._audit(symbol, "APPROVE", f"qty={qty} price={price}")
 
-    def check_sell(self, symbol, qty):
-        """卖出前检查"""
-        pos = self.positions.get(symbol, {})
-        if pos.get('qty', 0) < qty:
-            return False, f"持仓不足: 持有{pos.get('qty',0)}需卖{qty}"
+        return ("APPROVE", "OK", qty)
+
+    def check_sell(self, symbol, qty, live_mode=False):
+        """卖出前检查 (E371: T+1 + 跌停)
+        Returns: (action, reason, adjusted_qty)
+        """
+        if symbol not in self.positions:
+            return ("REJECT", f"未持有{symbol}", 0)
+        pos = self.positions[symbol]
+        if qty > pos.get('qty', 0):
+            return ("REJECT", f"卖出{qty}股>持仓{pos.get('qty',0)}股", 0)
+
+        # T+1检查
+        buy_date = pos.get("buy_date", "")
+        today = datetime.now().strftime("%Y-%m-%d")
+        if buy_date == today:
+            return ("REJECT", f"T+1锁定: {symbol}今日买入不可卖出", 0)
+
+        # 跌停 (实盘允许排队)
         if self._is_limit_down(symbol):
-            return False, "跌停板无法卖出"
-        return True, "OK"
+            if live_mode:
+                return ("QUEUE", "跌停排队挂单", qty)
+            return ("REJECT", "跌停板无法卖出", 0)
+
+        return ("APPROVE", "OK", qty)
+
+    # ═══ E371: 统一走 market_limits ═══
 
     def _is_limit_up(self, symbol):
-        code = symbol.replace('sh','').replace('sz','').replace('bj','').replace('SH','').replace('SZ','').replace('BJ','')
-        limit_pct = 0.10
-        if code.startswith(('688','3')): limit_pct = 0.20
-        elif code.startswith(('8','4')): limit_pct = 0.30
+        try:
+            from quant_framework.core.market_limits import is_limit_up
+        except ImportError:
+            return False
         prev_close = self._get_prev_close(symbol)
         if prev_close <= 0: return False
         cur = self._get_current_price(symbol)
         if cur <= 0: return False
-        return cur >= prev_close * (1 + limit_pct) - 0.01
+        return is_limit_up(symbol, cur, prev_close)
 
     def _is_limit_down(self, symbol):
-        code = symbol.replace('sh','').replace('sz','').replace('bj','').replace('SH','').replace('SZ','').replace('BJ','')
-        limit_pct = 0.10
-        if code.startswith(('688','3')): limit_pct = 0.20
-        elif code.startswith(('8','4')): limit_pct = 0.30
+        try:
+            from quant_framework.core.market_limits import is_limit_down
+        except ImportError:
+            return False
         prev_close = self._get_prev_close(symbol)
         if prev_close <= 0: return False
         cur = self._get_current_price(symbol)
         if cur <= 0: return False
-        return cur <= prev_close * (1 - limit_pct) + 0.01
+        return is_limit_down(symbol, cur, prev_close)
 
     def _get_prev_close(self, symbol):
         for fc in self.factor_cache:
@@ -112,6 +188,28 @@ class PreTradeChecker:
                 if close > 0: return close
         return 0
 
+    def _get_avg_daily_amount(self, symbol):
+        """E372: 估算日均成交额"""
+        try:
+            df = self.stock_data.get(symbol) if self.stock_data else None
+            if df is not None and len(df) >= 5:
+                vols = df['volume'].values[-5:]
+                closes = df['close'].values[-5:]
+                return float(sum(v * c for v, c in zip(vols, closes)) / len(vols))
+        except: pass
+        return 0
+
+    def _audit(self, symbol, action, detail):
+        """E372: 审计日志"""
+        try:
+            import json as _j, os as _os, datetime as _dt
+            _line = _j.dumps({"ts": _dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                              "symbol": symbol, "action": action, "detail": detail}, ensure_ascii=False)
+            _os.makedirs(_os.path.dirname(PreTradeChecker._audit_file), exist_ok=True)
+            with open(PreTradeChecker._audit_file, "a", encoding="utf-8") as _f:
+                _f.write(_line + "\n")
+        except: pass
+
 
 class CorrelationAnalyzer:
     """持仓相关性分析 — 检测集中风险"""
@@ -121,195 +219,143 @@ class CorrelationAnalyzer:
         self.factor_cache = factor_cache or []
 
     def analyze(self, positions, lookback=60):
-        """分析持仓组合的相关性风险"""
-        if len(positions) < 2:
-            return {"risk_level": "低", "warning": "", "details": []}
-
-        details = []
         syms = list(positions.keys())
-
-        # 1. 行业集中度
-        industries = defaultdict(list)
-        for sym, pos in positions.items():
-            ind = pos.get('industry', '未分类')
-            industries[ind].append(sym)
-        for ind, stock_list in industries.items():
-            if len(stock_list) >= 2:
-                details.append({
-                    'type': '行业集中',
-                    'level': 'warning' if len(stock_list) >= 3 else 'info',
-                    'desc': f"行业「{ind}」持有{len(stock_list)}只: {','.join(stock_list)}",
-                })
-
-        # 2. 价格相关性 (基于最近N天收益)
-        if self.stock_data:
-            returns = {}
-            for sym in syms:
-                df = self.stock_data.get(sym)
-                if df is not None and len(df) >= lookback:
-                    close = df['close'].values[-lookback:]
-                    returns[sym] = np.diff(close) / close[:-1]
-
-            if len(returns) >= 2:
-                sym_list = list(returns.keys())
-                for i in range(len(sym_list)):
-                    for j in range(i + 1, len(sym_list)):
-                        s1, s2 = sym_list[i], sym_list[j]
-                        r1, r2 = returns[s1], returns[s2]
-                        min_len = min(len(r1), len(r2))
-                        if min_len > 10:
-                            corr = np.corrcoef(r1[:min_len], r2[:min_len])[0, 1]
-                            if abs(corr) > 0.7:
-                                details.append({
-                                    'type': '高相关性',
-                                    'level': 'danger' if corr > 0.85 else 'warning',
-                                    'desc': f"{s1}与{s2}相关系数{corr:.2f}，同涨同跌风险",
-                                })
-
-        # 3. 风险评估
-        dangers = sum(1 for d in details if d['level'] == 'danger')
-        warnings = sum(1 for d in details if d['level'] == 'warning')
-        if dangers > 0:
-            risk = "高"
-            msg = f"⚠️ {dangers}项严重集中风险，建议分散"
-        elif warnings > 1:
-            risk = "中"
-            msg = f"⚡ {warnings}项集中警告，关注风险"
-        elif warnings > 0:
-            risk = "低"
-            msg = f"📊 {warnings}项提示"
+        if len(syms) < 2:
+            return {"risk_level": "低", "warning": "", "details": {}}
+        closes = {}
+        for sym in syms:
+            df = self.stock_data.get(sym)
+            if df is not None and len(df) >= lookback:
+                closes[sym] = df['close'].values[-lookback:]
+        if len(closes) < 2:
+            return {"risk_level": "低", "warning": "", "details": {}}
+        returns = {}
+        for sym, c in closes.items():
+            if len(c) > 1:
+                returns[sym] = np.diff(c) / c[:-1]
+        if len(returns) < 2:
+            return {"risk_level": "低", "warning": "", "details": {}}
+        corr_matrix = np.corrcoef(list(returns.values()))
+        max_corr = 0
+        max_pair = ("", "")
+        n = len(returns)
+        keys = list(returns.keys())
+        for i in range(n):
+            for j in range(i+1, n):
+                if abs(corr_matrix[i][j]) > max_corr:
+                    max_corr = abs(corr_matrix[i][j])
+                    max_pair = (keys[i], keys[j])
+        if max_corr > 0.85:
+            level = "高"
+            warning = f"{max_pair[0]}与{max_pair[1]}高度相关({max_corr:.2f})"
+        elif max_corr > 0.7:
+            level = "中"
+            warning = f"{max_pair[0]}与{max_pair[1]}中度相关({max_corr:.2f})"
         else:
-            risk = "低"
-            msg = "✅ 持仓分散良好"
+            level = "低"
+            warning = ""
+        return {"risk_level": level, "warning": warning, "details": {"max_correlation": round(max_corr, 3), "pair": max_pair}}
 
-        return {"risk_level": risk, "warning": msg, "details": details}
 
-
-# 风控事件通知
 class RiskEventBus:
-    """风控事件总线 — SSE推送风控事件到前端"""
+    """风控事件总线 — SSE推送"""
     def __init__(self, store=None):
         self.store = store
-        self.event_log = []  # 最近100条
+        self._events = []
 
     def emit(self, event_type, data):
-        """发出风控事件"""
-        event = {"type": event_type, "time": datetime.now().strftime("%H:%M:%S"), **data}
-        self.event_log.append(event)
-        if len(self.event_log) > 100: self.event_log.pop(0)
-        if self.store:
-            try: self.store.set('risk_event', event)
-            except: pass
-        return event
+        e = {"type": event_type, "data": data, "time": datetime.now().strftime("%H:%M:%S")}
+        self._events.append(e)
+        if len(self._events) > 100: self._events = self._events[-100:]
+        return e
 
     def get_recent(self, n=20):
-        return self.event_log[-n:]
+        return self._events[-n:]
 
 
-# 压力测试
 class RiskCycleScheduler:
-    """全周期风控调度: 盘前/盘中/盘后"""
+    """风控周期检查 — 盘前/盘后 (E372)"""
     def __init__(self, paper_engine=None, store=None):
         self.paper = paper_engine
         self.store = store
-        self._last_pre_market = None
-        self._last_post_market = None
 
     def pre_market_check(self):
-        """盘前检查(8:30-9:25): 持仓风险预警"""
-        today = datetime.now().strftime("%Y%m%d")
-        if self._last_pre_market == today: return None
-        self._last_pre_market = today
-
-        warnings = []
-        if self.paper:
-            # 检查隔夜持仓
-            for sym, pos in self.paper.positions.items():
-                pnl_pct = (pos.get('last_price',0)/pos.get('avg_cost',1)-1)*100
-                if pnl_pct < -8:
-                    warnings.append(f"⚠️ {sym} 隔夜亏损{pnl_pct:.1f}%，关注开盘")
-            # 检查熔断状态: daily_loss_total超过-5%初始资金即触发
-            daily_loss = getattr(self.paper, '_daily_loss_total', 0) or 0
-            if daily_loss < -50000:  # 1M * -5%
-                warnings.append(f"🚨 累计亏损{daily_loss:.0f}触发熔断，今日仅允许卖出")
-
-        result = {"phase": "pre_market", "time": datetime.now().strftime("%H:%M"), "warnings": warnings}
-        if self.store:
-            try: self.store.set('risk_pre_market', result)
-            except: pass
-        return result
+        """盘前检查: 隔夜风险"""
+        if not self.paper: return None
+        try:
+            eq = self.paper.get_total_equity()
+            cash = self.paper.cash
+            pos_count = len(self.paper.positions)
+            pnl = eq - 1_000_000
+            # 隔夜持仓>80% → 告警
+            exposure = (eq - cash) / max(eq, 1) * 100
+            warnings = []
+            if exposure > 80: warnings.append(f"隔夜敞口{exposure:.0f}%偏高")
+            if pnl < -50000: warnings.append(f"累计亏损¥{abs(pnl):,.0f}")
+            return {"equity": eq, "cash": cash, "positions": pos_count, "exposure_pct": round(exposure,1),
+                    "pnl": pnl, "warnings": warnings}
+        except: return None
 
     def post_market_report(self):
-        """盘后报告(15:05-16:00): 风控日报"""
-        today = datetime.now().strftime("%Y%m%d")
-        if self._last_post_market == today: return None
-        self._last_post_market = today
+        """日终风控报告 (E372)"""
+        if not self.paper: return None
+        try:
+            eq = self.paper.get_total_equity()
+            pos = self.paper.positions
+            trades = getattr(self.paper, '_trades_archive', []) or []
+            today = datetime.now().strftime("%Y-%m-%d")
+            today_trades = [t for t in trades if str(t.get("date","")) == today]
+            buys = [t for t in today_trades if t.get("side")=="buy"]
+            sells = [t for t in today_trades if t.get("side")=="sell"]
+            win_sells = [t for t in sells if t.get("pnl",0) > 0]
 
-        report = {"phase": "post_market", "time": datetime.now().strftime("%H:%M")}
-        if self.paper:
-            status = self.paper.get_status()
-            report.update({
-                "daily_pnl": status.get('total_pnl', 0),
-                "daily_return": status.get('total_return', 0),
-                "max_drawdown": status.get('max_drawdown', 0),
-                "trade_count": status.get('trade_count', 0),
-                "win_rate": status.get('win_rate', 0),
-                "sharpe": status.get('sharpe', 0),
-            })
-            # 与回测对比（偏差>20%告警）
-            bt_return = self.store.get('backtest', {}).get('metrics', {}).get('total_return', 0) if self.store else 0
-            if bt_return and report['daily_return']:
-                deviation = abs(report['daily_return'] - bt_return) / max(abs(bt_return), 0.01)
-                report['bt_deviation'] = round(deviation, 2)
-                report['bt_warning'] = '⚠️ 实盘偏离回测>20%' if deviation > 0.2 else '✅ 实盘与回测一致'
+            # 行业敞口
+            sectors = {}
+            for sym, p in pos.items():
+                ind = p.get("industry","其他") or "其他"
+                mkt = p.get("last_price",0) * p.get("qty",0)
+                sectors[ind] = sectors.get(ind,0) + mkt
 
-        if self.store:
-            try: self.store.set('risk_post_market', report)
+            report = {
+                "date": today, "total_equity": round(eq,2),
+                "daily_pnl": round(sum(t.get("pnl",0) for t in today_trades), 2),
+                "trades_today": len(today_trades),
+                "win_rate": round(len(win_sells)/max(len(sells),1)*100, 1),
+                "position_count": len(pos),
+                "sector_exposure": {k: round(v/eq*100,1) for k,v in sorted(sectors.items(), key=lambda x:-x[1])[:5]},
+                "max_single": max([p.get("last_price",0)*p.get("qty",0) for p in pos.values()], default=0),
+                "warnings": [],
+            }
+            # 告警
+            if report["daily_pnl"] < -(eq * 0.03): report["warnings"].append("日亏损>3%")
+            for ind, pct in report["sector_exposure"].items():
+                if pct > 25: report["warnings"].append(f"{ind}行业超25%")
+            if report["max_single"] / max(eq,1) > 0.20: report["warnings"].append("单票集中度>20%")
+
+            # 写文件供前端展示
+            try:
+                import json as _j, os as _os
+                _rp = r"D:\quant_web\data\daily_risk_report.json"
+                _os.makedirs(_os.path.dirname(_rp), exist_ok=True)
+                _j.dump(report, open(_rp, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
             except: pass
-        return report
+            return report
+        except: return None
 
 
 class StressTester:
-    """简单压力测试: 模拟极端行情"""
-
-    SCENARIOS = {
-        "2015股灾": {"market_drop": -0.30, "volatility": 3.0, "liquidity": 0.3},
-        "2020疫情": {"market_drop": -0.08, "volatility": 2.5, "liquidity": 0.5},
-        "2024小微盘": {"market_drop": -0.20, "volatility": 2.0, "liquidity": 0.2},
-        "千股跌停": {"market_drop": -0.35, "volatility": 4.0, "liquidity": 0.1},
-    }
+    """压力测试 — 历史极端行情"""
+    SCENARIOS = [
+        ("2015股灾", -0.30), ("2020疫情", -0.08), ("2024小微盘", -0.20), ("千股跌停", -0.35),
+    ]
 
     def run(self, positions, total_equity, quotes=None):
-        """对当前持仓运行所有压力情景"""
         results = {}
-        for name, scenario in self.SCENARIOS.items():
-            drop = scenario["market_drop"]
-            vol = scenario["volatility"]
-            liq = scenario["liquidity"]
-
-            # 简化: 按市场跌幅+个股波动放大估算
-            total_loss = 0
+        for name, drop in self.SCENARIOS:
+            loss = 0
             for sym, pos in positions.items():
-                beta = 1.0  # 默认市场Beta
-                stock_drop = drop * beta * (1 + np.random.uniform(-0.2, 0.3) * vol)
-                loss = pos.get('market_value', pos.get('avg_cost', 0) * pos.get('qty', 0)) * abs(stock_drop) * (2 - liq)
-                total_loss += loss
-
-            loss_pct = round(total_loss / max(total_equity, 1) * 100, 1)
-            remaining = round(total_equity - total_loss, 0)
-
-            if loss_pct > 20:
-                level = "🔴 危险"
-            elif loss_pct > 10:
-                level = "🟡 警告"
-            else:
-                level = "🟢 可控"
-
-            results[name] = {
-                "loss_pct": loss_pct,
-                "remaining_equity": remaining,
-                "level": level,
-                "scenario": scenario,
-            }
-
+                mkt = pos.get('last_price', pos.get('avg_cost', 0)) * pos.get('qty', 0)
+                loss += mkt * drop
+            results[name] = {"drop_pct": f"{drop*100:.0f}%", "estimated_loss": round(loss, 0),
+                           "loss_pct": round(loss / max(total_equity, 1) * 100, 1)}
         return results

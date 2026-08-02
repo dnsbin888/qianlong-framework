@@ -1,0 +1,111 @@
+[Trader] Loaded CONFIG overrides from d:\\quant_framework\\live_trader_config.json
+[TradeKB] 34 hotkeys registered
+[Trader] Auto-sync + Auto-trade started (30s interval)
+[AutoExport] Started (interval=10s, trading hours only)
+[Realtime] 初始股票池: 4468只A股, 取前300只
+[Realtime] 后台缓存已启动 (3秒批量刷新)
+[TDXWatcher] Monitoring D:\通信达技术指标\六合一竞价擒龙（下载到电脑里解压）\六合一竞价擒龙（下载到电脑里解压）\T0002\tpool every 30s
+[App] Paper auto-trade loop started
+[Scheduler] Evolution scheduler started
+[App] Auto-evolve system loaded
+[App] Knowledge base API loaded
+[PnL] 日频净值记录已启动 (每日15:30)
+============================================================
+  潜龙选股 Web 系统 v1.0
+  http://localhost:5002
+============================================================
+[Startup] Pre-loading cache...
+[Cache] 已加载 18 条回测缓存
+[Init] Loading names...
+[Names] Loaded 5525 names from CSV
+[Names] Builtin: 394 names
+[Names] Full CSV loaded: 5525 names, total: 5633
+[Names] Ready: 5633 names
+[Industry] Ready: 5509 mappings
+[Names] Total: 5633 names
+[Init] Sector indices loaded: 110, source=📡 westock实时 (市场指数)
+[Init] Factor cache loaded: 3500 items, patched=0, s0.signal_date=2026-06-12
+[Init] CACHE HIT: 5860 stocks + 3500 factors (instant!)
+[Startup] Price cache: 5860 symbols
+[Startup] 每日自动进化已启用 (02:00)
+[Startup] Watchdog auto-started
+  + app.py
+  + auto_evolve.py
+  + data_collector.py
+  + watchdog.py
+  + dingtalk_alerts.py
+  + paper_engine.py
+  + risk_guard.py
+  + realtime_quotes.py
+  + live_trader_config.json
+  + templates/ (28 files)
+  + quant_agent/ (6 files)
+
+📦 备份完成: backup_20260616_005735.zip (200KB)
+[Startup] Ready! Open http://localhost:5002
+[2026-06-16 00:57:35] ==================================================
+[2026-06-16 00:57:35]   潜龙 Flask 看门狗 v2.0 (E83)
+[2026-06-16 00:57:35]   检测: http://localhost:5002/api/paper-trade/v2
+[2026-06-16 00:57:35]   间隔: 30s  容错: 2次
+[2026-06-16 00:57:35] ==================================================
+[IC] 保存失败: name '_sanitize_nan' is not defined
+[2026-06-16 00:57:40] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 06:05:33] 心跳💓 Flask=OK Streamlit=OK
+[IC-DEBUG] factor_values: 10天, 200条
+[IC-DEBUG] forward_returns: 2584天, 300只股票满足数据长度
+[IC-DEBUG] 日期交集: 9天
+[IC-DEBUG] ic_series: {1: 0, 5: 0, 20: 0}
+[IC] 保存失败: name '_sanitize_nan' is not defined
+[SLOW] GET /api/factor/ic-analysis 9.6s
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (60): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'limit_up', 'low', 'low_suction_score', 'ma_position', 'macd_score', 'main_up', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-12'
+[XGB-API]   .entry_time = '06-08 10:36'
+[XGB-API]   .close = 20512.0
+[XGB-API]   .symbol = 'sh118018'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh118018', 'sh688056', 'sh603020', 'sh600869', 'sh688507']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh118018' in stock_data? True
+[XGB]   'sh688056' in stock_data? True
+[XGB]   'sh603020' in stock_data? True
+[XGB-API] XGBoost不可用(有效样本仅 0，需 ≥50), 降级IC...
+[SLOW] GET /api/auto-evolve/xgb-importance 16.3s
+[XGB-API] factor_cache=3500 stock_data=5860
+[XGB-API] StockInfo attrs (60): ['atr_pct', 'atr_score', 'bias_score', 'boll_score', 'breakout_score', 'buy_signal', 'capital_score', 'catch_bull_signal_time', 'change_pct', 'chg_10d', 'chg_5d', 'chg_score', 'chip_score', 'chip_struct_score', 'close', 'daily_pl', 'double_axes_signal', 'entry_time', 'fund_flow_score', 'fund_score', 'high', 'high_control_up', 'in_demand_area', 'in_out_days', 'industry', 'institution_strength', 'limit_up', 'low', 'low_suction_score', 'ma_position', 'macd_score', 'main_up', 'momentum_score', 'money_score', 'name', 'open', 'open_pct', 'position_score', 'power_score', 'pre_close', 'quality_score', 'rating_dist_score', 'rating_score', 'rsi_score', 'signal_b1', 'signal_date', 'signal_final', 'signal_qlj', 'signal_resonance', 'signal_xg', 'signal_ztxf', 'symbol', 'tech_score', 'three_axes_signal', 'trend_score', 'turnover_score', 'vol_ratio', 'vol_score', 'volume', 'volume_score']
+[XGB-API]   .signal_date = '2026-06-12'
+[XGB-API]   .entry_time = '06-08 10:36'
+[XGB-API]   .close = 20512.0
+[XGB-API]   .symbol = 'sh118018'
+[XGB-API]   .date = 'MISSING'
+[XGB-API] stock_data keys (first 5): ['sh000001', 'sh000002', 'sh000003', 'sh000009', 'sh000010']
+[XGB] factor_cache=3500 stock_data=5860 no_sym=0 no_match=0 no_date=0 ok=3500
+[XGB] sample symbols (first 5): ['sh118018', 'sh688056', 'sh603020', 'sh600869', 'sh688507']
+[XGB] stock_data keys (first 3): ['sh000001', 'sh000002', 'sh000003']
+[XGB]   'sh118018' in stock_data? True
+[XGB]   'sh688056' in stock_data? True
+[XGB]   'sh603020' in stock_data? True
+[2026-06-16 06:10:40] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 06:15:47] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 06:18:03] Flask 无响应 (1/2)
+[2026-06-16 06:18:38] Flask 已恢复 ✅
+[2026-06-16 06:20:56] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 06:26:03] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 06:31:10] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 06:36:17] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 06:39:44] Streamlit 无响应 (1/2)
+[2026-06-16 06:40:18] Streamlit 已恢复 ✅
+[2026-06-16 06:41:26] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 06:46:33] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 06:51:40] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 06:56:47] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 06:59:38] Flask 无响应 (1/2)
+[2026-06-16 07:00:12] Flask 已恢复 ✅
+[2026-06-16 07:01:56] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 07:07:03] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 07:12:10] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 07:17:17] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 07:22:24] 心跳💓 Flask=OK Streamlit=OK
+[2026-06-16 07:27:31] 心跳💓 Flask=OK Streamlit=OK

@@ -203,6 +203,18 @@ class SimulatedBroker(AbstractBroker):
     def get_position(self, symbol: str) -> Position | None:
         return self._positions.get(symbol)
 
+    def _create_position(self, symbol: str, volume: int, avg_cost: float,
+                         current_price: float = 0.0) -> Position:
+        """内部: 直接创建/更新持仓 (paper_engine_v2 restore用)"""
+        pos = Position(
+            symbol=symbol, volume=volume, available=volume,
+            avg_cost=avg_cost,
+            current_price=current_price or avg_cost,
+            market_value=volume * (current_price or avg_cost),
+            updated_time=datetime.now())
+        self._positions[symbol] = pos
+        return pos
+
     def get_account(self) -> AccountInfo:
         market_value = sum(
             p.volume * (p.current_price or p.avg_cost)

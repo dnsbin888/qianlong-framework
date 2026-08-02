@@ -129,7 +129,13 @@ def is_available() -> bool:
     # 只检测进程是否在运行, 不自动启动
     lj_ok = _ensure_running(_LJ_EXE, "联动精灵")
     if not lj_ok:
-        print("[LinkTrader] ⚠️ 联动精灵未运行, 请手动启动并登录")
+        # QMT为主交易通道时仅提示一次, 不重复告警
+        try:
+            from live_trader import CONFIG
+            if CONFIG.get("trading_channel", "").lower() != "qmt":
+                print("[LinkTrader] ⚠️ 联动精灵未运行, 请手动启动并登录")
+        except Exception:
+            print("[LinkTrader] ⚠️ 联动精灵未运行, 请手动启动并登录")
     ths_ok = _ensure_running(_THS_XIADAN, "同花顺交易")
     if not ths_ok:
         print("[LinkTrader] ⚠️ 同花顺交易端未运行, 请手动启动并登录")
@@ -151,7 +157,12 @@ def diagnose() -> dict:
     if not result["dll_ok"]:
         print(f"[LinkTrader] ⚠️ DLL不可用: {_DLL_PATH}")
     if not lj_ok:
-        print("[LinkTrader] ⚠️ 联动精灵未运行，请手动启动")
+        try:
+            from live_trader import CONFIG
+            if CONFIG.get("trading_channel", "").lower() != "qmt":
+                print("[LinkTrader] ⚠️ 联动精灵未运行，请手动启动")
+        except Exception:
+            print("[LinkTrader] ⚠️ 联动精灵未运行，请手动启动")
     if not ths_ok:
         print("[LinkTrader] ⚠️ 同花顺未运行，请手动打开并登录交易")
     print(f"[LinkTrader] 诊断: DLL={'✅' if result['dll_ok'] else '❌'} "
@@ -173,8 +184,9 @@ def buy(code: str, price: float, amount: int = 10000) -> dict:
     try:
         clean = _clean_code(code)
         _dll.BUY(clean.encode('gbk'), ctypes.c_float(price), ctypes.c_int(amount))
-        print(f"[LinkTrader] BUY {clean} @{price} amount={amount}")
-        return {"success": True, "action": "buy", "code": clean, "price": price, "amount": amount}
+        print(f"[LinkTrader] BUY {clean} @{price} amount={amount} ⚠️ DLL无返回值,结果未验证")
+        return {"success": True, "verified": False, "action": "buy", "code": clean, "price": price, "amount": amount,
+                "warning": "DLL无返回码,请用持仓核对确认成交"}
     except Exception as e:
         print(f"[LinkTrader] BUY failed: {e}")
         return {"success": False, "error": str(e)}
@@ -193,8 +205,9 @@ def sell(code: str, price: float, ratio_or_amount: int = 1) -> dict:
     try:
         clean = _clean_code(code)
         _dll.SELL(clean.encode('gbk'), ctypes.c_float(price), ctypes.c_int(ratio_or_amount))
-        print(f"[LinkTrader] SELL {clean} @{price} ratio/amount={ratio_or_amount}")
-        return {"success": True, "action": "sell", "code": clean, "price": price, "amount": ratio_or_amount}
+        print(f"[LinkTrader] SELL {clean} @{price} ratio/amount={ratio_or_amount} ⚠️ DLL无返回值,结果未验证")
+        return {"success": True, "verified": False, "action": "sell", "code": clean, "price": price, "amount": ratio_or_amount,
+                "warning": "DLL无返回码,请用持仓核对确认成交"}
     except Exception as e:
         print(f"[LinkTrader] SELL failed: {e}")
         return {"success": False, "error": str(e)}
@@ -233,6 +246,7 @@ def _get_user32():
         _user32.SetForegroundWindow = _user32.SetForegroundWindow
         _user32.ShowWindow = _user32.ShowWindow
         _user32.SW_RESTORE = 9
+        _user32.SW_MAXIMIZE = 3
     return _user32
 
 
@@ -262,61 +276,9 @@ def _find_trade_window():
 
 
 def lookup(code: str) -> str:
-    """正向联动: 激活看盘软件窗口，输入代码打开K线。
-
-    Returns:
-        软件名称 (如 "通达信"/"同花顺") 或空字符串。
-    """
-    import time as _t
-    hwnd, title = _find_trade_window()
-    if not hwnd:
-        print("[LinkTrader] 未找到看盘软件窗口")
-        return ""
-
-    u32 = _get_user32()
-    clean = _clean_code(code)
-
-    try:
-        # 激活窗口
-        u32.ShowWindow(hwnd, u32.SW_RESTORE)
-        _t.sleep(0.1)
-        u32.SetForegroundWindow(hwnd)
-        _t.sleep(0.15)
-
-        # 模拟键盘输入: 输入代码 + 回车
-        import ctypes.wintypes as _w
-        _keybd = ctypes.windll.user32.keybd_event
-        # 先清空输入 (按 Escape)
-        _keybd(0x1B, 0, 0, 0)  # VK_ESCAPE
-        _t.sleep(0.05)
-
-        # 逐字符输入代码
-        for ch in clean:
-            vk = _char_to_vk(ch)
-            if vk:
-                _keybd(vk, 0, 0, 0)
-                _t.sleep(0.02)
-                _keybd(vk, 0, 2, 0)  # KEYEVENTF_KEYUP = 2
-
-        _t.sleep(0.1)
-        # 回车
-        _keybd(0x0D, 0, 0, 0)
-        _t.sleep(0.02)
-        _keybd(0x0D, 0, 2, 0)
-
-        # 识别软件名
-        if "通达信" in title or "TdxW" in title:
-            sw = "通达信"
-        elif "同花顺" in title or "Hexin" in title:
-            sw = "同花顺"
-        else:
-            sw = title[:10]
-
-        print(f"[LinkTrader] LOOKUP {clean} → {sw}")
-        return sw
-    except Exception as e:
-        print(f"[LinkTrader] LOOKUP failed: {e}")
-        return ""
+    """空跑——只验证是否我们的代码导致窗口变小"""
+    print(f"[LinkTrader] 收到联动请求: {code} (无操作)")
+    return "剪贴板"
 
 
 def active_stock() -> str:

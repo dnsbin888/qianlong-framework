@@ -1,0 +1,39 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><title>信号自动/手动区分预览</title>
+<style>
+body{background:#0d0e10;color:#b4b6b8;font-family:sans-serif;padding:20px;max-width:600px;margin:0 auto}
+h2{color:#e3e3e3;font-size:16px;margin:20px 0 10px}
+.card{background:#141619;border-radius:4px;padding:6px 10px;margin:4px 0;display:flex;align-items:center;gap:8px;font-size:12px}
+.score{font-weight:700;min-width:28px}
+.sym{font-weight:600;min-width:68px;cursor:pointer}
+.name{color:#888;font-size:11px;min-width:48px}
+.lv{font-weight:600;min-width:32px}
+.chg{min-width:44px}
+.cts{font-size:10px;color:#666;min-width:32px}
+.pos{min-width:24px;color:#888;font-size:10px}
+.tag{min-width:40px;text-align:center;font-size:10px;font-weight:600;border-radius:3px;padding:1px 6px}
+.auto{color:#00b96b;background:rgba(0,185,107,.1)}
+.manual{background:#00b96b;color:#fff;cursor:pointer;border:none}
+.frozen{color:#FF4051;font-size:10px}
+.scenario{color:#888;font-size:11px;margin:8px 0 4px;padding:4px 8px;background:rgba(255,255,255,.02);border-radius:3px}
+</style></head><body>
+
+<h2>信号卡片 · 自动/手动区分</h2>
+
+<div class="scenario">🐻 当前熊市 — 60条信号全部需要手动审批</div>
+<div class="card"><span class="score" style="color:#F1A100">102</span><span class="sym">sh600246</span><span class="name">万通发展</span><span class="lv" style="color:#F1A100">L5</span><span class="chg" style="color:#FF4051">+0.56%</span><span class="cts">🟢🟢🔴</span><span class="pos">4%</span><button class="tag manual">💰 审批</button></div>
+<div class="card"><span class="score" style="color:#F1A100">102</span><span class="sym">sh688403</span><span class="name">汇成股份</span><span class="lv" style="color:#F1A100">L5</span><span class="chg" style="color:#FF4051">+7.65%</span><span class="cts">🟢🟢🔴</span><span class="pos">4%</span><button class="tag manual">💰 审批</button></div>
+
+<div class="scenario">📊 震荡市 — 三模型共振(🟢🟢🟢)的自动，双模型的手动</div>
+<div class="card"><span class="score" style="color:#F1A100">95</span><span class="sym">sh600519</span><span class="name">贵州茅台</span><span class="lv" style="color:#F1A100">L5</span><span class="chg" style="color:#FF4051">+2.1%</span><span class="cts">🟢🟢🟢</span><span class="pos">8%</span><span class="tag auto">⚡ 自动</span></div>
+<div class="card"><span class="score" style="color:#e3e3e3">78</span><span class="sym">sh000001</span><span class="name">上证指数</span><span class="lv">L3</span><span class="chg" style="color:#FF4051">+0.8%</span><span class="cts">🟢🟢🔴</span><span class="pos">4%</span><button class="tag manual">💰 审批</button></div>
+
+<div class="scenario">🐂 牛市 — 全自动，不需要任何人工审批</div>
+<div class="card"><span class="score" style="color:#F1A100">88</span><span class="sym">sh600030</span><span class="name">中信证券</span><span class="lv" style="color:#F1A100">L4</span><span class="chg" style="color:#FF4051">+5.2%</span><span class="cts">🟢🟢🟢</span><span class="pos">12%</span><span class="tag auto">⚡ 自动</span></div>
+<div class="card"><span class="score" style="color:#e3e3e3">76</span><span class="sym">sz000001</span><span class="name">平安银行</span><span class="lv">L3</span><span class="chg" style="color:#FF4051">+3.1%</span><span class="cts">🟢🟢🟢</span><span class="pos">10%</span><span class="tag auto">⚡ 自动</span></div>
+
+<div style="margin-top:20px;color:#888;font-size:11px;line-height:1.6">
+💡 <b>改动</b>：信号表加 <code>auto_enabled</code> 字段 → 前端自动/手动分色显示<br>
+熊市全手动、震荡混排、牛市全自动 — 全由 market_adaptive 规则自动决定
+</div>
+
+</body></html>

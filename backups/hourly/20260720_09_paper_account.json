@@ -1,0 +1,80 @@
+{
+  "cash": 824452.0,
+  "positions": {
+    "sh600089": {
+      "qty": 100,
+      "avg_cost": 19.0,
+      "last_price": 19.0,
+      "name": "特变电工",
+      "buy_date": "2026-07-17",
+      "strategy_id": "auto",
+      "stop_loss": 0,
+      "soft_stop_loss": 0,
+      "_verified": true
+    },
+    "sh600406": {
+      "qty": 100,
+      "avg_cost": 22.13,
+      "last_price": 22.13,
+      "name": "国电南瑞",
+      "buy_date": "2026-07-17",
+      "strategy_id": "",
+      "stop_loss": 0,
+      "soft_stop_loss": 0,
+      "_verified": true
+    },
+    "sh601857": {
+      "qty": 16500,
+      "avg_cost": 10.39,
+      "last_price": 10.39,
+      "name": "中国石油",
+      "buy_date": "2026-07-20",
+      "strategy_id": "信号5级(16.7%仓) [ML]",
+      "stop_loss": 0,
+      "soft_stop_loss": 0,
+      "_verified": true
+    }
+  },
+  "trade_log": [
+    {
+      "symbol": "sh600406",
+      "name": "国电南瑞",
+      "side": "buy",
+      "price": 22.13,
+      "qty": 100,
+      "cost": 2213.0,
+      "amount": 2213.0,
+      "fee": 5.0,
+      "pnl": null,
+      "cost_price": 22.13,
+      "signal_source": "auto",
+      "date": "2026-07-17",
+      "time": "23:05:42",
+      "type": "manual",
+      "reason": "测试弱转强"
+    },
+    {
+      "symbol": "sh601857",
+      "name": "中国石油",
+      "side": "buy",
+      "price": 10.39,
+      "qty": 16500,
+      "cost": 171435.0,
+      "amount": 171435.0,
+      "fee": 42.86,
+      "pnl": null,
+      "cost_price": 10.39,
+      "signal_source": "auto",
+      "date": "2026-07-20",
+      "time": "09:30:35",
+      "type": "auto",
+      "reason": "信号5级(16.7%仓) [ML]"
+    }
+  ],
+  "auto_enabled": true,
+  "daily_date": "20260720",
+  "daily_trade_count": 0,
+  "daily_buy_count": 0,
+  "daily_loss_total": 0.0,
+  "day_start_equity": null
+}

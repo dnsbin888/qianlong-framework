@@ -17,6 +17,9 @@
 """
 
 import os, sys, json, time, sqlite3, logging
+import numpy as np
+sys.path.insert(0, r"D:\quant_web")
+sys.path.insert(0, r"D:\quant_framework")
 
 logger = logging.getLogger(__name__)
 
@@ -208,6 +211,89 @@ def check_backup() -> bool:
     return False
 
 
+def check_factor_decay():
+    """11. 因子衰减监控"""
+    try:
+        reg_path = r"D:\quant_framework\factor_registry.json"
+        if not os.path.exists(reg_path):
+            warn("因子衰减", "registry缺失")
+            return False
+        reg = json.load(open(reg_path, encoding="utf-8"))
+        decayed = []
+        factors = reg.get("factors", {})
+        if isinstance(factors, list):
+            factors = {f.get('name', str(i)): f for i, f in enumerate(factors)}
+        for name, info in factors.items():
+            ic = info.get("ic", 0) or 0
+            if abs(ic) < 0.01 and not info.get("retired"):
+                decayed.append(f"{info.get('label', name)}(IC={ic:.4f})")
+        if decayed:
+            warn("因子衰减", f"{len(decayed)}个: {', '.join(decayed[:3])}")
+            return False
+        ok("因子衰减", "全部因子IC正常")
+        return True
+    except Exception as e:
+        warn("因子衰减", str(e))
+        return False
+
+
+def check_psi():
+    """12. PSI特征稳定性 (v2.0)
+    从全市场行情计算接近ML因子的特征, 对比历史分布
+    """
+    try:
+        from psi_monitor import psi_summary
+        try:
+            from data_loader import load_stock_data_cache
+            sd = load_stock_data_cache(r"D:\quant_web\stock_data.parquet", keep_days=30)
+        except ImportError:
+            warn("PSI检查", "data_loader不可用(Flask未启动时跳过)")
+            return False
+        if not sd or len(sd) < 50:
+            warn("PSI检查", "行情数据不足(<50只)")
+            return False
+
+        import pandas as pd
+        rows = []
+        for sym, df in list(sd.items())[:300]:  # 取前300只做样本
+            try:
+                c = df['close'].values
+                v = df['volume'].values
+                n = len(c)
+                if n < 21:
+                    continue
+                # 与模型因子同源的特征 (动量/波动/量价)
+                hh = np.max(c[-20:]); ll = np.min(c[-20:])
+                rows.append({
+                    'ret_1d': (c[-1] - c[-2]) / (c[-2] + 1e-9),
+                    'ret_5d': (c[-1] - c[-6]) / (c[-6] + 1e-9),
+                    'ret_20d': (c[-1] - c[-21]) / (c[-21] + 1e-9),
+                    'volatility': float(np.std(np.diff(c[-21:]) / (c[-21:-1] + 1e-9))),
+                    'price_position': (c[-1] - ll) / (hh - ll + 1e-9),  # 价格位置
+                    'vol_ratio': float(np.mean(v[-5:]) / (np.mean(v[-20:]) + 1e-9)),  # 量比
+                })
+            except Exception:
+                continue
+
+        if len(rows) < 30:
+            warn("PSI检查", f"有效特征不足({len(rows)}只)")
+            return False
+
+        feat_df = pd.DataFrame(rows)
+        summary = psi_summary(feat_df)
+        if "🔴" in summary:
+            fail("PSI检查", summary)
+            return False
+        elif "🟡" in summary:
+            warn("PSI检查", summary)
+            return False
+        ok("PSI检查", "特征分布稳定")
+        return True
+    except Exception as e:
+        warn("PSI检查", str(e))
+        return False
+
+
 def run_all():
     print("=" * 50)
     print(f"潜龙盘前检查 — {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M')}")
@@ -216,7 +302,7 @@ def run_all():
     checks = [
         check_qmt, check_sqlite, check_disk, check_data_freshness,
         check_flask, check_signals, check_paper_loop, check_rule_engine,
-        check_recon, check_backup,
+        check_recon, check_backup, check_factor_decay, check_psi,
     ]
     for fn in checks:
         try:

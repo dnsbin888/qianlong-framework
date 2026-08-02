@@ -1,10 +1,44 @@
-"""实时行情模块 — 新浪财经批量API + 后台缓存(3秒刷新)"""
+"""实时行情模块 — QMT推送优先 + 新浪财经批量API兜底 + 后台缓存(3秒刷新)"""
 import urllib.request, ssl, json, os, time, threading
 from datetime import datetime
 
 _SINA_BATCH_SIZE = 80  # 新浪单次批量最大股票数
 _CACHE_TTL = 3         # 3秒刷新，持仓批零延迟
 _PERSIST_FILE = r"D:\quant_framework\quote_cache.pkl"  # P2.1: 重启不丢
+_QMT_CACHE_FILE = r"D:\quant_framework\quote_cache.json"  # E372: QMT 桥接子进程输出
+
+# ── QMT 缓存读取 ──
+def _read_qmt_cache():
+    """读取 Python 3.11 子进程写入的 QMT 行情缓存。
+    返回 {clean_code: {price, change_pct, volume, ...}} 或空 dict。
+    """
+    try:
+        if not os.path.exists(_QMT_CACHE_FILE):
+            return {}
+        # 检查文件新鲜度 (3秒内)
+        mtime = os.path.getmtime(_QMT_CACHE_FILE)
+        if time.time() - mtime > 5:
+            return {}  # 过期, 降级新浪
+        with open(_QMT_CACHE_FILE, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        data = raw.get("data", {})
+        # QMT code格式: 000001.SH → clean 000001
+        quotes = {}
+        for qmt_code, tick in data.items():
+            clean = qmt_code.replace(".SH", "").replace(".SZ", "").replace(".BJ", "").lower()
+            if not clean.isdigit() or len(clean) != 6:
+                continue
+            quotes[clean] = {
+                "name": "", "close": tick.get("price", 0),
+                "change_pct": tick.get("change_pct", 0),
+                "volume": tick.get("volume", 0), "amount": tick.get("amount", 0),
+                "high": 0, "low": 0, "open": 0,
+                "vol_ratio": 1.0, "turnover": 0,
+                "data_source": "qmt",
+            }
+        return quotes
+    except Exception:
+        return {}
 
 # P2.1: 启动时加载持久化缓存
 def _load_persisted():
@@ -347,6 +381,15 @@ def start_bg_refresh():
                 priority_syms = []
 
             try:
+                # E372: QMT推送优先 — 从子进程缓存读取 (Python 3.11桥接)
+                qmt_quotes = _read_qmt_cache()
+                if qmt_quotes and len(qmt_quotes) > 100:
+                    _quote_cache = {
+                        "status": "live", "count": len(qmt_quotes), "data": qmt_quotes,
+                        "time": datetime.now().strftime("%H:%M:%S"), "trading": is_trading_time(),
+                    }
+                    continue  # QMT数据新鲜, 跳过新浪轮询
+
                 # 滚动窗口: 每轮取200只，下一轮偏移80只
                 if all_symbols:
                     start = pool_idx % max(1, len(all_symbols))
@@ -426,6 +469,7 @@ def start_bg_refresh():
                             "count": len(old_data), "data": old_data,
                             "time": datetime.now().strftime("%H:%M:%S"),
                         }
+                        _last_fetch_time = time.time()  # E349修复: 后台线程更新时间戳
                         # Phase 5: 发布行情事件到EventBus(灰度: 与轮询并存)
                         try:
                             from quant_framework.core.event_bus import EventBus

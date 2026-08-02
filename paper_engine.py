@@ -1,393 +1,149 @@
-"""模拟交易引擎 V4 — SimulatedBroker + 规则引擎组合。
+"""模拟交易引擎 V5 — SimulatedBroker 全权委托 + RuleEngine 驱动 + ML信号原生接入
 
-P0-模拟-01: 不再自己维护资金/持仓，委托给 SimulatedBroker。
-P0-模拟-02: 修复 T+1 强约束，所有交易类型均受 T+1 限制。
+设计原则:
+  1. SimulatedBroker 管资金/持仓 — 不手写dict
+  2. RuleEngine 管出场规则 — 不手写止损/止盈
+  3. signal_table.json 管信号源 — 不依赖 FACTOR_CACHE
+  4. trade_config_master.json 管参数 — 不硬编码
+  5. 前端 API 完全兼容 — paper_account.json 格式不变
+  6. 没有 CSV 脏数据 — 启动时清洗
+  7. 没有双循环 — 一条循环
 
-规则引擎: 7 条自动交易规则抽取到 src/quant_framework/execution/rules/
-  - AutoStopLossRule: 基本止损
-  - AutoTrailingStopRule: 双层移动止盈
-  - CircuitBreakerRule: 大盘熔断
-  - MaxDailyTradesRule: 下单频率限制
-  - DailyLossLimitRule: 日内亏损限制
-  - SignalQualityFilter: 信号质量过滤
-  - PositionSizingRule: 仓位计算
+上游:  signal_table.json → decision_adapter → auto_trade_check
+下游:  paper_account.json ↔ 前端API + SSE + EventBus
+参数:  trade_config_master.json (via config_loader)
+开关:  auto_enabled (本地) + master_switch.can_buy (总闸)
+
+旧版 paper_engine.py (2100行) 已归档到 paper_engine_old_bak.py
 """
 
-import json, os, sys, threading
+import json, os, sys, time, threading
 from datetime import datetime
 
-sys.path.insert(0, r"d:\quant_framework\src")
+sys.path.insert(0, r"D:\quant_framework")
+sys.path.insert(0, r"D:\quant_framework\src")
 
 from quant_framework.execution.brokers.simulated import SimulatedBroker
 from quant_framework.execution.rules import (
     RuleEngine, AutoStopLossRule, AutoTrailingStopRule,
     CircuitBreakerRule, MaxDailyTradesRule, DailyLossLimitRule,
-    SignalQualityFilter, PositionSizingRule,
 )
+from quant_framework.execution.rules.engine import RuleAction
 
-STATE_FILE = r"d:\quant_framework\paper_account.json"
-TRADE_LOG_CSV = r"d:\quant_framework\trade_log.csv"
+# ═══════════════════════════════ 文件路径 ═══════════════════════════════
+STATE_FILE      = r"D:\quant_framework\paper_account.json"
+TRADE_LOG_FILE  = r"D:\quant_framework\paper_trades.jsonl"  # 追加模式, 永不覆盖
+SNAPSHOT_DIR    = r"D:\quant_framework\backups\paper_snapshots"
+MASTER_CONFIG   = r"D:\quant_framework\trade_config_master.json"
+SIGNAL_TABLE    = r"D:\quant_web\data\signal_table.json"
+PLAN_PATH       = r"D:\quant_web\data\auto_trade_plan.json"
+STOCK_NAMES_CSV = r"D:\quant_web\stock_names_full.csv"
+QUOTE_CACHE     = r"D:\quant_framework\quote_cache.json"
+SIGNAL_CFG_PATH = r"D:\quant_framework\signal_config.json"
 
 
-def _load_trade_config(paper_config=None):
-    """加载交易规则配置 — 与实盘共享规则，E06: 支持模拟盘独立覆盖。"""
+# ═══════════════════════════════ 工具函数 ═══════════════════════════════
+
+def _load_master():
     try:
-        from live_trader import CONFIG
-        cfg = dict(CONFIG)  # 浅拷贝，避免修改原CONFIG
-        if paper_config:
-            cfg.update(paper_config)  # 模拟盘独立配置覆盖
-        return cfg
-    except Exception as _e:
-        print(f"[Paper] 加载交易配置失败: {_e}")
-    return {
-        "tp1_profit_pct": 0.05, "tp1_trail_pct": -0.01, "tp1_sell_ratio": 0.33, "tp1_stop_loss": -0.03,
-        "tp2_profit_pct": 0.07, "tp2_trail_pct": -0.02, "tp2_sell_ratio": 0.33, "tp2_stop_loss": -0.05,
-        "tp3_profit_pct": 0.12, "tp3_trail_pct": -0.03, "tp3_sell_ratio": 0.33, "tp3_stop_loss": -0.05,
-        "max_daily_trades": 5, "max_daily_loss": -5.0, "max_positions": 5, "min_cash_reserve": 100000,
-        "signal_min_strength": 5,
-        "limit_up_drop_sell": -0.03, "max_hold_days": 3,
-    }
+        with open(MASTER_CONFIG, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
 
+# D4: 策略级止盈注册表 (模块级加载, 不变)
+_strategy_tp_sl = {}
+def _load_strategy_tp_sl():
+    global _strategy_tp_sl
+    try:
+        with open(SIGNAL_CFG_PATH, "r", encoding="utf-8") as f:
+            _strategy_tp_sl = json.load(f).get("strategy_tp_sl", {})
+    except Exception:
+        _strategy_tp_sl = {}
+_load_strategy_tp_sl()
+
+def _load_names():
+    names = {}
+    if os.path.exists(STOCK_NAMES_CSV):
+        with open(STOCK_NAMES_CSV, "r", encoding="utf-8") as f:
+            for line in f:
+                p = line.strip().split(",")
+                if len(p) >= 2:
+                    names[p[0]] = p[1]
+    return names
+
+def _resolve_name(sym, names_cache):
+    clean = sym.replace("sh","").replace("sz","").replace("bj","")
+    return names_cache.get(sym) or names_cache.get(clean) or sym
+
+def _get_market_price(sym):
+    code = sym.replace("sh","").replace("sz","").replace("bj","")
+    try:
+        if os.path.exists(QUOTE_CACHE) and time.time() - os.path.getmtime(QUOTE_CACHE) < 5:
+            with open(QUOTE_CACHE, "r") as f:
+                qd = json.load(f).get("data", {})
+            for qcode, tick in qd.items():
+                c = qcode.replace(".SH","").replace(".SZ","").replace(".BJ","").lower()
+                if c == code.lower():
+                    return float(tick.get("price", 0)) or None
+    except Exception:
+        pass
+    try:
+        from realtime_quotes import _quote_cache
+        if _quote_cache and _quote_cache.get("data"):
+            q = _quote_cache["data"].get(code, {})
+            p = float(q.get("close", q.get("price", 0)) or 0)
+            if p > 0:
+                return p
+    except Exception:
+        pass
+    return None
+
+def _can_trade_time():
+    now = datetime.now()
+    if now.weekday() >= 5:
+        return False
+    t = now.time()
+    if t < datetime.strptime("09:25", "%H:%M").time():
+        return False
+    if datetime.strptime("11:30", "%H:%M").time() <= t <= datetime.strptime("13:00", "%H:%M").time():
+        return False
+    if t >= datetime.strptime("15:05", "%H:%M").time():
+        return False
+    return True
+
+
+# ═══════════════════════════════ 核心引擎 ═══════════════════════════════
 
 class PaperAccount:
-    """模拟交易账户 — 对外的纸交易接口。
-
-    内部使用 SimulatedBroker 管理资金/持仓，RuleEngine 管理自动规则。
-    """
+    """模拟交易账户 V5 — SimulatedBroker 全权委托"""
 
     def __init__(self):
-        # ── P0-模拟-01: 委托给 SimulatedBroker ──
         self._broker = SimulatedBroker(initial_cash=1_000_000.0)
         self._broker.connect()
-        self.auto_enabled = False
-        self._positions_compat = {}  # E30: 实例变量
-        self._trades_archive: list = []  # 交易日志
-        # E60: 风控数据源（由 app.py 注入）
-        self.factor_cache = []
-        self.stock_data = {}
-        self._name_cache = {}  # FIX: 初始化时就创建，避免下单时报错
-        # E06: 模拟盘独立配置（不与实盘CONFIG共享）
-        self._paper_config = {}
-        # C14: 直接在__init__中初始化所有运行时计数器
+        self._meta: dict[str, dict] = {}
+        self._signal_hold_days: dict[str, int] = {}
+        self._trades: list[dict] = []
+        self._names = _load_names()
+
+        self._auto_enabled = False
+        self.start_time = datetime.now()
         self._daily_date = None
         self._daily_trade_count = 0
         self._daily_buy_count = 0
         self._daily_loss_total = 0.0
+        self._consecutive_losses = 0
         self._day_start_equity = None
-        self.start_time = datetime.now()
-        # E33-1: 规则引擎提前初始化，避免 auto_trade_check() 抛 AttributeError
-        # R1-1: 注入 SimulatedBroker，使 RuleEngine 可直接执行订单
+
         self._rule_engine = RuleEngine(broker=self._broker)
         self._setup_rules()
-        self._restore_peaks()
 
-    def set_risk_data(self, factor_cache=None, stock_data=None):
-        """E60: 更新风控所需的数据源"""
-        if factor_cache is not None:
-            self.factor_cache = factor_cache
-        if stock_data is not None:
-            self.stock_data = stock_data
-        self._name_cache = {}
+        self._toggle_lock = threading.Lock()
+        self._trades_archive = self._trades
 
-        # ── 规则引擎 ──
-        self._rule_engine = RuleEngine(broker=self._broker)
-        self._setup_rules()
-        self._restore_peaks()
-
-        # ── 运行时追踪（首次初始化，后续调用不重置） ──
-        if not hasattr(self, '_daily_trade_count') or self._daily_trade_count is None:
-            self._daily_date = None
-            self._daily_trade_count = 0
-            self._daily_buy_count = 0
-            self._daily_loss_total = 0.0
-            self.start_time = datetime.now()  # E49: 记录启动时间用于现金收益
-
-        # 从文件恢复状态
         self._load()
 
-    # ═══════════════════ 规则配置 ═══════════════════
-
-    def set_config(self, key, value):
-        """E06: 设置模拟盘独立配置（如 signal_min_strength）"""
-        self._paper_config[key] = value
-        print(f"[Paper] 配置更新: {key}={value}")
-        self.restart()  # 重新加载规则使新配置生效
-
-    def get_config(self, key, default=None):
-        """获取配置，优先独立配置→共享CONFIG"""
-        if key in self._paper_config:
-            return self._paper_config[key]
-        try:
-            from live_trader import CONFIG
-            return CONFIG.get(key, default)
-        except:
-            return default
-
-    def restart(self):
-        """重启模拟交易引擎 — 重新加载交易规则配置。
-
-        进化参数应用后调用，使新止损/止盈立即生效。
-        不影响持仓和资金状态。
-        """
-        try:
-            self._rule_engine = RuleEngine(broker=self._broker)
-            self._setup_rules()
-            print(f"[Paper] 规则已重新加载: {len(self._rule_engine._rules)}条")
-        except Exception as _re:
-            print(f"[Paper] restart失败: {_re}")
-
-    def _setup_rules(self):
-        """初始化 7 条自动交易规则。"""
-        cfg = _load_trade_config(self._paper_config)  # E06
-
-        tp1_profit = cfg.get("tp1_profit_pct", 0.05)
-        tp1_trail = abs(cfg.get("tp1_trail_pct", -0.01))
-        tp1_sell = cfg.get("tp1_sell_ratio", 0.33)
-        tp1_stop = cfg.get("tp1_stop_loss", -0.03)
-
-        tp2_profit = cfg.get("tp2_profit_pct", 0.07)
-        tp2_trail = abs(cfg.get("tp2_trail_pct", -0.02))
-        tp2_sell = cfg.get("tp2_sell_ratio", 0.33)
-        tp2_stop = cfg.get("tp2_stop_loss", -0.05)
-
-        tp3_profit = cfg.get("tp3_profit_pct", 0.12)
-        tp3_trail = abs(cfg.get("tp3_trail_pct", -0.03))
-        tp3_sell = cfg.get("tp3_sell_ratio", 0.33)
-        tp3_stop = cfg.get("tp3_stop_loss", -0.05)
-
-        # 1. 基本止损: -3%清仓 (E02: 半仓导致反复触发, 改全卖)
-        self._rule_engine.add_rule(AutoStopLossRule(threshold=-0.03, sell_ratio=1.0))
-
-        # 2-4. 三级移动止盈
-        self._rule_engine.add_rule(AutoTrailingStopRule(
-            tier=2, profit_pct=tp2_profit, trail_pct=tp2_trail,
-            sell_ratio=tp2_sell, stop_loss=tp2_stop,
-        ))
-        self._rule_engine.add_rule(AutoTrailingStopRule(
-            tier=1, profit_pct=tp1_profit, trail_pct=tp1_trail,
-            sell_ratio=tp1_sell, stop_loss=tp1_stop,
-        ))
-        self._rule_engine.add_rule(AutoTrailingStopRule(
-            tier=3, profit_pct=tp3_profit, trail_pct=tp3_trail,
-            sell_ratio=tp3_sell, stop_loss=tp3_stop,
-        ))
-
-        # 4. 熔断
-        self._rule_engine.add_rule(CircuitBreakerRule(
-            max_daily_loss_pct=cfg.get("max_daily_loss", -0.05),
-            initial_capital=1_000_000,
-        ))
-
-        # 5. 下单频率限制
-        self._rule_engine.add_rule(MaxDailyTradesRule(
-            max_trades=cfg.get("max_daily_trades", 4),
-        ))
-
-        # 6. 日内亏损限制
-        self._rule_engine.add_rule(DailyLossLimitRule(
-            max_loss_pct=cfg.get("max_daily_loss", -0.05),
-            initial_capital=1_000_000,
-        ))
-
-        # 7. 信号质量过滤 + 仓位计算 (在 auto_trade_check 中显式调用)
-        self._signal_filter = SignalQualityFilter(
-            min_strength=cfg.get("signal_min_strength", 3),
-        )
-        self._position_sizer = PositionSizingRule()
-
-    # ═══════════════════ 状态持久化 ═══════════════════
-    _save_lock = threading.Lock()
-
-    def _repair_missing_buys(self):
-        """C18: 检测并回补缺失的买入记录（从卖出记录回推）。"""
-        sells = [t for t in self._trades_archive if t.get("side") == "sell"]
-        repaired = 0
-        for s in sells:
-            sym = s.get("symbol", "")
-            qty = s.get("qty", 0)
-            cost_price = s.get("cost_price", 0)
-            # 检查是否有对应买入
-            has_buy = any(t.get("side") == "buy" and t.get("symbol") == sym
-                         for t in self._trades_archive)
-            if not has_buy and cost_price > 0 and qty > 0:
-                self._trades_archive.insert(0, {
-                    "symbol": sym, "name": s.get("name", sym),
-                    "side": "buy", "price": cost_price, "qty": qty,
-                    "cost": round(cost_price * qty, 2),
-                    "time": "09:30:00", "type": "system", "repair": True,
-                })
-                repaired += 1
-                print(f"[Paper] ✅ 回补缺失买入: {sym} x{qty} @{cost_price}")
-        if repaired > 0:
-            print(f"[Paper] 共回补{repaired}笔缺失买入记录")
-
-    def _load(self):
-        if os.path.exists(STATE_FILE):
-            try:
-                with open(STATE_FILE, "r") as f:
-                    d = json.load(f)
-                file_cash = d.get("cash", 1_000_000)
-                self._broker._cash = float(file_cash)
-                self._trades_archive = d.get("trade_log", [])
-                self.auto_enabled = d.get("auto_enabled", False)
-                # 兼容旧记录: 补全缺失的 date 字段 + 去重
-                _today = datetime.now().strftime("%Y-%m-%d")
-                _seen = set()
-                _deduped = []
-                for _t in self._trades_archive:
-                    if not _t.get("date"):
-                        _t["date"] = _today
-                    _k = (_t.get("symbol",""), _t.get("side",""), _t.get("qty",0),
-                          _t.get("price",0), _t.get("time",""), _t.get("date",""))
-                    if _k not in _seen:
-                        _seen.add(_k)
-                        _deduped.append(_t)
-                if len(_deduped) < len(self._trades_archive):
-                    print(f"[Paper] 去重: 移除 {len(self._trades_archive)-len(_deduped)} 条重复记录")
-                    self._trades_archive = _deduped
-                # C18: 回补缺失的买入记录
-                self._repair_missing_buys()
-                # E259根治: 从 trade_log.csv 恢复缺失记录
-                self._sync_from_csv()
-                # D04: 恢复确认日志
-                print(f"[Paper] _load: cash={self._broker._cash} (from file={file_cash}), "
-                      f"positions={len(d.get('positions',{}))}, trades={len(self._trades_archive)}, auto={self.auto_enabled}")
-                for sym, pos in d.get("positions", {}).items():
-                    # C09: 校验持仓来源 — 必须有对应买入记录
-                    buy_recs = [t for t in self._trades_archive if t.get("side")=="buy" and t.get("symbol")==sym]
-                    if not buy_recs:
-                        print(f"[Paper] ⚠️ 忽略无源持仓 {sym}: 无对应买入记录")
-                        continue
-                    if not pos.get("last_price"): pos["last_price"] = pos.get("avg_cost", 1.0)
-                    if not pos.get("avg_cost"): pos["avg_cost"] = pos.get("last_price", 1.0)
-                    if not pos.get("qty"): pos["qty"] = 100
-                    pos["_verified"] = True  # C09: 有源持仓标记
-                    self.positions[sym] = pos
-                # 恢复日内计数器（崩溃后不丢失）
-                self._daily_date = d.get("daily_date")
-                self._daily_trade_count = d.get("daily_trade_count", 0)
-                self._daily_buy_count = d.get("daily_buy_count", 0)
-                self._daily_loss_total = d.get("daily_loss_total", 0.0)
-                self._day_start_equity = d.get("day_start_equity")
-            except Exception as _e:
-                print(f"[Paper] 状态文件加载失败: {_e}")
-
-    def _restore_peaks(self):
-        """从持仓数据恢复移动止盈峰值 (重启后不丢失)"""
-        try:
-            for sym, pos in self.positions.items():
-                peak_pnl = pos.get("_peak_pnl")
-                if peak_pnl and peak_pnl > 0:
-                    # 恢复峰值到所有 TrailingStopRule
-                    for rule in getattr(self._rule_engine, '_position_rules', []):
-                        if hasattr(rule, '_peaks'):
-                            rule._peaks[sym] = max(rule._peaks.get(sym, 0), peak_pnl)
-        except Exception: pass
-
-    def _save(self):
-        try:
-            # E17: 磁盘空间检查
-            import shutil
-            _dir = os.path.dirname(STATE_FILE)
-            if os.path.exists(_dir):
-                _disk = shutil.disk_usage(_dir)
-                if _disk.free < 100 * 1024 * 1024:  # <100MB
-                    print(f"[Paper] 磁盘空间不足({_disk.free//1024//1024}MB)，跳过保存")
-                    return
-            with self._save_lock:  # 线程安全
-                # E17: 保存前备份
-                if os.path.exists(STATE_FILE) and os.path.getsize(STATE_FILE) > 100:
-                    shutil.copy2(STATE_FILE, STATE_FILE + ".bak")
-                data = {
-                    "cash": self.cash,
-                    "positions": self.positions,
-                    "trade_log": self._trades_archive[-200:],
-                    "auto_enabled": self.auto_enabled,
-                    "daily_date": self._daily_date,
-                    "daily_trade_count": self._daily_trade_count,
-                    "daily_buy_count": getattr(self, '_daily_buy_count', 0),
-                    "daily_loss_total": self._daily_loss_total,
-                    "day_start_equity": getattr(self, '_day_start_equity', None),
-                    "last_trade_ts": datetime.now().strftime("%H:%M:%S"),
-                }
-                tmp = STATE_FILE + ".tmp"
-                with open(tmp, "w") as f:
-                    json.dump(data, f)
-                # E17: 写入后校验
-                with open(tmp, "r") as f:
-                    verify = json.load(f)
-                if verify.get("cash") != data.get("cash"):
-                    print(f"[Paper] 校验失败(cash mismatch)，放弃保存")
-                    return
-                os.replace(tmp, STATE_FILE)  # 原子写入: tmp→正式
-        except Exception as _e:
-            print(f"[Paper] 保存状态文件失败: {_e}")
-
-    def _append_trade_csv(self, trade: dict) -> None:
-        """E259根治: 卖出成交时同步追加 trade_log.csv，统一数据源。"""
-        try:
-            import csv as _csv, os as _os
-            _exists = _os.path.exists(TRADE_LOG_CSV)
-            _cols = ["symbol","buy_date","sell_date","buy_price","sell_price","volume","return_pct","net_profit","exit_type","signal"]
-            with open(TRADE_LOG_CSV, "a", newline="", encoding="utf-8-sig") as _f:
-                _w = _csv.DictWriter(_f, fieldnames=_cols)
-                if not _exists:
-                    _w.writeheader()
-                _w.writerow({
-                    "symbol": trade.get("symbol", ""),
-                    "buy_date": trade.get("buy_date", ""),
-                    "sell_date": trade.get("sell_date", datetime.now().strftime("%Y-%m-%d")),
-                    "buy_price": round(trade.get("cost_price", 0), 2),
-                    "sell_price": round(trade.get("price", 0), 2),
-                    "volume": trade.get("qty", 0),
-                    "return_pct": round(trade.get("pnl", 0) / max(trade.get("cost", 1), 1) * 100, 2),
-                    "net_profit": round(trade.get("pnl", 0), 2),
-                    "exit_type": trade.get("type", "signal"),
-                    "signal": trade.get("signal", ""),
-                })
-        except Exception as _e:
-            print(f"[Paper] CSV追加失败: {_e}")
-
-    def _sync_from_csv(self) -> None:
-        """E259根治: 从 trade_log.csv 恢复 trades_archive 中缺失的记录。"""
-        try:
-            import csv as _csv, os as _os
-            if not _os.path.exists(TRADE_LOG_CSV):
-                return
-            _existing = {(t.get("symbol",""), t.get("sell_date",""), t.get("qty",0))
-                         for t in self._trades_archive if t.get("side") == "sell"}
-            with open(TRADE_LOG_CSV, "r", encoding="utf-8-sig") as _f:
-                for _row in _csv.DictReader(_f):
-                    _key = (_row.get("symbol",""), _row.get("sell_date",""), int(float(_row.get("volume", 0) or 0)))
-                    if _key in _existing:
-                        continue
-                    _qty = int(float(_row.get("volume", 0) or 0))
-                    _price = float(_row.get("sell_price", 0) or 0)
-                    _cost_price = float(_row.get("buy_price", 0) or 0)
-                    _pnl = (_price - _cost_price) * _qty
-                    self._trades_archive.append({
-                        "symbol": _row.get("symbol", ""),
-                        "side": "sell",
-                        "price": _price,
-                        "qty": _qty,
-                        "revenue": _price * _qty,
-                        "cost": _cost_price * _qty,
-                        "pnl": round(_pnl, 2),
-                        "cost_price": _cost_price,
-                        "time": "00:00:00",
-                        "sell_date": _row.get("sell_date", ""),
-                        "buy_date": _row.get("buy_date", ""),
-                        "type": _row.get("exit_type", "csv_sync"),
-                        "_csv_synced": True,
-                    })
-                    _existing.add(_key)
-            _csv_sells = sum(1 for t in self._trades_archive if t.get("_csv_synced"))
-            if _csv_sells > 0:
-                print(f"[Paper] 从CSV恢复 {_csv_sells} 笔卖出记录")
-        except Exception as _e:
-            print(f"[Paper] CSV同步失败: {_e}")
-
-    # ═══════════════════ 资金/持仓代理 ═══════════════════
+    # ═══════════ 资金/持仓属性 ═══════════
 
     @property
     def cash(self) -> float:
@@ -399,365 +155,868 @@ class PaperAccount:
 
     @property
     def positions(self) -> dict:
-        """返回兼容旧接口的持仓 dict。"""
-        return self._positions_compat
+        result = {}
+        for sym, pos in self._broker._positions.items():
+            meta = self._meta.get(sym, {})
+            result[sym] = {
+                "qty": pos.volume,
+                "avg_cost": round(pos.avg_cost, 2),
+                "last_price": pos.current_price or pos.avg_cost,
+                "name": meta.get("name", _resolve_name(sym, self._names)),
+                "buy_date": meta.get("buy_date", ""),
+                "strategy_id": meta.get("strategy_id", ""),
+                "stop_loss": meta.get("stop_loss", 0),
+                "soft_stop_loss": meta.get("soft_stop_loss", 0),
+                "_verified": True,
+            }
+        return result
+
+    @property
+    def auto_enabled(self) -> bool:
+        return self._auto_enabled
+
+    @auto_enabled.setter
+    def auto_enabled(self, value: bool):
+        self._auto_enabled = value
+        self._save()
 
     @property
     def trade_log(self) -> list:
-        return self._trades_archive
+        return self._trades
 
     @property
-    def orders(self):
-        return []
+    def total_equity(self) -> float:
+        return self.get_total_equity()
 
-    # ═══════════════════ 名称解析 ═══════════════════
+    def _get_market_price(self, sym):
+        return _get_market_price(sym)
 
-    def _resolve_name(self, symbol):
-        code = symbol.replace("sh", "").replace("sz", "").replace("SH", "").replace("SZ", "")
-        if not self._name_cache:
-            try:
-                nf = r"D:\quant_web\stock_names_full.csv"
-                if os.path.exists(nf):
-                    with open(nf, "r", encoding="utf-8") as f:
-                        for line in f:
-                            p = line.strip().split(",", 1)
-                            if len(p) >= 2:
-                                self._name_cache[p[0].strip()] = p[1].strip()
-            except Exception as _e:
-                print(f"[Paper] 股票名称文件加载失败: {_e}")
-        return self._name_cache.get(code, code)
+    def set_config(self, key, value):
+        pass
 
-    # ═══════════════════ 价格查询 ═══════════════════
+    def restart(self):
+        self._save()
 
-    def _resolve_price(self, symbol, fallback=None, fast=False, side=None):
-        """统一价格获取: 实时行情→westock→价格缓存→因子缓存→fallback→成本价。
-        fast=True: 跳过westock。 side='buy': 加滑点+0.1%, side='sell': 减滑点-0.1%"""
-        price = self._resolve_price_raw(symbol, fallback, fast)
-        if price and price > 0 and side:
-            slippage = 0.001 if side == 'buy' else -0.001
-            price = round(price * (1 + slippage), 2)
-        return price
+    def get_pnl(self) -> float:
+        return self.get_total_equity() - 1_000_000.0
 
-    def _resolve_price_raw(self, symbol, fallback=None, fast=False):
-        """原始价格获取(无滑点)"""
-        code = symbol.replace("sh", "").replace("sz", "").replace("SH", "").replace("SZ", "")
+    # ═══════════ 规则设置 ═══════════
+
+    def _setup_rules(self):
+        m = _load_master()
+        tp = m.get("take_profit", {})
+        sl = m.get("stop_loss", {})
+        dr = m.get("daily_risk", {})
+
+        # 止损规则 (已有)
+        hard_sl = sl.get("hard", -0.055)
+        soft_sl = sl.get("soft", -0.03)
+        self._rule_engine.add_rule(AutoStopLossRule(threshold=hard_sl, sell_ratio=1.0))
+        self._rule_engine.add_rule(AutoStopLossRule(threshold=soft_sl, sell_ratio=0.5))
+
+        # 移动止盈 T1/T2/T3 (2026-07-21补T3)
+        for tier, key in [(1, "tp1"), (2, "tp2"), (3, "tp3")]:
+            t = tp.get(key, {})
+            if t:
+                defaults = {1: (0.05, 0.01, 0.33, -0.03),
+                           2: (0.07, 0.02, 0.5, -0.05),
+                           3: (0.10, 0.03, 1.0, -0.07)}
+                dp, dt, ds, dl = defaults[tier]
+                self._rule_engine.add_rule(AutoTrailingStopRule(
+                    tier=tier,
+                    profit_pct=t.get("profit_pct", dp),
+                    trail_pct=t.get("trail_pct", dt),
+                    sell_ratio=t.get("sell_ratio", ds),
+                    stop_loss=t.get("stop_loss", dl),
+                ))
+
+        # D1: 日内亏损分级 (软-3%半仓 → 硬-5%清仓)
+        self._rule_engine.add_rule(DailyLossLimitRule(
+            soft_loss_pct=dr.get("level1_pct", -0.03),
+            hard_loss_pct=dr.get("level2_pct", -0.05),
+            initial_capital=1_000_000.0,
+        ))
+
+        # 日笔上限 (已有导入, 补接线)
+        self._rule_engine.add_rule(MaxDailyTradesRule(
+            max_trades=dr.get("max_trades", 5),
+        ))
+
+    # ═══════════ 持久化 ═══════════
+
+    def _clean_state_file(self):
+        if not os.path.exists(STATE_FILE):
+            return {}, [], True
         try:
-            from realtime_quotes import _quote_cache
-            if _quote_cache and _quote_cache.get("data") and code in _quote_cache["data"]:
-                p = float(_quote_cache["data"][code].get("close", 0) or 0)
-                if p > 0:
-                    return p  # fix: 只有有效价格才返回，否则继续fallback
-        except Exception as _e:
-            print(f"[Paper] 实时行情查询失败: {_e}")
-        # E56: westock实时行情优先于旧缓存（页面加载fast=True跳过，避免500ms限速阻塞）
-        if not fast:
-            try:
-                from westock_factors import get_quote
-                q = get_quote(symbol)
-                if q:
-                    for price_key in ['current_price', 'close', 'price']:
-                        try:
-                            p = float(q.get(price_key, 0) or 0)
-                            if 0 < p < 10000:
-                                return p
-                        except (ValueError, TypeError):
-                            continue
-            except Exception as _e:
-                print(f"[Paper] westock价格查询失败: {_e}")
-        # 价格缓存（回退：westock失败/限速时使用）
-        try:
-            pf = r"d:\quant_framework\price_cache.json"
-            if os.path.exists(pf):
-                with open(pf, "r") as f:
-                    pc = json.load(f)
-                for k in [code, "sh" + code, "sz" + code]:
-                    if k in pc:
-                        return float(pc[k])
-                for k, v in pc.items():
-                    if k.replace("sh", "").replace("sz", "") == code:
-                        return float(v)
-        except Exception as _e:
-            print(f"[Paper] 价格缓存读取失败: {_e}")
+            with open(STATE_FILE, "r", encoding="utf-8") as f:
+                d = json.load(f)
+        except Exception:
+            return {}, [], True
 
-        if fallback and fallback > 0:
-            return fallback
-        # P0修复: 从行情缓存取收盘价兜底，防买入阻断
-        try:
-            from realtime_quotes import _quote_cache
-            if _quote_cache and _quote_cache.get("data"):
-                for k in [code, "sh"+code, "sz"+code]:
-                    p = _quote_cache["data"].get(k, {}).get("close", 0)
-                    if p and p > 0: return float(p)
-        except Exception: pass
-        # 所有价格源失效，用上次有效价格兜底
-        if symbol in self.positions:
-            pos = self.positions[symbol]
-            last_price = pos.get("last_price", 0)
-            avg = pos.get("avg_cost", 0)
-            price = last_price if last_price > 0 and last_price != avg else avg
-            if price > 0:
-                _now = datetime.now()
-                if not hasattr(self, '_price_fail_log'):
-                    self._price_fail_log = {}
-                _last = self._price_fail_log.get(symbol, datetime(2000, 1, 1))
-                if (_now - _last).total_seconds() >= 120:
-                    print(f"[Paper] 价格获取失败 symbol={symbol}, 用上次有效价{price:.2f}兜底")
-                    self._price_fail_log[symbol] = _now
-                return price
-        if not hasattr(self, '_price_fail_log2'):
-            self._price_fail_log2 = {}
-        _last2 = self._price_fail_log2.get(symbol, datetime(2000, 1, 1))
-        _now2 = datetime.now()
-        if (_now2 - _last2).total_seconds() >= 300:
-            print(f"[Paper] 价格获取失败 symbol={symbol}, 所有回退均无效，返回0")
-            self._price_fail_log2[symbol] = _now2
-        return 0.0
+        positions = d.get("positions", {})
+        clean_pos = {}
+        for sym, pos in positions.items():
+            if not isinstance(pos, dict):
+                continue
+            if pos.get("qty", 0) <= 0:
+                continue
+            if pos.get("avg_cost", 0) <= 0:
+                continue
+            clean_pos[sym] = {
+                "qty": int(pos["qty"]),
+                "avg_cost": float(pos.get("avg_cost", 0)),
+                "last_price": float(pos.get("last_price", pos.get("avg_cost", 0))),
+                "name": str(pos.get("name", "")),
+                "buy_date": str(pos.get("buy_date", "")),
+                "strategy_id": str(pos.get("strategy_id", "")),
+            }
 
-    def _get_market_price(self, symbol):
-        # E45-B: 纯数字代码自动补 sh/sz 前缀
-        clean = symbol.replace('sh', '').replace('sz', '').replace('bj', '')
-        if clean.isdigit() and len(clean) == 6:
-            for prefix in ['sh', 'sz']:
-                prefixed = prefix + clean
+        raw = d.get("trade_log", [])
+        clean_trades = []
+        dropped = 0
+        for t in raw:
+            if not isinstance(t, dict):
+                dropped += 1; continue
+            if t.get("qty", 0) <= 0 and t.get("side") == "sell":
+                dropped += 1; continue
+            if t.get("price", 0) <= 0:
+                dropped += 1; continue
+            if not t.get("symbol"):
+                dropped += 1; continue
+            if not t.get("name"):
+                t["name"] = _resolve_name(t["symbol"], self._names)
+            clean_trades.append(t)
+
+        auto = d.get("auto_enabled", True)
+        if dropped:
+            print(f"[Paper] 启动时清洗 {dropped} 条脏交易记录")
+
+        return clean_pos, clean_trades, auto
+
+    def _load(self):
+        clean_pos, clean_trades, auto = self._clean_state_file()
+
+        # ③ 防损坏: JSON损坏→自动从.bak恢复
+        if not clean_pos and not clean_trades:
+            bak = STATE_FILE + ".bak"
+            if os.path.exists(bak):
                 try:
-                    price = self._resolve_price(prefixed)
-                    if price and price != 10.0:
-                        return price
-                except Exception as _e:
-                    print(f"[Paper] 市价查询异常: {_e}")
-        return self._resolve_price(symbol)
+                    with open(bak, "r", encoding="utf-8") as f:
+                        d = json.load(f)
+                    clean_pos = d.get("positions", {})
+                    clean_trades = d.get("trade_log", [])
+                    auto = d.get("auto_enabled", True)
+                    print(f"[Paper] ⚠️ 主文件损坏, 从.bak恢复 "
+                          f"pos={len(clean_pos)} trades={len(clean_trades)}")
+                except Exception:
+                    print("[Paper] ⚠️ .bak也损坏, 从零开始")
 
-    def get_market_value(self, quotes=None):
+        # ④ 追加模式: 从JSONL加载额外交易记录
+        if os.path.exists(TRADE_LOG_FILE):
+            try:
+                with open(TRADE_LOG_FILE, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            try: clean_trades.append(json.loads(line))
+                            except: pass
+                # 去重
+                seen = set()
+                deduped = []
+                for t in clean_trades:
+                    k = (t.get("symbol",""), t.get("side",""), t.get("qty",0),
+                         t.get("price",0), str(t.get("date",""))[:10])
+                    if k not in seen:
+                        seen.add(k); deduped.append(t)
+                clean_trades = deduped
+            except Exception as e:
+                print(f"[Paper] ⚠️ JSONL加载异常: {e}")
+
+        for sym, pos in clean_pos.items():
+            qty = pos["qty"]
+            avg = pos["avg_cost"]
+            self._broker._positions[sym] = self._broker._create_position(
+                sym, qty, avg, pos.get("last_price", avg))
+            self._meta[sym] = {
+                "name": pos.get("name", ""),
+                "buy_date": pos.get("buy_date", ""),
+                "strategy_id": pos.get("strategy_id", ""),
+            }
+            self._broker._cash -= qty * avg
+
+        self._trades = clean_trades
+        for _t in self._trades:
+            if not _t.get("name"):
+                _t["name"] = _resolve_name(_t.get("symbol",""), self._names)
+        self._auto_enabled = auto
+
+        # ⑤ 启动快照
+        self._make_snapshot()
+
+        print(f"[Paper] 加载: cash=¥{self.cash:,.0f} "
+              f"pos={len(self.positions)} trades={len(self._trades)} auto={self.auto_enabled}")
+        # 启动不重写文件 — 只在真正交易后才_save (防重启归零)
+
+    def _save(self):
+        # 写入前去重
+        _seen, _dedup = set(), []
+        for _t in self._trades:
+            _k = (_t.get("symbol",""), _t.get("side",""), _t.get("qty",0),
+                  _t.get("price",0), str(_t.get("date",""))[:10], str(_t.get("time",""))[:8])
+            if _k not in _seen:
+                _seen.add(_k); _dedup.append(_t)
+        if len(_dedup) < len(self._trades):
+            self._trades = _dedup
+        try:
+            data = {
+                "cash": round(self.cash, 2),
+                "positions": self.positions,
+                "trade_log": self._trades,
+                "auto_enabled": self.auto_enabled,
+                "daily_date": self._daily_date or datetime.now().strftime("%Y%m%d"),
+                "daily_trade_count": self._daily_trade_count,
+                "daily_buy_count": self._daily_buy_count,
+                "daily_loss_total": self._daily_loss_total,
+                "day_start_equity": self._day_start_equity,
+            }
+            # 先备份旧文件 (防写坏恢复)
+            if os.path.exists(STATE_FILE):
+                try: os.replace(STATE_FILE, STATE_FILE + ".bak")
+                except: pass
+            tmp = STATE_FILE + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2, default=str)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp, STATE_FILE)
+            # ④ 追加交易记录到JSONL (永不覆盖)
+            try:
+                _latest = data.get("trade_log", [])[-1] if data.get("trade_log") else None
+                if _latest:
+                    with open(TRADE_LOG_FILE, "a", encoding="utf-8") as _tf:
+                        _tf.write(json.dumps(_latest, ensure_ascii=False, default=str) + "\n")
+            except: pass
+        except Exception as e:
+            print(f"[Paper] 保存失败: {e}")
+        self._verify_integrity()
+
+    def _verify_integrity(self) -> bool:
+        """计算完整性校验 — 检测 cash/持仓/交易记录 不一致"""
+        try:
+            calc_cash = 1_000_000.0
+            for t in self._trades:
+                price = float(t.get("price", 0))
+                qty = int(t.get("qty", 0))
+                if t.get("side") == "buy":
+                    calc_cash -= price * qty + max(price * qty * 0.00025, 5.0)
+                elif t.get("side") == "sell":
+                    calc_cash += price * qty - max(price * qty * 0.00025, 5.0) - price * qty * 0.0005
+
+            actual_cash = self._broker._cash
+            drift = abs(calc_cash - actual_cash)
+            if drift > 100:  # 差异>100元告警
+                print(f"[Paper] ⚠️ 现金漂移: 计算¥{calc_cash:,.0f} vs 实际¥{actual_cash:,.0f} (差¥{drift:,.0f})")
+                return False
+
+            # 校验持仓市值
+            pos_value = sum(
+                p.volume * (p.current_price or p.avg_cost)
+                for p in self._broker._positions.values()
+            )
+            total = actual_cash + pos_value
+            if total < 0:
+                print(f"[Paper] ⚠️ 总资产负值: ¥{total:,.0f}")
+                return False
+            return True
+        except Exception as e:
+            print(f"[Paper] ⚠️ 校验异常: {e}")
+            return False
+
+    def _make_snapshot(self):
+        """⑤ 启动快照 — 每天首次加载时存一份"""
+        try:
+            os.makedirs(SNAPSHOT_DIR, exist_ok=True)
+            today = datetime.now().strftime("%Y%m%d")
+            snap_path = os.path.join(SNAPSHOT_DIR, f"paper_{today}.json")
+            if not os.path.exists(snap_path):
+                import shutil
+                if os.path.exists(STATE_FILE):
+                    shutil.copy2(STATE_FILE, snap_path)
+        except: pass
+
+    # ═══════════ 下单 ═══════════
+
+    def _can_buy(self, symbol: str, price: float, qty: int, signal_id: str = "") -> tuple[bool, str]:
+        try:
+            from master_switch import can_buy
+            if not can_buy("sim"):
+                return False, "风控总闸关闭"
+        except Exception:
+            pass
+
+        try:
+            from risk_guard import PreTradeChecker
+            cfg = {"max_order_value": 1_000_000, "max_daily_trades": 5,
+                   "signal_min_strength": 3, "max_positions_abs": 5,
+                   "max_single_position_pct": 20}
+            ck = PreTradeChecker(config=cfg, positions=self.positions,
+                                 cash=self.cash, total_equity=self.get_total_equity(),
+                                 stock_data=getattr(self, 'stock_data', {}))
+            action, reason, adj_qty = ck.check_buy(symbol, price, qty,
+                                                    signal_id=signal_id,
+                                                    daily_trades=self._daily_trade_count)
+            if action == "REJECT":
+                return False, reason
+            if action == "REDUCE" and adj_qty < 100:
+                return False, f"缩减后不足100股: {reason}"
+        except Exception as e:
+            return False, f"风控异常: {e}"
+
+        if price * qty > self.cash * 0.5:
+            return False, f"资金不足: 需¥{price*qty:,.0f} 可用¥{self.cash:,.0f}"
+
+        return True, ""
+
+    _trade_lock = threading.Lock()
+
+    def place_order(self, symbol: str, side: str, price: float, qty: int,
+                    trade_type: str = "auto", reason: str = "",
+                    signal_source: str = "auto", signal_id: str = "") -> dict:
+        with self._trade_lock:
+            return self._place_order_locked(symbol, side, price, qty,
+                                            trade_type, reason, signal_source, signal_id)
+
+    def _place_order_locked(self, symbol: str, side: str, price: float, qty: int,
+                            trade_type: str, reason: str,
+                            signal_source: str, signal_id: str) -> dict:
+        if side not in ("buy", "sell"):
+            return {"success": False, "error": "side须是buy/sell"}
+
+        # 非A股品种过滤 (ETF/债/逆回购等)
+        _clean = symbol.replace('sh','').replace('sz','').replace('bj','')
+        if _clean.startswith(('204','131','51','159','16','18','58','50')):
+            return {"success": False, "error": f"非A股品种: {symbol}"}
+
+        # E303: 当日不重复买同票
+        if side == "buy":
+            _td = datetime.now().strftime("%Y-%m-%d")
+            if any(t.get("symbol") == symbol and t.get("side") == "buy"
+                   and str(t.get("date",""))[:10] == _td
+                   for t in self._trades[-30:]):
+                return {"success": False, "error": f"E303: {symbol}今日已买, 勿重复"}
+
+        # ── T+1强约束 (A股铁律: 当日买入不可卖) ──
+        _today = datetime.now().strftime("%Y-%m-%d")
+        if side == "sell":
+            pos = self.positions.get(symbol, {})
+            if not pos.get("_verified", False):
+                return {"success": False, "error": f"无源持仓不可卖出({symbol})"}
+            buy_date = pos.get("buy_date", "")
+            has_today_buy = any(t.get("side")=="buy" and t.get("symbol")==symbol
+                              and str(t.get("date",""))[:10]==_today
+                              for t in self._trades[-50:])
+            if buy_date == _today or has_today_buy:
+                return {"success": False, "error": f"T+1锁定: {symbol}今日有买入, 不可卖"}
+
+        if price is None or price <= 0:
+            price = _get_market_price(symbol) or self.positions.get(symbol, {}).get("last_price", 0)
+        if price <= 0:
+            return {"success": False, "error": "无法获取价格"}
+        price = round(price, 2)
+        qty = max(100, qty // 100 * 100)
+
+        if side == "buy":
+            ok, msg = self._can_buy(symbol, price, qty, signal_id)
+            if not ok:
+                return {"success": False, "error": msg}
+
+            # D2: 集中度检查 (单票/总资产>50%硬限, >30%软限)
+            new_value = price * qty
+            total_asset = self.get_total_equity()
+            pos_ok, pos_msg = self._rule_engine.check_concentration(
+                self.positions, symbol, new_value, total_asset=total_asset)
+            if not pos_ok:
+                return {"success": False, "error": pos_msg}
+
+        cost = round(price * qty, 2)
+        commission = max(cost * 0.00025, 5.0)
+        stamp = cost * 0.0005 if side == "sell" else 0
+        pnl = 0.0
+
+        if side == "buy":
+            self._broker._cash -= (cost + commission)
+            if symbol in self._broker._positions:
+                old = self._broker._positions[symbol]
+                total_qty = old.volume + qty
+                total_cost = old.avg_cost * old.volume + cost
+                new_avg = total_cost / total_qty if total_qty > 0 else price
+                self._broker._positions[symbol] = self._broker._create_position(
+                    symbol, total_qty, new_avg, price)
+            else:
+                self._broker._positions[symbol] = self._broker._create_position(
+                    symbol, qty, price, price)
+            # D4: 策略级持有天数 — 从注册表查, 兜底7天
+            _sig_key = signal_source if signal_source != "auto" else reason or ""
+            _stp_cfg = _strategy_tp_sl.get(_sig_key, _strategy_tp_sl.get("_default", {}))
+            _hold_days = _stp_cfg.get("hold_days", self._signal_hold_days.get(symbol, 7))
+            # D3: 记录买入当日参考价 (后续单票日跌检测用)
+            _yday_close = None
+            try:
+                _sd = getattr(self, 'stock_data', None)
+                if _sd and symbol in _sd:
+                    _df = _sd[symbol]
+                    if len(_df) >= 2:
+                        _yday_close = float(_df.iloc[-2]['close'])
+            except Exception:
+                _yday_close = price  # 降级: 用买入价
+            self._meta[symbol] = {
+                "name": _resolve_name(symbol, self._names),
+                "buy_date": datetime.now().strftime("%Y-%m-%d"),
+                "strategy_id": signal_source if signal_source != "auto" else reason or "auto",
+                "hold_days": _hold_days,
+                "prev_close": round(_yday_close or price, 2),  # D3用
+            }
+            self._daily_buy_count += 1
+        else:
+            if symbol not in self._broker._positions:
+                return {"success": False, "error": "无此持仓"}
+            pos = self._broker._positions[symbol]
+            sell_qty = min(qty, pos.volume)
+            sell_amount = price * sell_qty
+            sell_commission = max(sell_amount * 0.00025, 5.0) + sell_amount * 0.0005
+            pnl = (price - pos.avg_cost) * sell_qty - sell_commission
+
+            self._broker._cash += (sell_amount - sell_commission)
+            remaining = pos.volume - sell_qty
+            if remaining < 100:
+                del self._broker._positions[symbol]
+                self._meta.pop(symbol, None)
+            else:
+                self._broker._positions[symbol] = self._broker._create_position(
+                    symbol, remaining, pos.avg_cost, price)
+
+            if pnl < 0:
+                self._daily_loss_total += pnl
+                self._consecutive_losses += 1
+            else:
+                self._consecutive_losses = 0  # 盈利重置
+
+        self._daily_trade_count += 1
+
+        rec = {
+            "symbol": symbol,
+            "name": self._meta.get(symbol, {}).get("name", _resolve_name(symbol, self._names)),
+            "side": side,
+            "price": price,
+            "qty": qty,
+            "cost": cost,
+            "amount": cost,
+            "fee": round(commission + stamp, 2),
+            "pnl": round(pnl, 2) if side == "sell" else None,
+            "cost_price": self._broker._positions[symbol].avg_cost if side == "sell" and symbol in self._broker._positions else price,
+            "signal_source": signal_source,
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "time": datetime.now().strftime("%H:%M:%S"),
+            "type": trade_type,
+            "reason": reason or (f"{'买入' if side=='buy' else '卖出'}"),
+        }
+        self._trades.append(rec)
+        self._save()
+
+        try:
+            import app as _ap
+            eb = getattr(_ap, '_event_bus', None)
+            if eb:
+                eb.publish("order", rec)
+        except Exception:
+            pass
+
+        return {"success": True, "symbol": symbol, "side": side,
+                "qty": qty, "price": price, "pnl": rec.get("pnl")}
+
+    # ═══════════ 自动交易 ═══════════
+
+    def auto_trade_check(self, signals: list | None = None) -> list[dict]:
+        if not self.auto_enabled:
+            return []
+        if not _can_trade_time():
+            return []
+
+        today = datetime.now().strftime("%Y%m%d")
+        if self._daily_date != today:
+            self._daily_date = today
+            self._daily_trade_count = 0
+            self._daily_buy_count = 0
+            self._daily_loss_total = 0.0
+            self._consecutive_losses = 0
+            self._day_start_equity = self.get_total_equity()
+
+        # ══ 熔断检查: 连亏3笔或日亏>5% → 今日停买 ══
+        if self._consecutive_losses >= 3:
+            return []
+        today_dd = (self.get_total_equity() - max(self._day_start_equity or 1_000_000, 1)) / max(self._day_start_equity or 1_000_000, 1)
+        if today_dd < -0.05:
+            return []
+
+        if signals is None:
+            signals = self._load_ml_signals()
+
+        actions = []
+
+        # ── 出场检查 ──
+        for sym in list(self.positions.keys()):
+            pos = self.positions[sym]
+            mp = _get_market_price(sym)
+            if mp and mp > 0:
+                pos["last_price"] = mp
+            meta = self._meta.get(sym, {})
+            buy_date = meta.get("buy_date", "")
+            strategy_id = meta.get("strategy_id", "")
+            is_today_buy = buy_date == datetime.now().strftime("%Y-%m-%d")
+
+            # ══ 陈小群: 弱转强半小时无表现→走 (今日买的弱转强可以卖) ══
+            if strategy_id == "weak_to_strong" and is_today_buy:
+                _now = datetime.now()
+                _open_time = _now.replace(hour=9, minute=30, second=0)
+                _mins = (_now - _open_time).total_seconds() / 60 if _now > _open_time else 0
+                _pnl = (mp / pos["avg_cost"] - 1) if mp and pos["avg_cost"] > 0 else 0
+                if _mins > 30 and _pnl <= 0:
+                    r = self.place_order(sym, "sell", mp or pos["avg_cost"], pos["qty"],
+                                        trade_type="auto", reason=f"半小时无表现({_mins:.0f}分)")
+                    if r.get("success"): actions.append(r)
+                    continue
+
+            # T+1保护: 非弱转强的今日仓位, 跳过出场(place_order层也有T+1兜底)
+            if is_today_buy and strategy_id != "weak_to_strong":
+                continue
+
+            # ══ 单票日盈亏 ══
+            _prev_close = pos.get("avg_cost")
+            _today_open = pos.get("avg_cost")
+            try:
+                from xtquant import xtdata
+                _tk = xtdata.get_full_tick([sym])
+                if _tk and sym in _tk:
+                    _prev_close = float(_tk[sym].get('lastClose', _prev_close))
+                    _today_open = float(_tk[sym].get('open', _today_open))
+            except: pass
+            _lp = mp or pos.get("last_price", pos["avg_cost"])
+            _chg_close = (_lp / _prev_close - 1) if _prev_close > 0 else 0
+            _chg_open = (_lp / _today_open - 1) if _today_open > 0 else 0
+            if _chg_close <= -0.05:
+                r = self.place_order(sym, "sell", _lp, pos["qty"], trade_type="auto",
+                                    reason=f"昨收清仓({_chg_close*100:.1f}%)")
+                if r.get("success"): actions.append(r); continue
+            elif _chg_close <= -0.03:
+                _sq = max(100, int(pos["qty"] * 0.5) // 100 * 100)
+                _sq = min(_sq, pos["qty"] - 100)
+                if _sq >= 100:
+                    r = self.place_order(sym, "sell", _lp, _sq, trade_type="auto",
+                                        reason=f"昨收卖半({_chg_close*100:.1f}%)")
+                    if r.get("success"): actions.append(r); continue
+            if _chg_open <= -0.03:
+                r = self.place_order(sym, "sell", _lp, pos["qty"], trade_type="auto",
+                                    reason=f"今开清仓({_chg_open*100:.1f}%)")
+                if r.get("success"): actions.append(r); continue
+            elif _chg_open <= -0.02:
+                _sq = max(100, int(pos["qty"] * 0.5) // 100 * 100)
+                _sq = min(_sq, pos["qty"] - 100)
+                if _sq >= 100:
+                    r = self.place_order(sym, "sell", _lp, _sq, trade_type="auto",
+                                        reason=f"今开卖半({_chg_open*100:.1f}%)")
+                    if r.get("success"): actions.append(r); continue
+
+            # ══ 持仓到期: hold_days天未盈利→清仓 ══
+            _hd = self._signal_hold_days.get(sym, meta.get("hold_days", 7))
+            try:
+                _buy_dt = datetime.strptime(buy_date, "%Y-%m-%d")
+                _days_held = (datetime.now() - _buy_dt).days
+                if _days_held >= _hd:
+                    r = self.place_order(sym, "sell", mp or pos["avg_cost"], pos["qty"],
+                                        trade_type="auto", reason=f"持仓到期({_days_held}天≥{_hd}天)")
+                    if r.get("success"): actions.append(r)
+                    continue
+            except: pass
+
+            # ══ 信号级止损优先 (策略自带, 蓝图设计) ══
+            _sig_hard = pos.get("stop_loss", 0)
+            _sig_soft = pos.get("soft_stop_loss", 0)
+            _lp = pos.get("last_price", pos["avg_cost"])
+            if _sig_hard > 0 and _lp <= _sig_hard:
+                r = self.place_order(sym, "sell", _lp, pos["qty"],
+                                    trade_type="auto", reason=f"信号硬止损({_lp:.2f}≤{_sig_hard:.2f})")
+                if r.get("success"): actions.append(r)
+                continue
+            if _sig_soft > 0 and _lp <= _sig_soft:
+                _soft_qty = max(100, int(pos["qty"] * 0.5) // 100 * 100)
+                _soft_qty = min(_soft_qty, pos["qty"] - 100)  # 至少留100股
+                if _soft_qty >= 100:
+                    r = self.place_order(sym, "sell", _lp, _soft_qty,
+                                        trade_type="auto", reason=f"信号软止损({_lp:.2f}≤{_sig_soft:.2f})")
+                if r.get("success"): actions.append(r)
+                continue
+
+            rule_pos = {"symbol": sym, "avg_cost": pos["avg_cost"],
+                        "qty": pos["qty"], "last_price": pos["last_price"]}
+            # D3: 单票日盈亏 — 从meta取昨收, 无meta则用成本价兜底
+            _meta = self._meta.get(sym, {})
+            _prev_close = _meta.get("prev_close", pos["avg_cost"])
+
+            # D4: 策略级止盈止损 — 发起者锁定, 查策略注册表
+            _sid = _meta.get("strategy_id", "") or _meta.get("signal_source", "")
+            _stp = _strategy_tp_sl.get(_sid) if _sid else None
+            if not _stp:
+                _stp = _strategy_tp_sl.get("_default", {"tp": 0.05, "sl": -0.04})
+            md = {"price": pos["last_price"], "prev_close": _prev_close,
+                  "vol": pos.get("qty", 0)}
+
+            # D3: 先check单票日跌 (优先于止损, 日跌更急)
+            _dr = self._rule_engine.check_daily_drop(rule_pos | {"prev_close": _prev_close})
+            if _dr:
+                _dq = min(_dr["qty"], pos["qty"])
+                _dq = max(100, _dq // 100 * 100)
+                if _dq >= 100:
+                    r = self.place_order(sym, "sell", pos["last_price"], _dq,
+                                        trade_type="auto", reason=_dr["reason"])
+                    if r.get("success"): actions.append(r)
+                # 更新prev_close为今日价(明天检测基准)
+                self._meta[sym] = {**self._meta.get(sym, {}),
+                                   "prev_close": round(pos["last_price"], 2)}
+                continue
+
+            # D4: 策略级止盈止损 (发起者锁定, 优先于通用规则)
+            _lp = pos["last_price"]
+            _cost = pos["avg_cost"]
+            if _cost > 0 and _lp > 0:
+                _pnl_pct = (_lp - _cost) / _cost
+                _qty = pos["qty"]
+                # 策略级止损
+                if _pnl_pct <= _stp.get("sl", -0.04):
+                    _sq = _qty if _pnl_pct <= _stp["sl"] * 1.3 else max(100, (_qty // 2) // 100 * 100)
+                    if _sq >= 100:
+                        r = self.place_order(sym, "sell", _lp, _sq, trade_type="auto",
+                                            reason=f"策略止损{_sid}({_pnl_pct*100:.1f}%)")
+                        if r.get("success"): actions.append(r); continue
+                # 双级成本止盈(从 trade_config_master 读参数, 统一参数源)
+                _ctp = m.get("cost_take_profit", {})
+                _l2 = _ctp.get("level2_pct", 0.25)
+                _l1 = _ctp.get("level1_pct", 0.15)
+                if _pnl_pct >= _l2:
+                    r = self.place_order(sym, "sell", _lp, _qty, trade_type="auto",
+                                        reason=f"成本止盈{_l2*100:.0f}%清仓({_pnl_pct*100:.1f}%)")
+                    if r.get("success"): actions.append(r); continue
+                elif _pnl_pct >= _l1:
+                    _tq = max(100, int(_qty * 0.5) // 100 * 100)
+                    if _tq >= 100:
+                        r = self.place_order(sym, "sell", _lp, _tq, trade_type="auto",
+                                            reason=f"成本止盈{_l1*100:.0f}%半仓({_pnl_pct*100:.1f}%)")
+                        if r.get("success"): actions.append(r); continue
+
+            for rule in self._rule_engine._position_rules:
+                try:
+                    action = rule.check(rule_pos, md, {})
+                    if action and action.action == "sell":
+                        sell_qty = min(action.qty, pos["qty"])
+                        sell_qty = max(100, sell_qty // 100 * 100)
+                        r = self.place_order(sym, "sell", pos["last_price"], sell_qty,
+                                            trade_type="auto", reason=action.reason)
+                        if r.get("success"):
+                            actions.append(r)
+                        break
+                except Exception:
+                    continue
+
+        # ══ 账户级日亏控制 (个股判断后, 最后防线) ══
+        _dl_total = abs(self._daily_loss_total)
+        _dl_pct = _dl_total / 1_000_000
+        if _dl_pct >= 0.045:
+            _ratio = 1.0 if _dl_pct >= 0.065 else 0.5
+            _label = "清仓" if _dl_pct >= 0.065 else "卖半"
+            for _s, _p in list(self.positions.items()):
+                _sq = max(100, int(_p["qty"] * _ratio) // 100 * 100)
+                if _sq >= 100:
+                    _pr = _p.get("last_price", _p.get("avg_cost", 1))
+                    r = self.place_order(_s, "sell", _pr, _sq, trade_type="auto",
+                                        reason=f"日亏{_label}({_dl_pct*100:.1f}%)")
+                    if r.get("success"): actions.append(r)
+            if _dl_pct >= 0.065:
+                return actions  # 清仓后不再进场
+
+        # ── 进场: 记录信号hold_days + 止损价 ──
+        for _s in (signals or []):
+            _sym = _s.get("symbol", "")
+            _hd = _s.get("hold_days", 7)
+            if _hd:
+                self._signal_hold_days[_sym] = _hd
+            _sl = _s.get("stop_loss", 0)
+            _ssl = _s.get("soft_stop_loss", 0)
+            if _sl > 0 or _ssl > 0:
+                self._meta.setdefault(_sym, {})["stop_loss"] = _sl
+                self._meta.setdefault(_sym, {})["soft_stop_loss"] = _ssl
+
+        # ── 进场 ──
+        if signals and self._daily_buy_count < 5:
+            try:
+                from decision_adapter import process_signals as _da
+                status = {
+                    "total_equity": self.get_total_equity(),
+                    "positions": [{"symbol": s, "market_value":
+                        p.get("last_price", p["avg_cost"]) * p["qty"]}
+                        for s, p in self.positions.items()]
+                }
+                _sd = {}
+                try:
+                    from data_loader import load_stock_data_cache
+                    _sd = load_stock_data_cache(r"D:\quant_web\stock_data.parquet", keep_days=30)
+                except Exception:
+                    pass
+
+                orders = _da(signals[:15], _sd, status)
+                # 弱转强: 按分数排名, 只取最优1只 (max_positions=1)
+                orders.sort(key=lambda x: x.get("score", x.get("power_score", 0)), reverse=True)
+                for order in orders[:3]:
+                    sym = order["symbol"]
+                    if sym in self.positions:
+                        continue
+                    # E303: 当日同股票不重复买入
+                    _today = datetime.now().strftime("%Y-%m-%d")
+                    if any(t.get("symbol") == sym and t.get("side") == "buy"
+                           and str(t.get("date",""))[:10] == _today
+                           for t in self._trades[-20:]):
+                        continue
+                    if self._daily_buy_count >= 5:
+                        break
+                    # ── 竞价确认 (陈小群三维: 竞价涨幅+量能+L2资金) ──
+                    _is_wts = order.get("strategy") == "weak_to_strong" or "弱转强" in str(order.get("reason",""))
+                    _sig_close = order.get("raw_close", order.get("close", 0))
+                    _rt_price = _get_market_price(sym)
+                    if _is_wts and _rt_price and _sig_close > 0:
+                        _gap_pct = (_rt_price / _sig_close - 1) * 100
+                        if _gap_pct < -1:  # 弱转强: 低开>1% → 未转强, 放弃
+                            continue
+                        if _gap_pct > 6:   # 追高超6% → 透支, 放弃
+                            continue
+                    elif not _is_wts and _rt_price and _sig_close > 0:
+                        _gap_pct = (_rt_price / _sig_close - 1) * 100
+                        if _gap_pct < -2 or _gap_pct > 5:
+                            continue
+                    # ── L2资金确认: xtdata.get_full_tick (对齐screener) ──
+                    try:
+                        from xtquant import xtdata
+                        _l2 = xtdata.get_full_tick([sym]) if 'xtdata' in dir() else {}
+                        _tick = _l2.get(sym, {}) if _l2 else {}
+                        _bv = float(_tick.get('bidVol', 0) or 0)
+                        _av = float(_tick.get('askVol', 0) or 0)
+                        if _av > 0 and _bv / _av < 1.2:
+                            continue
+                    except Exception:
+                        pass
+                    prc = order.get("close", order.get("raw_close", 0))
+                    # 必须市价: 模拟盘以实时行情为成本价, 无实时行情→放弃
+                    _live = _get_market_price(sym)
+                    if _live and _live > 0:
+                        prc = round(_live, 2)
+                    else:
+                        continue  # 无实时价→跳过, 不以下线收盘价代替
+                    if prc <= 0:
+                        continue
+                    qty = order.get("shares", 100)
+                    reason = f"信号{order.get('buy_signal','?')}级({order.get('position_pct','?')}%仓) [ML]"
+                    _sig_sl = order.get("stop_loss", 0)
+                    _sig_ssl = order.get("soft_stop_loss", 0)
+                    r = self.place_order(sym, "buy", prc, qty,
+                                        trade_type="auto", reason=reason, signal_source="auto")
+                    if r.get("success"):
+                        if _sig_sl > 0 or _sig_ssl > 0:
+                            self._meta[sym]["stop_loss"] = _sig_sl
+                            self._meta[sym]["soft_stop_loss"] = _sig_ssl
+                        actions.append(r)
+            except Exception as e:
+                print(f"[Paper] decision_adapter失败: {e}", flush=True)
+
+        if actions:
+            self._save()
+        return actions
+
+    def _load_ml_signals(self) -> list[dict]:
+        if not os.path.exists(SIGNAL_TABLE):
+            return []
+        try:
+            with open(SIGNAL_TABLE, "r", encoding="utf-8") as f:
+                table = json.load(f)
+            result = []
+            for s in table:
+                if not s.get("auto_enabled"):
+                    continue
+                _decision = str(s.get("decision", ""))
+                sc = s.get("combined_score", 0) or 0
+                _strategy = "weak_to_strong" if "弱转强" in _decision else "ml_daily"
+                result.append({
+                    "symbol": s.get("symbol", ""),
+                    "name": s.get("name", ""),
+                    "buy_signal": 5 if sc >= 90 else 4 if sc >= 80 else 3 if sc >= 70 else 2,
+                    "close": s.get("close", 0),
+                    "change_pct": s.get("change_pct", 0) or 0,
+                    "vol_ratio": s.get("vol_ratio", 1) or 1,
+                    "industry": s.get("industry", ""),
+                    "power_score": sc,
+                    "strategy": _strategy,
+                    "score": sc,
+                    "stop_loss": s.get("stop_loss", 0),
+                    "soft_stop_loss": s.get("soft_stop_loss", 0),
+                    "hold_days": s.get("hold_days", 7),
+                })
+            return result
+        except Exception as e:
+            print(f"[Paper] 信号加载失败: {e}", flush=True)
+            return []
+
+    # ═══════════ 状态查询 ═══════════
+
+    def get_total_equity(self, quotes=None) -> float:
+        mv = self.get_market_value(quotes)
+        return self.cash + mv
+
+    def get_market_value(self, quotes=None) -> float:
         total = 0.0
         for sym, pos in self.positions.items():
             code = sym.replace("sh", "").replace("sz", "")
             price = pos.get("last_price", pos["avg_cost"])
             if quotes and code in quotes:
-                price = quotes[code].get("close", price)
-            else:
-                try:
-                    cached = self._resolve_price(sym)
-                    if cached and cached > 0:
-                        price = cached
-                except Exception as _e:
-                    print(f"[Paper] 价格查询失败: {_e}")
-            if price is None or price <= 0: price = pos.get("avg_cost", 1.0)
+                price = float(quotes[code].get("close", price) or price)
             total += price * pos["qty"]
-        return total
+        return round(total, 2)
 
-    def get_total_equity(self, quotes=None):
-        return self.cash + self.get_market_value(quotes)
-
-    def get_pnl(self, quotes=None):
-        cost = sum(p["avg_cost"] * p["qty"] for p in self.positions.values())
-        return self.get_market_value(quotes) - cost
-
-    # ═══════════════════ 下单 ═══════════════════
-
-    _trade_lock = threading.Lock()  # 防多线程穿仓
-
-    def place_order(self, symbol, side, price=None, qty=100, trade_type="manual", reason=""):
-        """下单 — P0-模拟-02: 全面强制 T+1 约束。
-
-        行业惯例: paper_engine 只负责执行，不负责去重。
-        去重应由上游信号引擎通过唯一 signal_id 保证。
-        """
+    def get_status(self, quotes=None) -> dict:
         try:
-            with self._trade_lock:  # 线程安全: 检查+扣除是原子操作
-                return self._place_order_locked(symbol, side, price, qty, trade_type, reason)
+            return self._get_status_impl(quotes)
         except Exception as e:
             import traceback
             traceback.print_exc()
-            print(f"[Paper] place_order EXCEPTION: {e}")
-            return {"success": False, "error": f"下单异常: {e}"}
+            return {"code": 500, "error": str(e),
+                    "total_equity": 0, "total_pnl": 0, "cash": 0,
+                    "positions": [], "position_count": 0}
 
-    def _place_order_locked(self, symbol, side, price=None, qty=100, trade_type="manual", reason=""):
-        if side == "reset":
-            self.cash = 1_000_000.0
-            self._positions_compat = {}
-            self._trades_archive = []
-            self._save()
-            return {"success": True, "action": "reset"}
-
-        code = symbol.replace("sh", "").replace("sz", "").replace("SH", "").replace("SZ", "")
-        sym = symbol
-        name = self._resolve_name(symbol)
-        today = datetime.now().strftime("%Y-%m-%d")
-
-        if side == "buy":
-            # E60: 涨跌停/资金/仓位事前风控
-            from risk_guard import PreTradeChecker
-            _chk = PreTradeChecker(config=_load_trade_config(), positions=self.positions,
-                                   cash=self.cash, total_equity=self.get_total_equity(),
-                                   factor_cache=self.factor_cache, stock_data=self.stock_data)
-            _ind = self._resolve_name(symbol)
-            try:
-                from stock_names import get_industry as _gi
-                _ind = _gi(symbol.replace('sh','').replace('sz','').replace('bj','')) or ''
-            except: pass
-            # FIX: 在风控检查前解析价格，避免 None*int 报错
-            if price is None or price <= 0:
-                price = self._resolve_price(symbol)
-            if price is None or price <= 0:
-                return {"success": False, "error": f"无法获取{symbol}实时价格"}
-            _ok, _reason = _chk.check_buy(symbol, price, qty, industry=_ind)
-            if not _ok:
-                return {"success": False, "error": _reason}
-            # E42+E49: 过滤非A股品种(逆回购/ETF/可转债等)
-            if not sym.startswith(('sh', 'sz', 'bj')):
-                print(f"[PaperTrade] 跳过非A股品种: {sym}")
-                return {"success": False, "error": f"非A股品种: {sym}"}
-            # 强化过滤: 纯数字部分以逆回购/ETF/可转债前缀开头
-            clean_code = sym.replace('sh','').replace('sz','').replace('bj','')
-            _bad_prefixes = ('204', '131', '51', '159', '16', '18', '58')
-            if clean_code.startswith(_bad_prefixes):
-                print(f"[PaperTrade] 跳过非A股品种: {sym} (code={clean_code})")
-                return {"success": False, "error": f"非A股品种: {sym}"}
-            if price is None or price <= 0:
-                price = self._resolve_price(sym, side="buy")
-            if price is None or price <= 0:
-                return {"success": False, "error": f"无法获取{sym}实时价格，请手动输入"}
-            cost = price * qty
-            if cost > self.cash:
-                return {"success": False, "error": f"资金不足: 需{cost:.0f} 余{self.cash:.0f}"}
-
-            self.cash -= cost
-            # 买入佣金: 0.03% 最低5元
-            commission = max(5.0, cost * 0.0003)
-            self.cash -= commission
-            if sym in self.positions:
-                old = self.positions[sym]
-                tq = old["qty"] + qty
-                old["avg_cost"] = (old["avg_cost"] * old["qty"] + price * qty) / tq
-                old["qty"] = tq
-                old["last_price"] = price
-                old["_verified"] = True
-                old["buy_date"] = max(old.get("buy_date", ""), today)
-            else:
-                self.positions[sym] = {
-                    "qty": qty, "avg_cost": price, "last_price": price,
-                    "name": name, "buy_date": today, "_verified": True,
-                }
-            # 滑点统计: 信号价 vs 实际成交价
-            sig_price = price  # signal价格
-            actual_price = self._resolve_price(sym, fast=True) or price
-            slippage = round((actual_price - sig_price) / max(sig_price, 0.01) * 100, 2) if sig_price > 0 else 0
-            self._trades_archive.append({
-                "symbol": sym, "name": name, "side": "buy", "price": round(price, 2),
-                "qty": qty, "cost": round(cost, 2),
-                "date": today, "time": datetime.now().strftime("%H:%M:%S"),
-                "type": trade_type, "reason": reason or ("买入" if trade_type=="manual" else "信号买入"),
-                "pnl": None, "slippage_pct": slippage,
-            })
-            self._save()
-            return {"success": True, "action": "buy", "symbol": sym, "price": round(price, 2),
-                    "qty": qty, "type": trade_type}
-
-        elif side == "sell":
-            # E60: 跌停板卖出检查
-            from risk_guard import PreTradeChecker
-            _chk = PreTradeChecker(config=_load_trade_config(), positions=self.positions,
-                                   cash=self.cash, total_equity=self.get_total_equity(),
-                                   factor_cache=self.factor_cache, stock_data=self.stock_data)
-            _ok, _reason = _chk.check_sell(symbol, qty)
-            if not _ok:
-                return {"success": False, "error": _reason}
-
-            if sym not in self.positions or self.positions[sym]["qty"] < qty:
-                return {"success": False, "error": "持仓不足"}
-
-            # ── P0-模拟-02: T+1 强约束 (所有交易类型) ──
-            pos = self.positions[sym]
-            # C09: 无源持仓拦截
-            if not pos.get("_verified", False):
-                return {"success": False, "error": "无源持仓不可卖出("+sym+")，请先买入或手动重置"}
-            buy_date = pos.get("buy_date", "")
-            # T+1: 检查仓位日期 + 同期买入记录(防累积仓位绕过)
-            has_today_buy = any(t.get("side")=="buy" and t.get("symbol")==sym and t.get("date")==today
-                              for t in self._trades_archive[-50:])
-            if buy_date == today or has_today_buy:
-                return {
-                    "success": False,
-                    "error": f"T+1锁定：今日有买入记录, 不可卖出 ({sym})",
-                }
-
-            if price is None or price <= 0:
-                price = self._resolve_price(sym, fallback=pos["avg_cost"], side="sell")
-            revenue = price * qty
-            self.cash += revenue
-            # 卖出成本: 佣金0.03% + 印花税0.1%
-            sell_commission = max(5.0, revenue * 0.0003)
-            stamp_tax = revenue * 0.001
-            self.cash -= (sell_commission + stamp_tax)
-
-            pos = self.positions[sym]
-            pos["qty"] -= qty
-            n = pos.get("name", name)
-            if pos["qty"] <= 0:
-                del self.positions[sym]
-
-            # 记录盈亏用于日内亏损跟踪
-            cost_price = pos["avg_cost"]
-            pnl = (price - cost_price) * qty
-            self._daily_loss_total += pnl
-
-            _sell_trade = {
-                "symbol": sym, "name": n, "side": "sell", "price": round(price, 2),
-                "qty": qty, "revenue": round(revenue, 2),
-                "cost": round(cost_price * qty, 2), "pnl": round(pnl, 2),
-                "cost_price": round(cost_price, 2),
-                "buy_date": buy_date, "sell_date": today,
-                "date": today, "time": datetime.now().strftime("%H:%M:%S"),
-                "type": trade_type, "reason": reason or ("卖出" if trade_type=="manual" else "信号卖出"),
-            }
-            self._trades_archive.append(_sell_trade)
-            self._save()
-            # E259根治: 同步写入 trade_log.csv
-            self._append_trade_csv(_sell_trade)
-            return {"success": True, "action": "sell", "symbol": sym, "price": round(price, 2),
-                    "qty": qty, "type": trade_type}
-
-        return {"success": False, "error": "unknown side"}
-
-    # ═══════════════════ 状态查询 ═══════════════════
-
-    def get_status(self, quotes=None):
-        """获取账户状态 — 接口不变。"""
-        try:
-            return self._get_status_impl(quotes)
-        except Exception as _e:
-            import traceback
-            traceback.print_exc()
-            return {"code": 500, "error": str(_e), "trace": traceback.format_exc()}
-
-    def _get_status_impl(self, quotes=None):
+    def _get_status_impl(self, quotes=None) -> dict:
         import numpy as np
 
         positions = []
         for sym, pos in self.positions.items():
             code = sym.replace("sh", "").replace("sz", "")
-            price = pos.get("last_price") or pos.get("avg_cost") or 1.0
-            if quotes and code in quotes:
-                price = quotes[code].get("close", price)
-            else:
-                # 未命中实时行情：从缓存快速获取（跳过westock，毫秒级）
-                try:
-                    cached = self._resolve_price(sym, fast=True)
-                    if cached and cached > 0:
-                        price = cached
-                except Exception as _e:
-                    print(f"[Paper] 价格查询失败: {_e}")
+            price = _get_market_price(sym) or pos.get("last_price") or pos["avg_cost"]
             pnl = (price - pos["avg_cost"]) * pos["qty"]
             pnl_pct = (price / pos["avg_cost"] - 1) * 100 if pos["avg_cost"] > 0 else 0
-            # D15: 板块标记
-            _c = code.replace('sh','').replace('sz','')
-            _bd = '科创板' if _c.startswith(('688','689')) else '创业板' if _c.startswith(('300','301')) else \
-                  '沪主板' if _c.startswith(('600','601','603','605')) else '深主板' if _c.startswith(('000','001','002','003')) else \
-                  '北交所' if _c.startswith(('8','4')) else '其他'
+
+            c = code.replace("sh","").replace("sz","")
+            bd = ("科创板" if c.startswith(("688","689")) else "创业板" if c.startswith(("300","301"))
+                  else "沪主板" if c.startswith(("600","601","603","605"))
+                  else "深主板" if c.startswith(("000","001","002","003"))
+                  else "北交所" if c.startswith(("8","4")) else "其他")
+
             positions.append({
-                "symbol": sym, "name": pos.get("name", code),
-                "board": _bd,  # D15
-                "qty": pos["qty"], "quantity": pos["qty"],  # E235: 兼容前端 quantity 字段
+                "symbol": sym, "name": pos.get("name") or _resolve_name(sym, self._names),
+                "board": bd,
+                "qty": pos["qty"], "quantity": pos["qty"],
                 "avg_cost": round(pos["avg_cost"], 2), "cost_price": round(pos["avg_cost"], 2),
                 "last_price": round(price, 2), "current_price": round(price, 2),
                 "market_value": round(price * pos["qty"], 2),
@@ -766,854 +1025,95 @@ class PaperAccount:
                 "buy_date": pos.get("buy_date", ""),
             })
 
-        sells = [t for t in self._trades_archive if t.get("side") == "sell"]
-        buys = [t for t in self._trades_archive if t.get("side") == "buy"]
+        sells = [t for t in self._trades if t.get("side") == "sell" and t.get("pnl") is not None]
+        wins = [s for s in sells if s.get("pnl", 0) > 0]
+        wr_pct = round(len(wins) / len(sells) * 100, 1) if sells else 0
+        wr = wr_pct
 
-        buy_queue = {}
-        for b in buys:
-            sym = b.get("symbol", "")
-            if sym not in buy_queue:
-                buy_queue[sym] = []
-            buy_queue[sym].append(b)
-
-        trade_returns = []
-        wins = []
+        # 收益计算: 用sell记录的cost(卖出金额), 而非buy成本
+        returns = []
         for s in sells:
-            rev = s.get("revenue", 0)
-            qty = s.get("qty", 100)
-            # C08: 优先使用卖出记录自带的cost/pnl字段，不依赖买入匹配
-            cost = s.get("cost", 0)
-            if cost <= 0:
-                # 无自带cost → 尝试匹配买入记录
-                sym = s.get("symbol", "")
-                if sym in buy_queue and buy_queue[sym]:
-                    matched = buy_queue[sym].pop(0)
-                    buy_price = matched.get("price", 0)
-                    buy_qty = matched.get("qty", qty)
-                    cost = buy_price * min(qty, buy_qty)
-                    if buy_qty > qty:
-                        matched["qty"] = buy_qty - qty
-                        buy_queue[sym].insert(0, matched)
-            if cost <= 0:
-                # P1-3修复: 成本无法确定时标记为估算，不虚增利润
-                cost = rev  # 保守：假设保本（不再虚增10%利润）
-                s["cost_estimated"] = True
-            else:
-                s["cost_estimated"] = False
-            pnl = rev - cost
-            if pnl > 0:
-                wins.append(s)
+            cost = s.get("cost", s.get("price", 0) * s.get("qty", 100))
             if cost > 0:
-                trade_returns.append(pnl / cost)
+                returns.append(s.get("pnl", 0) / cost)
 
-        wr = round(len(wins) / len(sells) * 100, 1) if sells else None  # None=无卖出,前端显示N/A
-        # 真实总盈亏 = 总资产 - 初始本金（包含已实现+未实现）
+        sharpe = 0.0
+        if returns and len(returns) >= 2:
+            arr = np.array(returns)
+            std = max(np.std(arr), 1e-8)
+            sharpe = round(float(np.mean(arr) / std) * np.sqrt(min(252, len(arr))), 2)
+
+        # B3: DSR (Deflated Sharpe Ratio) — 过拟合审计
+        dsr_info = {"dsr": None, "verdict": "样本不足", "p_value": None}
+        if len(returns) >= 10:
+            try:
+                from deflated_sharpe import deflated_sharpe_ratio
+                n_attempts = len(set(t.get("strategy_id", "") for t in self._trades if t.get("strategy_id")))
+                n_attempts = max(n_attempts, 1) * 3
+                dsr_info = deflated_sharpe_ratio(returns, n_trials=n_attempts)
+            except Exception:
+                pass
+
         initial = 1_000_000.0
         current_eq = self.get_total_equity(quotes)
         total_pnl = round(current_eq - initial, 2)
 
-        if trade_returns and len(trade_returns) >= 2:
-            arr = np.array(trade_returns)
-            std = max(np.std(arr), 1e-8)  # C08: min_std保护，防止return相同时std极小→夏普爆炸
-            sharpe = round(float(np.mean(arr) / std) * np.sqrt(min(252, len(arr))), 2)
-        else:
-            sharpe = 0.0
-
-        # 最大回撤: 基于交易流水的净PnL累计（买入=现金转资产，不产生回撤）
-        # P1-2修复: 加载历史峰值，重启后不丢失
-        dd_state_file = r"D:\quant_framework\data\max_drawdown_state.json"
-        _hist_peak = float(initial)
-        _hist_max_dd = 0.0
-        try:
-            import json as _jdd, os as _odd
-            if _odd.path.exists(dd_state_file):
-                with open(dd_state_file, "r") as _fdd:
-                    _saved = _jdd.load(_fdd)
-                _hist_peak = max(float(_saved.get("peak", initial)), initial)
-                _hist_max_dd = float(_saved.get("max_drawdown", 0))
-        except Exception:
-            pass
-
         eq = initial
-        peak = max(initial, _hist_peak)  # P1-2: 继承历史峰值
-        for t in self._trades_archive:
+        peak = initial
+        for t in self._trades:
             if t.get("side") == "sell":
-                eq += t.get("pnl", t.get("revenue", 0) - t.get("cost", 0))
+                eq += t.get("pnl", 0)
             if eq > peak:
                 peak = eq
-        # 历史最大回撤 vs 当前未实现亏损，取较大者
-        dd_from_peak = round((eq - peak) / peak * 100, 2) if peak > 0 else 0.0
-        if dd_from_peak < 0:
-            max_dd = min(dd_from_peak, _hist_max_dd)  # P1-2: 保留历史最深回撤
-        elif current_eq < initial:
-            max_dd = min(round((current_eq - initial) / initial * 100, 2), _hist_max_dd)
-        else:
-            max_dd = _hist_max_dd  # P1-2: 无新回撤时保留历史值
-
-        # P1-2: 持久化当前峰值和最大回撤
-        try:
-            import json as _jdd2, os as _odd2
-            _odd2.makedirs(_odd2.dirname(dd_state_file), exist_ok=True)
-            with open(dd_state_file, "w") as _fdd2:
-                _jdd2.dump({"peak": peak, "max_drawdown": max_dd,
-                            "current_equity": current_eq, "initial": initial,
-                            "updated_at": datetime.now().isoformat()}, _fdd2)
-        except Exception:
-            pass
-        # 钳制非法值
-        if max_dd < -100:
-            max_dd = -100.0
+        max_dd = round((eq - peak) / peak * 100, 2) if peak > 0 else 0.0
+        max_dd = max(max_dd, -100.0)
         calmar = round(abs((total_pnl / initial * 100) / max(abs(max_dd), 0.01)), 2)
 
-        # E49-C: 现金年化收益（年化1.5%）
-        if not hasattr(self, 'start_time'): self.start_time = datetime.now()
-        days_held = max(1, (datetime.now() - self.start_time).days)
-        cash_interest = round(self.cash * 0.015 / 365 * days_held, 2)
-
-        # E55: 含现金利息的总盈亏
-        total_pnl_with_interest = round(total_pnl + cash_interest, 2)
-
-        # D11: 计算模拟盘日亏损（已实现+未实现）
-        try:
-            day_cost = sum(pos["avg_cost"] * pos["qty"] for pos in self.positions.values())
-            day_market = sum(pos.get("last_price", pos["avg_cost"]) * pos["qty"] for pos in self.positions.values())
-            unrealized_pct = (day_market - day_cost) / max(day_cost, 1) * 100 if day_cost > 0 else 0
-            realized_pct = getattr(self, '_daily_loss_total', 0) / 1_000_000 * 100
-            daily_loss = round(min(realized_pct, unrealized_pct) if self.positions else realized_pct, 2)
-        except Exception:
-            daily_loss = 0
-
         return {
+            "code": 200,
             "cash": round(self.cash, 2),
-            "cash_interest": cash_interest,
             "market_value": round(self.get_market_value(quotes), 2),
-            "day_start_equity": getattr(self, '_day_start_equity', None),
-            "total_equity": round(self.get_total_equity(quotes), 2),
+            "total_equity": round(current_eq, 2),
             "total_pnl": round(total_pnl, 2),
-            "total_pnl_with_interest": total_pnl_with_interest,  # E55
-            "total_return": round(total_pnl / 1_000_000 * 100, 2),
-            "win_rate": round(wr, 1) if wr is not None else 0, "sharpe": sharpe,
-            "max_drawdown": max_dd, "calmar": calmar,
+            "total_return": round(total_pnl / initial * 100, 2),
+            "win_rate": round(wr, 1) if wr is not None else 0,
+            "sharpe": sharpe,
+            "dsr": dsr_info,
+            "max_drawdown": max_dd,
+            "calmar": calmar,
             "positions": positions,
-            # P0修复: 每次状态查询写入当日权益 (前端日盈亏数据源)
-            try:
-                eq_file = r"D:\quant_framework\equity_log.json"
-                eq_data = {"log": []}
-                if os.path.exists(eq_file):
-                    with open(eq_file, "r", encoding="utf-8") as _f:
-                        eq_data = json.load(_f)
-                today_str = datetime.now().strftime("%Y-%m-%d")
-                eq_log = eq_data.get("log", [])
-                current_eq = round(self.get_total_equity(quotes), 2)
-                # 覆盖今日记录 (不累积重复日期)
-                found = False
-                for i, e in enumerate(eq_log):
-                    if e[0] == today_str:
-                        eq_log[i] = [today_str, current_eq]
-                        found = True; break
-                if not found:
-                    eq_log.append([today_str, current_eq])
-                eq_data["log"] = eq_log[-90:]
-                eq_data["updated"] = datetime.now().isoformat()
-                with open(eq_file, "w", encoding="utf-8") as _f:
-                    json.dump(eq_data, _f, ensure_ascii=False)
-            except Exception: pass
-
-            "trade_log": self._trades_archive[-30:],
+            "trade_log": self._trades[-30:],
             "auto_enabled": self.auto_enabled,
             "position_count": len(positions),
-            "trade_count": len(self._trades_archive),
-            "risk": {"daily_loss": daily_loss},  # D11: 模拟盘日亏损
         }
 
-    # ═══════════════════ 自动交易 ═══════════════════
 
-    def _reset_daily_if_new_day(self):
-        today = datetime.now().strftime("%Y%m%d")
-        if self._daily_date != today:
-            self._daily_date = today
-            self._day_start_equity = self.get_total_equity()  # 日切重置基准
-            self._daily_trade_count = 0
-            self._daily_buy_count = 0
-            self._daily_loss_total = 0.0
-            self._day_start_equity = self.get_total_equity()  # 新交易日重置基准
+# ═══════════════════════════════ 全局实例 + 兼容接口 ═══════════════════════════════
 
-    def auto_trade_check(self, signals):
-        """自动交易规则 — 通过 RuleEngine 执行。
-
-        P0-模拟-01: 7条规则全交由 RuleEngine 处理。
-        与旧 PaperAccount.auto_trade_check() 的结果接口完全一致。
-        """
-        if not self.auto_enabled:
-            return []
-        # E33-1: 防御性初始化（__init__已初始化，此处兜底）
-        if not hasattr(self, '_rule_engine') or self._rule_engine is None:
-            self._rule_engine = RuleEngine()
-            self._setup_rules()
-        self._reset_daily_if_new_day()
-        cfg = _load_trade_config()
-        actions = []
-
-        # 日初权益基准(用于计算含未实现亏损的日内总亏损)
-        try:
-            if not hasattr(self, '_day_start_equity') or self._day_start_equity is None:
-                self._day_start_equity = self.get_total_equity()
-            current_eq = self.get_total_equity()
-            unrealized_loss = current_eq - self._day_start_equity
-        except Exception:
-            current_eq = self.cash
-            unrealized_loss = 0
-        # 更新 _daily_loss_total 为已实现+当前未实现中的较大亏损
-        total_daily_loss = min(self._daily_loss_total, unrealized_loss)
-
-        # ── 构建上下文 ──
-        context = {
-            "daily_trade_count": self._daily_trade_count,  # 买入+卖出总数
-            "daily_loss_total": total_daily_loss,  # 含未实现亏损
-            "cash": self.cash,
-            "config": cfg,
-        }
-
-        # ── 1. 检查持仓规则: 止损/止盈 ──
-        # E58+E90+fix: 刷新持仓实时价格 + 防止回退到买入价
-        if self.positions:
-            print(f"[Paper] 卖出检查: {len(self.positions)}只持仓 ")
-        for sym, pos in list(self.positions.items()):
-            old_price = pos.get("last_price", pos["avg_cost"])
-            fresh_price = self._resolve_price(sym, fallback=None)
-            if fresh_price and fresh_price > 0 and fresh_price != 10.0:
-                pos["last_price"] = fresh_price
-                # 追踪峰值PNL: 移动止盈需要知道"最高涨到过多少"
-                pnl = (fresh_price / pos["avg_cost"] - 1) if pos["avg_cost"] > 0 else 0
-                peak_pnl = pos.get("_peak_pnl", pnl)
-                if pnl > peak_pnl:
-                    pos["_peak_pnl"] = pnl
-            elif not fresh_price or fresh_price <= 0:
-                fresh_price = old_price
-            # E90: 诊断 — 价格更新后计算账面盈亏
-            pnl_pct = (fresh_price / pos["avg_cost"] - 1) * 100 if fresh_price and pos["avg_cost"] > 0 else 0
-            if pnl_pct < -3:
-                print(f"[Paper] 持仓诊断 {sym}: avg={pos['avg_cost']:.2f} "
-                      f"old_price={old_price:.2f} new_price={fresh_price:.2f} "
-                      f"pnl={pnl_pct:.1f}% buy_date={pos.get('buy_date','?')}")
-            elif pnl_pct > 0:
-                print(f"[Paper] {sym} 浮盈{pnl_pct:.1f}% (avg={pos['avg_cost']:.2f} price={fresh_price:.2f})")
-
-        # E203: 持仓天数到期检查
-        max_days = cfg.get("max_hold_days", 0)
-        if max_days > 0:
-            for sym, pos in list(self.positions.items()):
-                buy_date_str = pos.get("buy_date", "")
-                if not buy_date_str:
-                    continue
-                try:
-                    buy_date = datetime.strptime(buy_date_str, "%Y-%m-%d")
-                    held = (datetime.now() - buy_date).days
-                except Exception:
-                    continue
-                if held < max_days:
-                    continue
-                # E203b: 涨停跳过
-                try:
-                    from risk_guard import PreTradeChecker
-                    _chk = PreTradeChecker(config=cfg, positions=self.positions,
-                                           cash=self.cash, total_equity=self.get_total_equity())
-                    if _chk._is_limit_up(sym):
-                        print(f"[Paper] 持仓{sym}已{held}天到期，涨停中跳过")
-                        continue
-                except: pass
-                price = pos.get("last_price", pos["avg_cost"])
-                qty = pos["qty"]
-                r = self.place_order(sym, "sell", price, qty, trade_type="auto", reason=f"持仓到期({held}天>={max_days}天)")
-                if r.get("success"):
-                    actions.append(r)
-                    self._daily_trade_count += 1
-                    print(f"[Paper] 持仓到期卖出 {sym} x{qty} @{price:.2f} (已持{held}天)")
-
-        for sym, pos in list(self.positions.items()):
-            peak_price = pos.get("_peak_price", pos.get("avg_cost", 0))
-            market_data = {"price": pos.get("last_price", pos["avg_cost"]), "peak_price": peak_price}
-            pos_with_sym = {**pos, "symbol": sym, "_peak_price": peak_price}
-
-            rule_actions = self._rule_engine.check_position(pos_with_sym, market_data, context)
-            for ra in rule_actions:
-                if ra.action != "sell":
-                    continue
-
-                sell_qty = ra.qty if ra.qty > 0 else pos["qty"]
-                sell_qty = max(100, int(sell_qty) // 100 * 100)
-                if sell_qty < 100:
-                    continue
-
-                # 用实时价执行，不依赖规则检查时的缓存价
-                exec_price = self._resolve_price(ra.symbol or sym, fallback=ra.price, side="sell")
-                if exec_price and exec_price > 0 and exec_price != 10.0:
-                    exec_price = exec_price
-                else:
-                    exec_price = ra.price
-                r = self.place_order(ra.symbol or sym, "sell", exec_price, sell_qty, trade_type="auto", reason=ra.reason)
-                if r.get("success"):
-                    actions.append(r)
-                    self._daily_trade_count += 1
-                    # 钉钉通知
-                    try:
-                        from dingtalk_alerts import trade_signal
-                        trade_signal(sym, "", "sell", str(ra.reason), ra.price, 0, "", source="模拟")
-                    except: pass
-
-                # 检查是否附带止损 (TrailingStopRule 的 meta 处理)
-                if ra.meta and ra.meta.get("stop_loss_check") and ra.meta.get("remaining_qty", 0) > 0:
-                    remaining = self.positions.get(sym, {}).get("qty", 0)
-                    if remaining > 0 and pos["avg_cost"] > 0:
-                        pnl = (ra.price / pos["avg_cost"] - 1)
-                        if pnl <= ra.meta.get("stop_loss_threshold", -0.05):
-                            r2 = self.place_order(sym, "sell", ra.price, remaining, trade_type="auto", reason=f"止盈T止损({pnl*100:.1f}%)")
-                            if r2.get("success"):
-                                actions.append(r2)
-                                self._daily_trade_count += 1
-
-        # ── 1.5 E117: 账户级日亏两层控制（在全局规则前，先于个股止损后） ──
-        account_loss_pct = total_daily_loss / 1_000_000  # 小数(0.03=3%)
-        half_cfg = cfg.get("daily_loss_sell_half", -0.03)  # 配置也是小数(-0.05=-5%)
-        clear_cfg = cfg.get("daily_loss_clear_all", -0.05)
-        if account_loss_pct <= half_cfg and total_eq > 0:
-            sell_ratio = 1.0 if account_loss_pct <= clear_cfg else 0.5
-            label = "清仓" if sell_ratio >= 1 else "卖半"
-            print(f"[Paper] 账户日亏{account_loss_pct*100:.1f}%触发{label}")
-            sorted_pos = sorted(self.positions.items(),
-                                key=lambda x: x[1].get("last_price", 0) * x[1].get("qty", 0),
-                                reverse=True)
-            for sym, pos in sorted_pos:
-                total_qty = pos.get("qty", 0)
-                sell_qty = max(100, int(total_qty * sell_ratio) // 100 * 100)
-                if sell_qty >= 100:
-                    price = pos.get("last_price", pos.get("avg_cost", 0))
-                    r = self.place_order(sym, "sell", price, sell_qty, trade_type="auto", reason=f"账户日亏{label}({account_loss_pct*100:.1f}%)")
-                    if r.get("success"):
-                        actions.append(r)
-                        self._daily_trade_count += 1
-                        print(f"[Paper] 账户日亏{label} {sym} x{sell_qty} @{price:.2f}")
-
-        # ── 2. 检查全局规则: 熔断/频率限制 ──
-        can_buy, reject_reason = self._rule_engine.can_buy(context)
-
-        # ── 2.5 E89+E92: 双层集中度风控 ──
-        max_soft = cfg.get("max_single_position_pct", 30) / 100  # 🟡建议线30%
-        max_hard = cfg.get("max_single_position_hard", 50) / 100  # 🔴硬上限50%
-        for threshold, label in [(max_hard, "硬上限"), (max_soft, "建议线")]:
-            total_eq = self.get_total_equity()  # fix: 每轮重算，卖后权益变化
-            if total_eq <= 0:
-                break
-            for sym, pos in list(self.positions.items()):
-                price = pos.get("last_price") or pos.get("avg_cost") or 1.0
-                mkt_val = price * pos["qty"]
-                if mkt_val / total_eq > threshold:
-                    target_val = total_eq * threshold
-                    excess_val = mkt_val - target_val
-                    sell_qty = max(100, int(excess_val / (price + 0.01)) // 100 * 100)
-                    if sell_qty >= 100 and sell_qty <= pos["qty"]:
-                        r = self.place_order(sym, "sell", price, sell_qty, trade_type="auto", reason=f"集中度{label}({mkt_val/total_eq*100:.0f}%>{threshold*100:.0f}%)减{sell_qty}股")
-                        if r.get("success"):
-                            actions.append(r)
-                            self._daily_trade_count += 1
-                            print(f"[Paper] 集中度减仓 {sym}: {mkt_val/total_eq*100:.0f}%→{threshold*100:.0f}% ({label})")
-
-        # ── 2.6 日亏损清算: can_buy被拦截时从最大头寸开始卖
-        if not can_buy and reject_reason and "亏损" in str(reject_reason):
-            print(f"[Paper] 日亏损触发清算: {reject_reason}")
-            sorted_pos = sorted(self.positions.items(),
-                                key=lambda x: x[1].get("last_price", 0) * x[1].get("qty", 0),
-                                reverse=True)
-            for sym, pos in sorted_pos:
-                qty = pos.get("qty", 0)
-                price = pos.get("last_price", pos.get("avg_cost", 0))
-                if qty >= 100 and price > 0:
-                    r = self.place_order(sym, "sell", price, qty, trade_type="auto", reason="日亏清算(最大头寸优先)")
-                    if r.get("success"):
-                        actions.append(r)
-                        self._daily_trade_count += 1
-                        print(f"[Paper] 日亏清算卖出 {sym} x{qty} @{price:.2f}")
-
-        # ── 3. 信号买入 ──
-        max_positions = cfg.get("max_positions", 3)
-        # E263: 多策略信号聚合
-        if can_buy and not signals:
-            # FIX: 多策略信号源 + HTTP兜底
-            try:
-                from strategy_manager import mgr
-                m = mgr.get_default()
-                if self.factor_cache and self.stock_data:
-                    mgr_signals = m.generate_signals(self.factor_cache, self.stock_data, max_total=15)
-                    if mgr_signals:
-                        signals = mgr_signals
-                        print(f"[Paper] 多策略信号: {len(mgr_signals)}只")
-            except Exception: pass
-            if not signals:
-                try:
-                    import urllib.request, json as _j2
-                    _r2 = urllib.request.urlopen('http://127.0.0.1:5002/api/signal-center', timeout=10)
-                    signals = _j2.loads(_r2.read().decode()).get('signals', [])
-                    if signals: print(f"[Paper] HTTP信号兜底: {len(signals)}条")
-                except Exception: pass
-
-        if can_buy and signals:
-            signal_min = _load_trade_config().get("signal_min_strength", self._signal_filter.min_strength)
-            max_daily = cfg.get("max_daily_trades", 4)
-            min_cash = cfg.get("min_cash_reserve", 50000)  # E38: 最低现金保留
-
-            buy_this_cycle = 0
-            max_cycle = cfg.get("max_buy_per_cycle", 3)  # A02: 配置可控
-            for sig in (signals or [])[:15]:
-                if getattr(self, '_daily_buy_count', 0) >= max_daily or buy_this_cycle >= max_cycle:
-                    break
-
-                # 信号质量过滤
-                bs = self._signal_filter.adjust_signal(sig)
-                if bs < signal_min:
-                    continue
-
-                sym = sig.get("symbol", "")
-                if not sym:
-                    continue
-                if sym in self.positions:
-                    continue
-                # E303: 当日同股票不重复买入（信号幂等）
-                _today = __import__('datetime').datetime.now().strftime("%Y-%m-%d")
-                if any(t.get("symbol") == sym and t.get("side") == "buy" and str(t.get("date",""))[:10] == _today
-                       for t in (getattr(self, '_trades_archive', None) or [])):
-                    continue
-                # A01: 用实时行情价覆盖信号缓存价（提高成交率）
-                real_price = sig.get("close", 10)
-                try:
-                    rt = self._resolve_price(sym, fast=True)
-                    if rt and rt > 0: real_price = rt
-                except: pass
-                # E266: 黑名单检查
-                try:
-                    from blacklist import is_blocked
-                    if is_blocked(sym):
-                        continue
-                except: pass
-                # E38: 检查持仓数上限
-                if max_positions > 0 and len(self.positions) >= max_positions:
-                    break  # 已达上限，停止买入
-                # E38: 检查最低现金保留
-                if min_cash > 0 and self.cash < min_cash:
-                    break  # 现金不足，停止买入
-
-                # 仓位计算（A01: 用实时价）
-                qty = self._position_sizer.calculate_shares(bs, self.cash, real_price)
-                if qty >= 100:
-                    r = self.place_order(sym, "buy", real_price, qty, trade_type="auto", reason=f"信号{bs}级({int(self._position_sizer.sizing_map.get(bs, 0.15)*100)}%仓)")
-                    buy_this_cycle += 1
-                    # E32: 买入失败记日志
-                    if not r.get("success"):
-                        print(f"[Paper] 自动买入失败 {sym}: {r.get('error','未知')}")
-                    if r.get("success"):
-                        pct = self._position_sizer.sizing_map.get(bs, 0.15)
-                        strat = sig.get("strategy", sig.get("name", ""))
-                        r["reason"] = f"信号{bs}级({int(pct*100)}%仓)"
-                        if strat: r["reason"] += f" [{strat}]"
-                        r["strategy"] = strat  # 绩效追踪
-                        actions.append(r)
-                        self._daily_trade_count += 1
-                        self._daily_buy_count = getattr(self, '_daily_buy_count', 0) + 1
-                        # 钉钉通知
-                        try:
-                            from dingtalk_alerts import trade_signal
-                            trade_signal(sym, "", "buy", str(r["reason"]), sig.get("close", 0), 0, "", source="模拟")
-                        except: pass
-
-        # E45-A: 超额持仓主动减仓（每次最多卖2只，优先亏损最大的）
-        if max_positions > 0 and len(self.positions) > max_positions:
-            excess = len(self.positions) - max_positions
-            sorted_pos = sorted(
-                self.positions.items(),
-                key=lambda x: (x[1].get("last_price", x[1].get("avg_cost", 0))
-                               / max(x[1].get("avg_cost", 1), 0.01) - 1)
-            )
-            sold = 0
-            for sym, pos in sorted_pos:
-                if sold >= min(excess, 2):
-                    break
-                qty = pos.get("qty", 0)
-                if qty > 0:
-                    price = pos.get("last_price", pos.get("avg_cost", 0))
-                    r = self.place_order(sym, "sell", price, qty, trade_type="auto", reason=f"超额减仓(持仓{len(self.positions)}>{max_positions})")
-                    if r.get("success"):
-                        actions.append(r)
-                        self._daily_trade_count += 1
-                        sold += 1
-
-        # D13: 更新线程心跳（看门狗监控用）
-        self._last_heartbeat = datetime.now()
-        return actions
-
-
-# ═══════════════════ 全局单例 + 兼容旧接口 ═══════════════════
 paper = PaperAccount()
 
 
-def start():
-    """启动自动交易 (兼容旧接口)。"""
-    paper.auto_enabled = True
-    paper._save()
-    return {"status": "started"}
-
-
-def stop():
-    """停止自动交易 (兼容旧接口)。"""
-    paper.auto_enabled = False
-    paper._save()
-    return {"status": "stopped"}
-
-
-def get_status():
-    """获取状态 (兼容旧接口)。"""
-    return paper.get_status()
-
-
-# ═══════════════════════════════════════════════════════
-#  PaperAutoLoop — 模拟盘自动交易循环 (蓝图 v3.0 Phase 1)
-# ═══════════════════════════════════════════════════════
-
-class PaperAutoLoop:
-    """模拟盘自动交易循环 — RuleEngine 统一驱动。
-
-    启动时自动禁用 app.py 旧版内联循环，避免双循环冲突。
-    补齐审计日志、SSE推送、A/B测试、实时价格刷新等旧循环功能。
-    """
-
-    CHECK_INTERVAL = 10  # 扫描间隔(秒)
-
-    def __init__(self):
-        self.running = False
-        self._thread = None
-        self._last_scan = None
-        self._scan_count = 0
-        self._errors = 0
-
-    # ── 生命周期 ──
-
-    def start(self):
-        """启动循环，同时禁用 app.py 旧版内联循环避免双循环冲突。"""
-        if self.running:
-            return
-        # P0: 禁用旧循环 (app.py:308 _paper_auto_loop)
-        try:
-            import app as _app
-            if hasattr(_app, '_paper_auto_running'):
-                _app._paper_auto_running[0] = False
-                print("[PaperLoop] 已禁用旧版内联循环")
-        except Exception:
-            pass
-        self.running = True
-        self._thread = threading.Thread(target=self._loop, daemon=True, name="PaperAutoLoop")
-        self._thread.start()
-        print("[PaperLoop] 自动交易循环已启动 (10s 间隔, RuleEngine 驱动)")
-
-    def stop(self):
-        """停止循环，恢复旧版循环作为降级保底。"""
-        self.running = False
-        # 恢复旧循环 (降级保底: 宪法第二章第2条)
-        try:
-            import app as _app
-            if hasattr(_app, '_paper_auto_running'):
-                _app._paper_auto_running[0] = True
-                print("[PaperLoop] 已恢复旧版内联循环(降级)")
-        except Exception:
-            pass
-        print("[PaperLoop] 自动交易循环已停止")
-
-    def is_running(self) -> bool:
-        return self.running and (self._thread and self._thread.is_alive())
-
-    # ── 交易时间检查 ──
-
-    @staticmethod
-    def _can_trade() -> bool:
-        """复用 realtime_quotes.is_trading_time()，与旧循环一致。"""
-        try:
-            from realtime_quotes import is_trading_time
-            return is_trading_time()
-        except ImportError:
-            now = datetime.now()
-            t = now.time()
-            if now.weekday() >= 5:
-                return False
-            if t < datetime.strptime("09:25", "%H:%M").time():
-                return False
-            if datetime.strptime("11:30", "%H:%M").time() <= t <= datetime.strptime("13:00", "%H:%M").time():
-                return False
-            if t >= datetime.strptime("15:05", "%H:%M").time():
-                return False
-            return True
-
-    # ── 信号获取 + 实时价格刷新 ──
-
-    @staticmethod
-    def _get_signals() -> list[dict]:
-        """获取信号 — FACTOR_CACHE优先，HTTP兜底，实时价格刷新 (对齐旧循环)。"""
-        signals = []
-        try:
-            import app as _app
-            cache = getattr(_app, '_FACTOR_CACHE', None)
-            if cache and getattr(_app, '_CACHE_READY', False):
-                for s in cache[:200]:
-                    sym = getattr(s, 'symbol', '')
-                    if not sym:
-                        continue
-                    rt_close = getattr(s, 'close', 0) or 0
-                    rt_chg = getattr(s, 'change_pct', 0) or 0
-                    # 实时价格刷新 (对齐旧循环)
-                    try:
-                        from realtime_quotes import _quote_cache
-                        code = sym.replace('sh', '').replace('sz', '')
-                        if _quote_cache and _quote_cache.get('data') and code in _quote_cache['data']:
-                            q = _quote_cache['data'][code]
-                            rt_close = float(q.get('close', rt_close) or rt_close)
-                            rt_chg = float(q.get('change_pct', rt_chg) or rt_chg)
-                    except Exception:
-                        pass
-                    signals.append({
-                        'symbol': sym,
-                        'name': getattr(s, 'name', '') or '',
-                        'buy_signal': getattr(s, 'buy_signal', 0) or 0,
-                        'close': rt_close,
-                        'change_pct': rt_chg,
-                        'vol_ratio': getattr(s, 'vol_ratio', 1) or 1,
-                        'industry': getattr(s, 'industry', '') or '',
-                        'power_score': getattr(s, 'power_score', 0) or 0,
-                    })
-        except Exception as e:
-            print(f"[PaperLoop] 信号读取失败(FACTOR_CACHE): {e}")
-
-        if not signals:
-            try:
-                import urllib.request, json as _j
-                r = urllib.request.urlopen('http://127.0.0.1:5002/api/signal-center', timeout=10)
-                raw = _j.loads(r.read().decode()).get('signals', [])
-                for _s in raw[:50]:
-                    signals.append({
-                        'symbol': _s.get('symbol', ''),
-                        'buy_signal': _s.get('buy_signal', 0) or 0,
-                        'close': _s.get('close', 0) or 0,
-                        'vol_ratio': 1,
-                        'change_pct': _s.get('change_pct', 0) or 0,
-                    })
-                if signals:
-                    print(f"[PaperLoop] HTTP信号兜底: {len(signals)}条")
-            except Exception as e:
-                print(f"[PaperLoop] HTTP兜底也失败: {e}")
-
-        # FactorRegistry 驱动: 对所有 active 因子生成信号
-        try:
-            from factor_registry import get_active_factors
-            active_factors = {f["name"] for f in get_active_factors()}
-            from quant_framework.execution.rules.engine import RuleEngine
-            re_engine = getattr(paper, '_rule_engine', None)
-            if re_engine is None:
-                re_engine = RuleEngine(broker=paper._broker)
-            watchlist = list(paper.positions.keys())[:10]
-            if not watchlist:
-                for s in (signals[:30] if signals else []):
-                    sym = s.get("symbol", "")
-                    if sym and sym not in watchlist:
-                        watchlist.append(sym)
-            if not watchlist:
-                try:
-                    from stock_pool_manager import get_stock_pool
-                    pool = get_stock_pool("core_plus_extended")
-                    watchlist = pool[:50]
-                except Exception: pass
-            for sym in watchlist[:30]:
-                try:
-                    bs = re_engine.check_buy_signal(sym, {}, market_state="unknown")
-                    # 只接受 Registry active 因子的信号
-                    if bs and bs.get("strategy") in active_factors:
-                        signals.append({
-                            "symbol": sym, "name": bs.get("strategy", ""),
-                            "buy_signal": int(bs.get("score", 0) / 20),
-                            "close": bs.get("entry_price", 10),
-                            "change_pct": 0, "vol_ratio": 1, "industry": "",
-                            "power_score": bs.get("score", 0),
-                            "_v15_strategy": bs.get("strategy"),
-                            "_v15_score": bs.get("score"),
-                        })
-                except Exception: pass
-        except Exception as e:
-            print(f"[PaperLoop] Registry信号异常: {e}")
-
-        return signals
-
-    # ── 审计日志 + SSE推送 (补齐旧循环功能) ──
-
-    @staticmethod
-    def _write_audit_log(actions: list):
-        """写入审计日志，对齐旧循环 audit_trade.jsonl。"""
-        try:
-            import json as _aj
-            from config import AUDIT_LOG_JSONL
-            now_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            log_line = _aj.dumps({
-                'ts': now_ts,
-                'actions': [
-                    {'symbol': a.get('symbol', ''), 'action': a.get('action', ''),
-                     'reason': a.get('reason', '')}
-                    for a in actions
-                ]
-            }, ensure_ascii=False)
-            with open(AUDIT_LOG_JSONL, 'a', encoding='utf-8') as _af:
-                _af.write(log_line + '\n')
-            # 限制最多5000行
-            if os.path.exists(AUDIT_LOG_JSONL) and os.path.getsize(AUDIT_LOG_JSONL) > 1_000_000:
-                with open(AUDIT_LOG_JSONL, 'r', encoding='utf-8') as f:
-                    lines = f.readlines()
-                if len(lines) > 5000:
-                    open(AUDIT_LOG_JSONL, 'w', encoding='utf-8').writelines(lines[-2000:])
-        except Exception:
-            pass
-
-    @staticmethod
-    def _push_sse_events(actions: list):
-        """推送风控事件到SSE，对齐旧循环 store.set('risk_event')。"""
-        try:
-            now_ts = datetime.now().strftime('%H:%M:%S')
-            from state_persist import store
-            for a in actions:
-                store.set('risk_event', {
-                    'type': 'auto_trade',
-                    'time': now_ts,
-                    'symbol': a.get('symbol', ''),
-                    'action': a.get('action', ''),
-                    'reason': a.get('reason', ''),
-                })
-        except Exception:
-            pass
-
-    # ── 主循环 ──
-
-    def _loop(self):
-        """后台循环: 每10秒扫描信号 → RuleEngine → 下单。"""
-        import time as _time
-        _time.sleep(5)  # 首次延迟等系统就绪
-
-        while self.running:
-            try:
-                self._scan_count += 1
-                self._last_scan = datetime.now()
-
-                if not self._can_trade():
-                    _time.sleep(self.CHECK_INTERVAL)
-                    continue
-
-                if not paper.auto_enabled:
-                    _time.sleep(self.CHECK_INTERVAL)
-                    continue
-
-                # 1. 获取信号 (含实时价格刷新)
-                signals = self._get_signals()
-
-                # 2. 刷新持仓市价 (对齐旧循环)
-                for sym, pos in list(paper.positions.items()):
-                    mp = paper._get_market_price(sym)
-                    if mp and mp > 0:
-                        pos['last_price'] = mp
-
-                if signals and self._scan_count % 3 == 0:
-                    print(f"[PaperLoop] 第{self._scan_count}次扫描, "
-                          f"信号{len(signals)}条, 持仓{len(paper.positions)}只, "
-                          f"资金¥{paper.cash:,.0f}")
-
-                # 3. RuleEngine 驱动 (信号取50条，对齐旧循环)
-                actions = paper.auto_trade_check(signals[:50] if signals else None)
-
-                # P3-2: 日终自动报告 (15:05)
-                now = datetime.now()
-                if now.hour == 15 and now.minute >= 5 and not getattr(self, '_report_generated_today', False):
-                    try:
-                        from daily_report import generate_daily_report
-                        generate_daily_report()
-                        self._report_generated_today = True
-                        print("[PaperLoop] 日终报告已生成")
-                    except Exception as e:
-                        print(f"[PaperLoop] 日终报告失败: {e}")
-                if now.hour < 15:
-                    self._report_generated_today = False  # 重置标记
-
-                # G2: 策略自动熔断 (每30循环≈5分钟)
-                if self._scan_count % 30 == 0:
-                    try:
-                        from factor_health import check_strategy_circuit_breaker
-                        cb_actions = check_strategy_circuit_breaker()
-                        if cb_actions:
-                            print(f"[PaperLoop] 熔断触发: {len(cb_actions)}个策略")
-                    except Exception: pass
-
-                # 4. A/B测试信号处理 (对齐旧循环)
-                if signals:
-                    try:
-                        from ab_test import runner as _ab_runner
-                        if _ab_runner.running:
-                            _ab_runner.process_signals(signals)
-                    except Exception:
-                        pass
-
-                # 5. 审计日志 + SSE推送 (补齐旧循环功能)
-                if actions:
-                    buy_count = sum(1 for a in actions if a.get("action") == "buy")
-                    sell_count = sum(1 for a in actions if a.get("action") == "sell")
-                    print(f"[PaperLoop] 执行{len(actions)}笔 (买{buy_count}/卖{sell_count})")
-                    self._write_audit_log(actions)
-                    self._push_sse_events(actions)
-
-                self._errors = 0
-
-            except Exception as e:
-                self._errors += 1
-                print(f"[PaperLoop] 循环异常(#{self._errors}): {e}")
-                if self._errors > 5:
-                    print("[PaperLoop] 连续错误>5次，停止循环 → 恢复旧循环")
-                    self.running = False
-                    try:
-                        import app as _app
-                        if hasattr(_app, '_paper_auto_running'):
-                            _app._paper_auto_running[0] = True
-                    except Exception:
-                        pass
-                    break
-
-            _time.sleep(self.CHECK_INTERVAL)
-
-        print("[PaperLoop] 循环退出")
-
-
-# ── 全局实例 ──
-_paper_loop = PaperAutoLoop()
-
-
 def start_auto_loop():
-    """启动模拟盘自动交易循环 (app.py 启动时调用)。"""
-    if not _paper_loop.is_running():
-        _paper_loop.start()
-        return True
-    return False
+    """启动模拟盘自动交易循环 (兼容旧接口, V5引擎内部处理)"""
+    pass
 
 
-def stop_auto_loop():
-    """停止模拟盘自动交易循环。"""
-    _paper_loop.stop()
-    return True
-
-
-def get_loop_status() -> dict:
-    """获取自动循环运行状态。"""
-    return {
-        "running": _paper_loop.is_running(),
-        "auto_enabled": paper.auto_enabled,
-        "scan_count": _paper_loop._scan_count,
-        "last_scan": _paper_loop._last_scan.strftime("%H:%M:%S") if _paper_loop._last_scan else None,
-        "errors": _paper_loop._errors,
-        "positions": len(paper.positions),
-        "cash": paper.cash,
-    }
+def init_stock_data():
+    """app.py 数据预热完成后调用，注入 stock_data (含退市股)"""
+    try:
+        from data_loader import load_stock_data_cache, get_survivorship_stats
+        sd = load_stock_data_cache(r"D:\quant_web\stock_data.parquet", keep_days=60)
+        print(f"[Paper] stock_data 已注入: {len(sd)}只")
+        # B1: 幸存者偏差诊断
+        try:
+            stats = get_survivorship_stats()
+            if stats and 'delisted' in stats:
+                print(f"[Paper·B1] 幸存者偏差: 全量{stats.get('total_stocks_ever')}只, "
+                      f"存活{stats.get('active_today')}只, 退市{stats.get('delisted')}只 "
+                      f"({stats.get('delisted_pct')}%), 估计偏差{stats.get('estimated_bias')}")
+        except Exception:
+            pass
+        return sd
+    except Exception as e:
+        print(f"[Paper] stock_data加载失败: {e}")
+        return {}

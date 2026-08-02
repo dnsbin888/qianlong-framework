@@ -1,0 +1,63 @@
+SQLAlchemy 未安装 (不影响 sqlite_persistence 运行). 如需 ORM 功能请执行: pip install sqlalchemy>=2.0
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:stock_screener:QMT 不可用: name 'symbols' is not defined
+WARNING:stock_screener:读取股票列表失败: Compressed file ended before the end-of-stream marker was reached
+ERROR:stock_screener:TDX 降级读取失败: Compressed file ended before the end-of-stream marker was reached
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 2
+Exception in thread Thread-10 (_startup_heavy):
+Traceback (most recent call last):
+  File "D:\quant_web\app.py", line 749, in init_data
+    logger.info("[DataStore] 初始化完成(首次), version=%d", store.get_version())
+    ^^^^^^
+NameError: name 'logger' is not defined
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Program Files\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "D:\quant_web\app.py", line 7224, in _startup_heavy
+    init_data()  # 缓存加载/重建
+    ^^^^^^^^^^^
+  File "D:\quant_web\app.py", line 751, in init_data
+    logger.warning("[DataStore] 初始化写入失败(path3): %s", _ds_e)
+    ^^^^^^
+NameError: name 'logger' is not defined
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:stock_screener:QMT 不可用: name 'symbols' is not defined
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 1
+WARNING:waitress.queue:Task queue depth is 2
+WARNING:waitress.queue:Task queue depth is 3
+WARNING:waitress.queue:Task queue depth is 4
+WARNING:waitress.queue:Task queue depth is 5
+WARNING:waitress.queue:Task queue depth is 6
+WARNING:waitress.queue:Task queue depth is 7
+WARNING:waitress.queue:Task queue depth is 8
+WARNING:waitress.queue:Task queue depth is 9
+WARNING:waitress.queue:Task queue depth is 10

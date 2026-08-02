@@ -1,0 +1,92 @@
+无法解析 tdx_signal_watcher.factor_tdx_signal: module 'tdx_signal_watcher' has no attribute 'factor_tdx_signal'
+C:\Users\Administrator\AppData\Roaming\Python\Python312\site-packages\sklearn\utils\validation.py:2827: UserWarning: X does not have valid feature names, but LGBMRegressor was fitted with feature names
+  warnings.warn(
+[DataLoader] 截断至最近60天 (2026-05-10 ~ 2026-07-09)
+[DataLoader] Parquet 缓存已加载: 5201 stocks × 60d, 6.6MB, 2.5s
+[LHB] 今日龙虎榜: 0只净买入票
+候选池过滤: 685/5201 只通过
+  └ 日均成交额>1000万: 3732只
+  └ 流动性+缓冲区: 780只
+  └ 净资产为负: 4只
+[LGBM-Strategy] 批量评分完成: 421只股票, range=[0.9, 100.0]
+[LGBM-Strategy] 生成 30 个买入信号 (Top3: [('605589', 100), ('600330', 100), ('600246', 100)])
+[XGB] 批量评分: 682只, range=[30.5, 71.4]
+[XGB] 信号: 30只 (Top3: [('301013', 71.4), ('301526', 71.2), ('688519', 71.1)])
+[Ridge] 开始...
+无法解析 tdx_signal_watcher.factor_tdx_signal: module 'tdx_signal_watcher' has no attribute 'factor_tdx_signal'
+[Ridge] 预测完成: 299只
+d:\quant_framework\data_paths.py:1: SyntaxWarning: invalid escape sequence '\q'
+  """统一数据路径 — 代码与数据分离。
+2026-07-14 00:56:35 [INFO ] logging_config: 日志系统已初始化
+d:\quant_framework\stock_bridge.py:83: SyntaxWarning: invalid escape sequence '\q'
+  """
+2026-07-14 00:56:35 [INFO ] quant_framework.event_bus: [EventBus] 已启动
+2026-07-14 00:56:35 [INFO ] quant_framework.broker.simulated: Simulated broker started with cash=1000000.00
+2026-07-14 00:56:36 [INFO ] trading_loop: 统一交易循环已启动
+2026-07-14 00:56:36 [INFO ] trading_loop: 事件驱动交易循环已启动(灰度)
+
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "D:\quant_web\generate_signal_table.py", line 483, in main
+    "type": classify(sym),
+            ^^^^^^^^^^^^^
+  File "D:\quant_framework\sentiment_cycle.py", line 24, in classify
+    sent = get_market_sentiment(sd)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\quant_framework\sentiment.py", line 38, in get_market_sentiment
+    for sym, df in sd.items():
+                   ^^^^^^^^
+AttributeError: 'str' object has no attribute 'items'
+Ridge: 299 只 → Top30入信号表
+弱转强: 0 候选
+超跌反弹: 并入, 反转信号覆盖15只
+打板候选池: 退潮期→空仓 (不生成候选)
+[Preload] 因子缓存注入: 3500 条
+[App] 数据目录已初始化: D:\quant_data\
+[Config] 路径配置加载成功
+[Trader] QMT XtQuant 交易通道可用
+[Trader] Master参数已加载: TP3_sell=1.0, 硬止损=-0.055, max_pos=3
+[Trader] KS ai_auto_enabled=False → auto_trade_enabled 已同步
+[Trader] Loaded CONFIG overrides from D:\quant_framework\live_trader_config.json
+[Trader] EventBus 未启动, 配置同步仅文件模式
+[Trader] 加载 4 个策略参数: ['第一次建组合因子测试', 'S_mqrsskpw', '九因子统一策略V1', 'WQ101+自研策略V1']
+[TradeKB] 34 hotkeys registered
+[PopupKiller] 启动成功（扫描间隔 2.0s）
+[Trader] 弹窗杀手已启动（2秒扫描间隔）
+[Trader] 持仓跟踪已加载: 2只
+[Trader] QMT无持仓数据(可能未连接)
+[Trader] Auto-sync + Auto-trade started (30s interval, link_trader enabled)
+[App] 事件总线已启动
+[Realtime] 已加载缓存: 581只
+[Realtime] 初始股票池: 5201只A股, 取前1000只
+[Realtime] 后台缓存已启动 (3秒批量刷新)
+[TDXWatcher] Monitoring D:\通信达技术指标\六合一竞价擒龙（下载到电脑里解压）\六合一竞价擒龙（下载到电脑里解压）\T0002\tpool every 30s
+[PaperInit] cfg min_daily_amount=20000000
+[Paper] __init__ 准备加载状态文件: d:\quant_framework\paper_account.json (存在=True)
+[Paper] 从CSV恢复 39 笔卖出记录
+[Paper] _load: cash=971354.9872400003 (from file=971354.9872400003), positions=1, trades=56, auto=False
+[Paper] __init__ 加载完成: cash=971354.9872400003, positions=1, auto=False
+[App] 自动交易状态已恢复: auto=False
+[App] 统一交易循环已启动
+[App] SQLite每日备份已注册 (09:30)
+[App] 交易数据每小时备份已注册(模拟+实盘)
+[App] IC自动更新已就绪 (每周一08:00)
+[App] 策略自动熔断已就绪 (每5分钟)
+[App] 周检定时器已就绪 (每周六09:00)
+[Module] 因子缓存: 3500 条
+***** xtdata连接成功 2026-07-14 00:36:56*****
+服务信息: {'tag': 'sp3', 'version': '1.0'}
+服务地址: 127.0.0.1:58610
+数据路径: D:\国金证券QMT交易端\bin.x64/../userdata_mini/datadir
+设置xtdata.enable_hello = False可隐藏此消息
+
+[TDXParser] 26池 20841只 (自动15池 + 手动11池)
+[DataLoader] 截断至最近60天 (2026-05-10 ~ 2026-07-09)
+[DataLoader] Parquet 缓存已加载: 5201 stocks × 60d, 6.6MB, 2.8s
+[Scheduler] Evolution scheduler started
+[App] Auto-evolve system loaded
+[App] Knowledge base API loaded
+[System] 保存状态...
+[Shutdown] paper已保存
+[Shutdown] 持仓跟踪已保存
+[System] 状态已保存

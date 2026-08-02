@@ -4,3 +4,7 @@ data\market\
 backups\  
 *.bak  
 __pycache__\  
+logs/
+*.parquet
+logs/
+*.parquet
