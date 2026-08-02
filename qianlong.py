@@ -57,7 +57,7 @@ def lock():
     count = 0
     for f in PROTECTED:
         if os.path.exists(f):
-            run(f'attrib +R "{f}"')
+            os.chmod(f, 0o444)
             count += 1
     print(f"🔒 已锁定 {count}/{len(PROTECTED)} 个文件")
 
@@ -67,7 +67,7 @@ def unlock():
     count = 0
     for f in PROTECTED:
         if os.path.exists(f):
-            run(f'attrib -R "{f}"')
+            os.chmod(f, 0o666)  # read-write
             count += 1
     print(f"🔓 已解锁 {count} 个文件 (快照已保存)")
 
