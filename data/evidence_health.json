@@ -1,0 +1,39 @@
+{
+  "date": "2026-08-02",
+  "producers": {
+    "trend_ml": {
+      "health_id": "HLTH-20260802-000001",
+      "drift_score": 0.05,
+      "drift_level": "LOW",
+      "health_status": "healthy",
+      "ic_trend": {
+        "current_ic": 0.0334,
+        "ic_20d_avg": 0.0013,
+        "ic_slope": 0.00217,
+        "n_days": 42
+      },
+      "checked_at": "2026-08-02T16:03:34.331865"
+    },
+    "momentum_ml": {
+      "health_id": "HLTH-20260802-000001",
+      "drift_score": 0.05,
+      "drift_level": "LOW",
+      "health_status": "healthy",
+      "ic_trend": {
+        "current_ic": 1.0,
+        "ic_20d_avg": 0.7,
+        "ic_slope": 0.004511,
+        "n_days": 60
+      },
+      "checked_at": "2026-08-02T16:03:34.331865"
+    },
+    "tdx_formula": {
+      "health_id": "HLTH-20260802-000001",
+      "drift_score": 0.0,
+      "drift_level": "LOW",
+      "health_status": "healthy",
+      "ic_trend": null,
+      "checked_at": "2026-08-02T16:03:34.331865"
+    }
+  }
+}
