@@ -30,7 +30,7 @@ def _load_model(model_path=None):
     try:
         with open(path, "rb") as f:
             data = pickle.load(f)
-        return data.get("model"), data.get("factors", [])
+        return data.get("model"), data.get("factor_names") or data.get("factors", [])
     except Exception as e:
         print(f"[LGBM-Strategy] 模型加载失败: {e}")
         return None, None
