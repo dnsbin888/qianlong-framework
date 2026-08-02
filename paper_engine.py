@@ -671,6 +671,7 @@ class PaperAccount:
             "evidence_id": evidence_id or None,  # Decision→Execution 绑定
             "strategy_id": self._meta.get(symbol, {}).get("strategy_id", ""),  # 策略归属
             "strategy_name": self._meta.get(symbol, {}).get("strategy_name", ""),
+            "regime": self._get_regime(),
             "date": datetime.now().strftime("%Y-%m-%d"),
             "time": datetime.now().strftime("%H:%M:%S"),
             "type": trade_type,
@@ -1028,6 +1029,21 @@ class PaperAccount:
             return []
 
     # ═══════════ 状态查询 ═══════════
+
+    def _get_regime(self) -> str:
+        """获取当前市场状态。失败时返回 'unknown'"""
+        try:
+            from market_state_classifier import classify_market_state
+            return classify_market_state() or "unknown"
+        except Exception:
+            try:
+                from market_regime import detect_regime as _dr
+                result = _dr({})
+                if isinstance(result, dict):
+                    return result.get("regime", "unknown")
+            except Exception:
+                pass
+        return "unknown"
 
     def get_total_equity(self, quotes=None) -> float:
         mv = self.get_market_value(quotes)
