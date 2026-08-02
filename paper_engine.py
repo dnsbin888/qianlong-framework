@@ -98,17 +98,6 @@ def _get_market_price(sym):
                 return p
     except Exception:
         pass
-    # QMT xtdata (最高优先级)
-    try:
-        from xtquant import xtdata
-        qmt_code = code + '.SH' if sym.startswith('sh') else code + '.SZ'
-        snap = xtdata.get_full_tick([qmt_code])
-        if snap and qmt_code in snap:
-            p = snap[qmt_code].get('lastPrice', 0)
-            if p > 0:
-                return float(p)
-    except Exception:
-        pass
     return None
 
 def _can_trade_time():
@@ -173,7 +162,7 @@ class PaperAccount:
             result[sym] = {
                 "qty": pos.volume,
                 "avg_cost": round(pos.avg_cost, 2),
-                "last_price": _get_market_price(sym) or meta.get("last_price") or pos.current_price or pos.avg_cost,
+                "last_price": pos.current_price or pos.avg_cost,
                 "name": meta.get("name", _resolve_name(sym, self._names)),
                 "buy_date": meta.get("buy_date", ""),
                 "strategy_id": meta.get("strategy_id", ""),
