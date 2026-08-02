@@ -1,0 +1,23 @@
+{
+  "date": "2026-08-02",
+  "total_sells": 24,
+  "total_buys": 8,
+  "total_pnl": 12924.79,
+  "strategies": {
+    "ML综合": {
+      "trades": 24,
+      "buys": 7,
+      "sells": 24,
+      "win_rate": 66.7,
+      "total_pnl": 12924.79,
+      "avg_return_pct": 2.59,
+      "profit_factor": 2.34
+    }
+  },
+  "exit_distribution": {
+    "strategy.take_profit": 12,
+    "strategy.trailing_stop": 4,
+    "strategy.open_sell_half": 6,
+    "system.expiry": 2
+  }
+}

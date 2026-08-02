@@ -1,0 +1,876 @@
+{
+  "date": "20260802",
+  "archived_at": "2026-08-02T16:08:41.629565",
+  "evidence": {
+    "date": "2026-08-02",
+    "total_evidence": 40,
+    "trend_count": 20,
+    "momentum_count": 20,
+    "evidence": [
+      {
+        "human_id": "AQFT-20260802-000001",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh600025",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000002",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh603658",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000003",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh688147",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000004",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh688343",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000005",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh688758",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000006",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh600323",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000007",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh601866",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000008",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh605208",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000009",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh688235",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000010",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh600246",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000011",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh600900",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000012",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh600036",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000013",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh601333",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000014",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh688120",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000015",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh603170",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000016",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh688200",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000017",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh688302",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000018",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh600166",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000019",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh688106",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000020",
+        "producer_id": "trend_ml",
+        "evidence_type": "trend_evidence",
+        "symbol": "sh688172",
+        "score": 90.3,
+        "buy_signal": 5,
+        "confidence": 0.85,
+        "snapshot": {
+          "algorithm": "LightGBM",
+          "algorithm_version": "2.8.6",
+          "model_file": "lgbm_model.pkl",
+          "original_score": 90.3,
+          "original_buy_signal": 5
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000021",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sh600605",
+        "score": 67.6,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 67.6,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000022",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sh600933",
+        "score": 67.0,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 67.0,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000023",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sz300281",
+        "score": 64.7,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 64.7,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000024",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sh603418",
+        "score": 64.6,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 64.6,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000025",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sh000026",
+        "score": 64.5,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 64.5,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000026",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sz300389",
+        "score": 64.2,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 64.2,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000027",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sh000107",
+        "score": 64.2,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 64.2,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000028",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sz002197",
+        "score": 64.1,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 64.1,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000029",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sz300479",
+        "score": 63.8,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 63.8,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000030",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sz301025",
+        "score": 63.6,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 63.6,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000031",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sz002050",
+        "score": 63.2,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 63.2,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000032",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sz300594",
+        "score": 63.2,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 63.2,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000033",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sh516110",
+        "score": 63.0,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 63.0,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000034",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sh600505",
+        "score": 62.9,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 62.9,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000035",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sh688296",
+        "score": 62.7,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 62.7,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000036",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sz000803",
+        "score": 62.6,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 62.6,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000037",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sz002193",
+        "score": 62.6,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 62.6,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000038",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sz300923",
+        "score": 62.5,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 62.5,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000039",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sh600862",
+        "score": 62.4,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 62.4,
+          "original_buy_signal": 2
+        }
+      },
+      {
+        "human_id": "AQFT-20260802-000040",
+        "producer_id": "momentum_ml",
+        "evidence_type": "momentum_evidence",
+        "symbol": "sh600521",
+        "score": 62.4,
+        "buy_signal": 2,
+        "confidence": 0.6,
+        "snapshot": {
+          "algorithm": "XGBoost",
+          "algorithm_version": "2.8.6",
+          "model_file": "xgb_model.json",
+          "original_score": 62.4,
+          "original_buy_signal": 2
+        }
+      }
+    ]
+  },
+  "exit": {
+    "date": "2026-08-02",
+    "total_sells": 24,
+    "classified": 24,
+    "distribution": {
+      "strategy.take_profit": 12,
+      "strategy.trailing_stop": 4,
+      "strategy.open_sell_half": 6,
+      "system.expiry": 2
+    },
+    "categories": {
+      "strategy": 22,
+      "system": 2
+    },
+    "details": [
+      {
+        "symbol": "sh601857",
+        "reason_code": "strategy.take_profit",
+        "category": "strategy",
+        "pnl_pct": 5.89,
+        "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+      },
+      {
+        "symbol": "sh601857",
+        "reason_code": "strategy.take_profit",
+        "category": "strategy",
+        "pnl_pct": 5.89,
+        "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+      },
+      {
+        "symbol": "sh601857",
+        "reason_code": "strategy.take_profit",
+        "category": "strategy",
+        "pnl_pct": 5.89,
+        "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+      },
+      {
+        "symbol": "sh601857",
+        "reason_code": "strategy.take_profit",
+        "category": "strategy",
+        "pnl_pct": 5.88,
+        "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+      },
+      {
+        "symbol": "sh601857",
+        "reason_code": "strategy.take_profit",
+        "category": "strategy",
+        "pnl_pct": 5.87,
+        "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+      },
+      {
+        "symbol": "sh601857",
+        "reason_code": "strategy.take_profit",
+        "category": "strategy",
+        "pnl_pct": 5.85,
+        "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+      },
+      {
+        "symbol": "sh601857",
+        "reason_code": "strategy.take_profit",
+        "category": "strategy",
+        "pnl_pct": 5.82,
+        "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+      },
+      {
+        "symbol": "sh601857",
+        "reason_code": "strategy.take_profit",
+        "category": "strategy",
+        "pnl_pct": 5.75,
+        "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+      },
+      {
+        "symbol": "sh601857",
+        "reason_code": "strategy.take_profit",
+        "category": "strategy",
+        "pnl_pct": 5.67,
+        "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+      },
+      {
+        "symbol": "sh600406",
+        "reason_code": "strategy.take_profit",
+        "category": "strategy",
+        "pnl_pct": 6.01,
+        "original": "策略止盈(6.7%)"
+      },
+      {
+        "symbol": "sh601857",
+        "reason_code": "strategy.trailing_stop",
+        "category": "strategy",
+        "pnl_pct": 2.16,
+        "original": "移动止盈T1(盈6.7% 回落≥1%)"
+      },
+      {
+        "symbol": "sh601857",
+        "reason_code": "strategy.trailing_stop",
+        "category": "strategy",
+        "pnl_pct": 1.39,
+        "original": "移动止盈T2(盈5.9% 回落≥2%)"
+      },
+      {
+        "symbol": "sh601857",
+        "reason_code": "strategy.trailing_stop",
+        "category": "strategy",
+        "pnl_pct": 1.18,
+        "original": "移动止盈T1(盈5.7% 回落≥1%)"
+      },
+      {
+        "symbol": "sh600089",
+        "reason_code": "strategy.trailing_stop",
+        "category": "strategy",
+        "pnl_pct": -0.31,
+        "original": "移动止盈T1(盈0.0% 回落≥1%)"
+      },
+      {
+        "symbol": "sh600406",
+        "reason_code": "strategy.take_profit",
+        "category": "strategy",
+        "pnl_pct": 4.55,
+        "original": "策略止盈(5.1%)"
+      },
+      {
+        "symbol": "sh601857",
+        "reason_code": "strategy.take_profit",
+        "category": "strategy",
+        "pnl_pct": 5.43,
+        "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+      },
+      {
+        "symbol": "sz000807",
+        "reason_code": "strategy.open_sell_half",
+        "category": "strategy",
+        "pnl_pct": -2.14,
+        "original": "今开卖半(-2.1%)"
+      },
+      {
+        "symbol": "sz000807",
+        "reason_code": "strategy.open_sell_half",
+        "category": "strategy",
+        "pnl_pct": -2.14,
+        "original": "今开卖半(-2.1%)"
+      },
+      {
+        "symbol": "sz000807",
+        "reason_code": "strategy.open_sell_half",
+        "category": "strategy",
+        "pnl_pct": -2.14,
+        "original": "今开卖半(-2.1%)"
+      },
+      {
+        "symbol": "sz000807",
+        "reason_code": "strategy.open_sell_half",
+        "category": "strategy",
+        "pnl_pct": -2.28,
+        "original": "今开卖半(-2.2%)"
+      },
+      {
+        "symbol": "sz000807",
+        "reason_code": "strategy.open_sell_half",
+        "category": "strategy",
+        "pnl_pct": -2.33,
+        "original": "今开卖半(-2.2%)"
+      },
+      {
+        "symbol": "sz000807",
+        "reason_code": "strategy.open_sell_half",
+        "category": "strategy",
+        "pnl_pct": -2.62,
+        "original": "今开卖半(-2.4%)"
+      },
+      {
+        "symbol": "sz000807",
+        "reason_code": "system.expiry",
+        "category": "system",
+        "pnl_pct": -0.44,
+        "original": "持仓到期(7天≥7天)"
+      },
+      {
+        "symbol": "sh601857",
+        "reason_code": "system.expiry",
+        "category": "system",
+        "pnl_pct": 3.44,
+        "original": "持仓到期(7天≥7天)"
+      }
+    ]
+  },
+  "health": {
+    "date": "2026-08-02",
+    "producers": {
+      "trend_ml": {
+        "health_id": "HLTH-20260802-000001",
+        "drift_score": 0.05,
+        "drift_level": "LOW",
+        "health_status": "healthy",
+        "ic_trend": {
+          "current_ic": 0.0334,
+          "ic_20d_avg": 0.0013,
+          "ic_slope": 0.00217,
+          "n_days": 42
+        },
+        "checked_at": "2026-08-02T16:03:34.331865"
+      },
+      "momentum_ml": {
+        "health_id": "HLTH-20260802-000001",
+        "drift_score": 0.05,
+        "drift_level": "LOW",
+        "health_status": "healthy",
+        "ic_trend": {
+          "current_ic": 1.0,
+          "ic_20d_avg": 0.7,
+          "ic_slope": 0.004511,
+          "n_days": 60
+        },
+        "checked_at": "2026-08-02T16:03:34.331865"
+      },
+      "tdx_formula": {
+        "health_id": "HLTH-20260802-000001",
+        "drift_score": 0.0,
+        "drift_level": "LOW",
+        "health_status": "healthy",
+        "ic_trend": null,
+        "checked_at": "2026-08-02T16:03:34.331865"
+      }
+    }
+  }
+}
