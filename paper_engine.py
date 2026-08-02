@@ -296,18 +296,29 @@ class PaperAccount:
     def _load(self):
         clean_pos, clean_trades, auto = self._clean_state_file()
 
-        # ③ 防损坏: JSON损坏→自动从.bak恢复
+        # ③ 防损坏: JSON损坏→自动从.bak恢复 (带版本检查: 绝不回退到旧版本)
         if not clean_pos and not clean_trades:
             bak = STATE_FILE + ".bak"
             if os.path.exists(bak):
                 try:
                     with open(bak, "r", encoding="utf-8") as f:
                         d = json.load(f)
-                    clean_pos = d.get("positions", {})
-                    clean_trades = d.get("trade_log", [])
-                    auto = d.get("auto_enabled", True)
-                    print(f"[Paper] ⚠️ 主文件损坏, 从.bak恢复 "
-                          f"pos={len(clean_pos)} trades={len(clean_trades)}")
+                    bak_version = d.get("_version", 0)
+                    # 如果.bak版本低于主文件版本 → 拒绝恢复(主文件可能更新)
+                    main_version = 0
+                    if os.path.exists(STATE_FILE):
+                        try:
+                            with open(STATE_FILE, "r", encoding="utf-8") as _mf:
+                                main_version = json.load(_mf).get("_version", 0)
+                        except: pass
+                    if main_version > bak_version:
+                        print(f"[Paper] ⚠️ 主文件(v{main_version})比.bak(v{bak_version})更新, 拒绝回退")
+                    else:
+                        clean_pos = d.get("positions", {})
+                        clean_trades = d.get("trade_log", [])
+                        auto = d.get("auto_enabled", True)
+                        print(f"[Paper] ⚠️ 主文件损坏, 从.bak恢复 v{bak_version} "
+                              f"pos={len(clean_pos)} trades={len(clean_trades)}")
                 except Exception:
                     print("[Paper] ⚠️ .bak也损坏, 从零开始")
 
@@ -368,7 +379,17 @@ class PaperAccount:
         if len(_dedup) < len(self._trades):
             self._trades = _dedup
         try:
+            # 递增版本号，用于判断新旧、防止还原覆盖更新数据
+            current_version = 0
+            if os.path.exists(STATE_FILE):
+                try:
+                    with open(STATE_FILE, "r", encoding="utf-8") as _vf:
+                        current_version = json.load(_vf).get("_version", 0)
+                except: pass
+
             data = {
+                "_version": current_version + 1,
+                "_saved_at": datetime.now().isoformat(),
                 "cash": round(self.cash, 2),
                 "positions": self.positions,
                 "trade_log": self._trades,
