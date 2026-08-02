@@ -229,15 +229,17 @@ class EvidenceHealthMonitor:
 
     @staticmethod
     def _infer_type(producer_id: str) -> str:
-        mapping = {
-            "trend_ml": "trend_evidence",
-            "momentum_ml": "momentum_evidence",
-            "tdx_formula": "formula_evidence",
-            "path_a": "board_evidence",
-            "regime": "regime_evidence",
-            "exit_pipeline": "exit_evidence",
-        }
-        return mapping.get(producer_id, "unknown")
+        """从 Registry 读取 evidence_type（不硬编码）"""
+        try:
+            from evidence_registry import EvidenceRegistry
+            reg = EvidenceRegistry()
+            if reg.load():
+                meta = reg.get(producer_id)
+                if meta:
+                    return meta.get("evidence_type", "unknown")
+        except Exception:
+            pass
+        return "unknown"
 
     def summary(self) -> str:
         lines = ["=" * 60, "  Evidence Health Monitor", "=" * 60]
