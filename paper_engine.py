@@ -379,15 +379,16 @@ class PaperAccount:
                 "daily_loss_total": self._daily_loss_total,
                 "day_start_equity": self._day_start_equity,
             }
-            # 先备份旧文件 (防写坏恢复)
-            if os.path.exists(STATE_FILE):
-                try: os.replace(STATE_FILE, STATE_FILE + ".bak")
-                except: pass
+            # 先写临时文件，再替换 (保证任意时刻崩溃都有恢复点)
             tmp = STATE_FILE + ".tmp"
             with open(tmp, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2, default=str)
                 f.flush()
                 os.fsync(f.fileno())
+            # 备份旧文件 (保留最近版本用于崩溃恢复)
+            if os.path.exists(STATE_FILE):
+                try: os.replace(STATE_FILE, STATE_FILE + ".bak")
+                except: pass
             os.replace(tmp, STATE_FILE)
             # ④ 追加交易记录到JSONL (永不覆盖)
             try:
