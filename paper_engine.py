@@ -411,7 +411,19 @@ class PaperAccount:
                 try: os.replace(STATE_FILE, STATE_FILE + ".bak")
                 except: pass
             os.replace(tmp, STATE_FILE)
-            # ④ 追加交易记录到JSONL (永不覆盖)
+            # ④ 滚动备份: 保留最近5个版本 (防止.bak单点)
+            try:
+                backup_dir = os.path.join(os.path.dirname(STATE_FILE), "paper_versions")
+                os.makedirs(backup_dir, exist_ok=True)
+                # 复制当前版本到版本库
+                ver_file = os.path.join(backup_dir, f"paper_account.v{data['_version']:06d}.json")
+                shutil.copy2(STATE_FILE, ver_file)
+                # 只保留最近5个版本
+                all_vers = sorted([f for f in os.listdir(backup_dir) if f.startswith("paper_account.v")])
+                for old in all_vers[:-5]:
+                    os.remove(os.path.join(backup_dir, old))
+            except: pass
+            # ⑤ 追加交易记录到JSONL (永不覆盖)
             try:
                 _latest = data.get("trade_log", [])[-1] if data.get("trade_log") else None
                 if _latest:
