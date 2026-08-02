@@ -1,0 +1,185 @@
+{
+  "date": "2026-08-02",
+  "total_sells": 24,
+  "classified": 24,
+  "distribution": {
+    "strategy.take_profit": 12,
+    "strategy.trailing_stop": 4,
+    "strategy.open_sell_half": 6,
+    "system.expiry": 2
+  },
+  "categories": {
+    "strategy": 22,
+    "system": 2
+  },
+  "details": [
+    {
+      "symbol": "sh601857",
+      "reason_code": "strategy.take_profit",
+      "category": "strategy",
+      "pnl_pct": 5.89,
+      "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+    },
+    {
+      "symbol": "sh601857",
+      "reason_code": "strategy.take_profit",
+      "category": "strategy",
+      "pnl_pct": 5.89,
+      "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+    },
+    {
+      "symbol": "sh601857",
+      "reason_code": "strategy.take_profit",
+      "category": "strategy",
+      "pnl_pct": 5.89,
+      "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+    },
+    {
+      "symbol": "sh601857",
+      "reason_code": "strategy.take_profit",
+      "category": "strategy",
+      "pnl_pct": 5.88,
+      "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+    },
+    {
+      "symbol": "sh601857",
+      "reason_code": "strategy.take_profit",
+      "category": "strategy",
+      "pnl_pct": 5.87,
+      "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+    },
+    {
+      "symbol": "sh601857",
+      "reason_code": "strategy.take_profit",
+      "category": "strategy",
+      "pnl_pct": 5.85,
+      "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+    },
+    {
+      "symbol": "sh601857",
+      "reason_code": "strategy.take_profit",
+      "category": "strategy",
+      "pnl_pct": 5.82,
+      "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+    },
+    {
+      "symbol": "sh601857",
+      "reason_code": "strategy.take_profit",
+      "category": "strategy",
+      "pnl_pct": 5.75,
+      "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+    },
+    {
+      "symbol": "sh601857",
+      "reason_code": "strategy.take_profit",
+      "category": "strategy",
+      "pnl_pct": 5.67,
+      "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+    },
+    {
+      "symbol": "sh600406",
+      "reason_code": "strategy.take_profit",
+      "category": "strategy",
+      "pnl_pct": 6.01,
+      "original": "策略止盈(6.7%)"
+    },
+    {
+      "symbol": "sh601857",
+      "reason_code": "strategy.trailing_stop",
+      "category": "strategy",
+      "pnl_pct": 2.16,
+      "original": "移动止盈T1(盈6.7% 回落≥1%)"
+    },
+    {
+      "symbol": "sh601857",
+      "reason_code": "strategy.trailing_stop",
+      "category": "strategy",
+      "pnl_pct": 1.39,
+      "original": "移动止盈T2(盈5.9% 回落≥2%)"
+    },
+    {
+      "symbol": "sh601857",
+      "reason_code": "strategy.trailing_stop",
+      "category": "strategy",
+      "pnl_pct": 1.18,
+      "original": "移动止盈T1(盈5.7% 回落≥1%)"
+    },
+    {
+      "symbol": "sh600089",
+      "reason_code": "strategy.trailing_stop",
+      "category": "strategy",
+      "pnl_pct": -0.31,
+      "original": "移动止盈T1(盈0.0% 回落≥1%)"
+    },
+    {
+      "symbol": "sh600406",
+      "reason_code": "strategy.take_profit",
+      "category": "strategy",
+      "pnl_pct": 4.55,
+      "original": "策略止盈(5.1%)"
+    },
+    {
+      "symbol": "sh601857",
+      "reason_code": "strategy.take_profit",
+      "category": "strategy",
+      "pnl_pct": 5.43,
+      "original": "策略止盈信号5级(16.7%仓) [ML](6.0%)"
+    },
+    {
+      "symbol": "sz000807",
+      "reason_code": "strategy.open_sell_half",
+      "category": "strategy",
+      "pnl_pct": -2.14,
+      "original": "今开卖半(-2.1%)"
+    },
+    {
+      "symbol": "sz000807",
+      "reason_code": "strategy.open_sell_half",
+      "category": "strategy",
+      "pnl_pct": -2.14,
+      "original": "今开卖半(-2.1%)"
+    },
+    {
+      "symbol": "sz000807",
+      "reason_code": "strategy.open_sell_half",
+      "category": "strategy",
+      "pnl_pct": -2.14,
+      "original": "今开卖半(-2.1%)"
+    },
+    {
+      "symbol": "sz000807",
+      "reason_code": "strategy.open_sell_half",
+      "category": "strategy",
+      "pnl_pct": -2.28,
+      "original": "今开卖半(-2.2%)"
+    },
+    {
+      "symbol": "sz000807",
+      "reason_code": "strategy.open_sell_half",
+      "category": "strategy",
+      "pnl_pct": -2.33,
+      "original": "今开卖半(-2.2%)"
+    },
+    {
+      "symbol": "sz000807",
+      "reason_code": "strategy.open_sell_half",
+      "category": "strategy",
+      "pnl_pct": -2.62,
+      "original": "今开卖半(-2.4%)"
+    },
+    {
+      "symbol": "sz000807",
+      "reason_code": "system.expiry",
+      "category": "system",
+      "pnl_pct": -0.44,
+      "original": "持仓到期(7天≥7天)"
+    },
+    {
+      "symbol": "sh601857",
+      "reason_code": "system.expiry",
+      "category": "system",
+      "pnl_pct": 3.44,
+      "original": "持仓到期(7天≥7天)"
+    }
+  ]
+}
