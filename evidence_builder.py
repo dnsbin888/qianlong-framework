@@ -31,13 +31,12 @@ REGISTRY_PATH = r"D:\AQF-T\contracts\evidence_registry.json"
 
 @dataclass
 class Evidence:
-    """最小 Evidence Object — Phase 1 P0-1 标准输出
+    """Evidence Object — Phase 1 P0-1/2 标准输出"""
 
-    原则: 先跑通，不加多余字段。P0-3/P0-4 再扩展 evaluation/health。
-    """
-
-    # ── 身份 ──
-    evidence_id: str                     # 占位，P0-2 正式生成
+    # ── P0-2: 三层身份 ──
+    human_id: str                        # AQFT-20260802-000001
+    machine_id: str                      # UUID v7
+    evidence_seq: int                    # Producer 今日序号
     producer_id: str                     # "trend_ml" | "momentum_ml"
     evidence_type: str                   # "trend_evidence" | "momentum_evidence"
 
@@ -58,6 +57,9 @@ class Evidence:
 
     # ── 元数据 ──
     metadata: dict = field(default_factory=dict)
+
+    # ── 预留 ──
+    parent_evidence_id: Optional[str] = None  # Evidence Graph
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -82,6 +84,8 @@ class EvidenceBuilder:
         self._registry_path = registry_path or REGISTRY_PATH
         self._registry: dict = {}
         self._load_registry()
+        from evidence_id import EvidenceIdGenerator
+        self._id_gen = EvidenceIdGenerator()
         self._counter: int = 0
 
     def _load_registry(self):
@@ -94,38 +98,20 @@ class EvidenceBuilder:
     def _get_producer_meta(self, producer_id: str) -> dict:
         return self._registry.get("producers", {}).get(producer_id, {})
 
-    # ══════════════════════════════════════════════════
-    # 核心方法
-    # ══════════════════════════════════════════════════
-
     def build(self, signal: dict, producer_id: str) -> Optional[Evidence]:
-        """
-        将现有 ML 信号封装为 Evidence 对象。
-
-        Args:
-            signal: 现有信号 dict
-                {symbol, buy_signal, close, score, name, stop_loss, take_profit, strategy}
-            producer_id: "trend_ml" | "momentum_ml"
-
-        Returns:
-            Evidence 对象，或 None（如果 ENABLE_EVIDENCE=False 或 producer 未注册）
-        """
         if not ENABLE_EVIDENCE:
             return None
 
         meta = self._get_producer_meta(producer_id)
-        if not meta:
-            return None
-        if meta.get("lifecycle") != "ACTIVE":
-            return None
-        if not meta.get("enabled"):
+        if not meta or meta.get("lifecycle") != "ACTIVE" or not meta.get("enabled"):
             return None
 
         self._counter += 1
 
-        # ── 置信度估算（不改模型输出） ──
+        # ── P0-2: 生成 EvidenceId ──
+        eid = self._id_gen.generate(producer_id)
+
         score = signal.get("score", 0)
-        # 简单映射: score 0-100 → confidence 0-1
         confidence = self._estimate_confidence(score)
 
         # ── 快照 ──
@@ -139,7 +125,10 @@ class EvidenceBuilder:
         }
 
         return Evidence(
-            evidence_id=f"PENDING-{self._counter:06d}",  # P0-2 替换为双编号
+            human_id=eid.human_id,
+            machine_id=eid.machine_id,
+            evidence_seq=eid.evidence_seq,
+            parent_evidence_id=eid.parent_evidence_id,
             producer_id=producer_id,
             evidence_type=meta.get("evidence_type", ""),
             timestamp=datetime.now().isoformat(),
